@@ -1,0 +1,20 @@
+[
+  { "id": "criminal", "title": "Criminal Law" },
+  { "id": "civil", "title": "Civil Law" },
+  { "id": "family", "title": "Family Law" },
+  { "id": "property", "title": "Land & Property" },
+  { "id": "consumer", "title": "Consumer Law" },
+  { "id": "corporate", "title": "Corporate & Commercial" },
+  { "id": "labour", "title": "Labour & Employment" },
+  { "id": "cyber", "title": "Cyber Crime & IT" },
+  { "id": "tax", "title": "Tax Law" },
+  { "id": "constitutional", "title": "Constitutional Law" },
+  { "id": "service", "title": "Service Law" },
+  { "id": "banking", "title": "Banking & Finance" },
+  { "id": "insurance", "title": "Insurance Law" },
+  { "id": "ipr", "title": "Intellectual Property" },
+  { "id": "environment", "title": "Environmental Law" },
+  { "id": "motor_accident", "title": "Motor Accident Claims" },
+  { "id": "arbitration", "title": "Arbitration & Mediation" },
+  { "id": "other", "title": "Other Legal Matters" }
+]

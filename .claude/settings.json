@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun add *)",
+      "PowerShell(node --version)",
+      "PowerShell(npm --version)",
+      "PowerShell(npm install --save-dev vite-plugin-pwa 2>&1)",
+      "PowerShell(powershell -ExecutionPolicy Bypass -File \"C:\\\\Users\\\\srira\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-srira-OneDrive-Desktop-close-ur-case-fe\\\\71f38029-debc-40c7-98e3-29223c030b2d\\\\scratchpad\\\\gen-icons.ps1\")",
+      "Bash(npx eslint *)",
+      "Bash(npx vite *)",
+      "Bash(chromium-cli --help)",
+      "Bash(netstat -ano)",
+      "Bash(timeout 30 bash -c 'until curl -sf http://localhost:8080 >/dev/null; do sleep 1; done')",
+      "Read(//c/Users/srira/AppData/Local/Temp/claude/c--Users-srira-OneDrive-Desktop-close-ur-case-fe/71f38029-debc-40c7-98e3-29223c030b2d/scratchpad/pw/**)",
+      "Bash(node drive2.js)"
+    ]
+  }
+}

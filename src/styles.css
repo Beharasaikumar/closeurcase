@@ -1,0 +1,381 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@theme inline {
+  /* M3-flavored shape scale for existing rounded-sm/md/lg/xl usage. Kept
+     closer to the original (small) radii on purpose — M3's largest shape
+     steps (16/28px) are meant for prominent single surfaces like sheets and
+     dialogs, not everyday cards/inputs/table wrappers, and using them
+     everywhere read as oversized. */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --font-sans: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--foreground);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: var(--surface);
+  --color-secondary-foreground: var(--foreground);
+  --color-muted: #f4f4f4;
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: #f4f4f4;
+  --color-accent-foreground: var(--foreground);
+  --color-destructive: var(--danger);
+  --color-destructive-foreground: #ffffff;
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-border: var(--border);
+  --color-input: var(--border);
+  --color-ring: var(--primary);
+  --color-sidebar: #ffffff;
+  --color-sidebar-foreground: var(--foreground);
+  --color-sidebar-primary: var(--primary);
+  --color-sidebar-primary-foreground: #ffffff;
+  --color-sidebar-accent: #f4f4f4;
+  --color-sidebar-accent-foreground: var(--foreground);
+  --color-sidebar-border: var(--border);
+  --color-sidebar-ring: var(--primary);
+}
+
+:root {
+  --radius: 6px;
+
+  /* Material 3 color roles, generated from the navy sampled out of
+     public/newlogo.jpeg (#133367 — the ring's dominant lit-face color,
+     averaged over ~55k matching pixels) via @material/material-color-utilities
+     (HCT tonal palette). Light scheme only — this app has no dark mode.
+     `primary` is pinned to the seed's own HCT tone (~22) instead of the
+     default M3 tone-40 role mapping, since the brand calls for a darker,
+     closer-to-source navy rather than the standard medium-emphasis accent. */
+  --md-sys-color-primary: #003272;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: #d8e2ff;
+  --md-sys-color-on-primary-container: #001a42;
+  --md-sys-color-secondary: #575e71;
+  --md-sys-color-on-secondary: #ffffff;
+  --md-sys-color-secondary-container: #dbe2f9;
+  --md-sys-color-on-secondary-container: #141b2c;
+  --md-sys-color-tertiary: #715573;
+  --md-sys-color-on-tertiary: #ffffff;
+  --md-sys-color-tertiary-container: #fcd7fb;
+  --md-sys-color-on-tertiary-container: #29132d;
+  --md-sys-color-error: #ba1a1a;
+  --md-sys-color-on-error: #ffffff;
+  --md-sys-color-error-container: #ffdad6;
+  --md-sys-color-on-error-container: #410002;
+  --md-sys-color-background: #fefbff;
+  --md-sys-color-on-background: #1b1b1f;
+  --md-sys-color-surface: #fefbff;
+  --md-sys-color-on-surface: #1b1b1f;
+  --md-sys-color-surface-variant: #e1e2ec;
+  --md-sys-color-on-surface-variant: #44474f;
+  --md-sys-color-outline: #75777f;
+  --md-sys-color-outline-variant: #c4c6d0;
+  --md-sys-color-shadow: #000000;
+  --md-sys-color-scrim: #000000;
+  --md-sys-color-inverse-surface: #303034;
+  --md-sys-color-inverse-on-surface: #f2f0f4;
+  --md-sys-color-inverse-primary: #aec6ff;
+  --md-sys-color-surface-dim: #dbd9dd;
+  --md-sys-color-surface-bright: #faf8fd;
+  --md-sys-color-surface-container-lowest: #ffffff;
+  --md-sys-color-surface-container-low: #f5f3f7;
+  --md-sys-color-surface-container: #efedf1;
+  --md-sys-color-surface-container-high: #e9e7ec;
+  --md-sys-color-surface-container-highest: #e3e2e6;
+
+  /* Extended M3 semantic roles (success / warning) — not part of the core
+     baseline scheme, generated the same way for visual consistency. */
+  --md-extended-color-success: #006e2d;
+  --md-extended-color-on-success: #ffffff;
+  --md-extended-color-success-container: #7ffc97;
+  --md-extended-color-on-success-container: #002109;
+  --md-extended-color-warning: #904d00;
+  --md-extended-color-on-warning: #ffffff;
+  --md-extended-color-warning-container: #ffdcc3;
+  --md-extended-color-on-warning-container: #2f1500;
+
+  /* M3 shape scale */
+  --md-sys-shape-corner-none: 0px;
+  --md-sys-shape-corner-extra-small: 4px;
+  --md-sys-shape-corner-small: 8px;
+  --md-sys-shape-corner-medium: 12px;
+  --md-sys-shape-corner-large: 16px;
+  --md-sys-shape-corner-extra-large: 28px;
+  --md-sys-shape-corner-full: 9999px;
+
+  /* M3 elevation levels (box-shadow approximations) */
+  --md-sys-elevation-level0: none;
+  --md-sys-elevation-level1: 0px 1px 2px 0px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+  --md-sys-elevation-level2: 0px 1px 2px 0px rgba(0, 0, 0, 0.3), 0px 2px 6px 2px rgba(0, 0, 0, 0.15);
+  --md-sys-elevation-level3: 0px 1px 3px 0px rgba(0, 0, 0, 0.3), 0px 4px 8px 3px rgba(0, 0, 0, 0.15);
+  --md-sys-elevation-level4: 0px 2px 3px 0px rgba(0, 0, 0, 0.3), 0px 6px 10px 4px rgba(0, 0, 0, 0.15);
+  --md-sys-elevation-level5: 0px 4px 4px 0px rgba(0, 0, 0, 0.3), 0px 8px 12px 6px rgba(0, 0, 0, 0.15);
+
+  /* @material/web's shadow-DOM stylesheets fall back to the literal string
+     "Roboto" for every typescale token (--md-sys-typescale-*-font) when
+     these ref tokens aren't set — since Roboto isn't loaded, the browser
+     silently substitutes its generic serif default, so every md-* component
+     (dialogs, buttons, chips, tabs, menus, text fields...) rendered in serif
+     instead of the app's actual Montserrat font until these were defined. */
+  --md-ref-typeface-brand: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --md-ref-typeface-plain: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+
+  /* App semantic tokens, now sourced from the M3 scheme so any remaining
+     Tailwind utility (bg-primary, text-foreground, ...) stays in sync with md-* components. */
+  --background: var(--md-sys-color-background);
+  --surface: var(--md-sys-color-surface);
+  --foreground: var(--md-sys-color-on-surface);
+  --muted-foreground: var(--md-sys-color-on-surface-variant);
+  --border: var(--md-sys-color-outline-variant);
+  --primary: var(--md-sys-color-primary);
+  --success: var(--md-extended-color-success);
+  --warning: var(--md-extended-color-warning);
+  --danger: var(--md-sys-color-error);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html, body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 { font-weight: 600; letter-spacing: -0.01em; }
+
+  /* M3 text fields/selects default to a spacious 56px-tall field (16px
+     padding above + below the input). That reads as oversized in this
+     data-dense dashboard app — search bars and filter fields especially —
+     so trim it down to a compact ~36px everywhere they're used. */
+  md-outlined-text-field,
+  md-filled-text-field,
+  md-outlined-select,
+  md-filled-select {
+    --md-outlined-field-top-space: 6px;
+    --md-outlined-field-bottom-space: 6px;
+    --md-outlined-field-leading-space: 12px;
+    --md-outlined-field-trailing-space: 12px;
+    --md-outlined-field-content-size: 0.875rem;
+    --md-outlined-field-label-text-size: 0.875rem;
+    --md-filled-field-top-space: 6px;
+    --md-filled-field-bottom-space: 6px;
+    --md-filled-field-leading-space: 12px;
+    --md-filled-field-trailing-space: 12px;
+    --md-filled-field-content-size: 0.875rem;
+    --md-filled-field-label-text-size: 0.875rem;
+    --md-outlined-select-text-field-input-text-size: 0.875rem;
+    --md-outlined-select-text-field-label-text-size: 0.875rem;
+    --md-outlined-select-text-field-leading-icon-size: 18px;
+    --md-outlined-select-text-field-trailing-icon-size: 18px;
+  }
+
+  /* M3 chips (filter/assist/input/suggestion) default to a 32px-tall pill
+     with 16px horizontal padding — oversized for the dense filter rows this
+     app uses them for, and prone to wrapping into tall multi-row blocks on
+     phone widths. Shrink every chip type app-wide, once, here, rather than
+     passing a `style` override at each call site. */
+  md-filter-chip,
+  md-assist-chip,
+  md-input-chip,
+  md-suggestion-chip {
+    --md-filter-chip-container-height: 24px;
+    --md-filter-chip-label-text-size: 0.6875rem;
+    --md-filter-chip-leading-space: 8px;
+    --md-filter-chip-trailing-space: 8px;
+    --md-filter-chip-container-shape: 6px;
+    --md-filter-chip-icon-size: 14px;
+
+    --md-assist-chip-container-height: 24px;
+    --md-assist-chip-label-text-size: 0.6875rem;
+    --md-assist-chip-leading-space: 8px;
+    --md-assist-chip-trailing-space: 8px;
+    --md-assist-chip-container-shape: 6px;
+    --md-assist-chip-icon-size: 14px;
+
+    --md-input-chip-container-height: 24px;
+    --md-input-chip-label-text-size: 0.6875rem;
+    --md-input-chip-leading-space: 8px;
+    --md-input-chip-trailing-space: 8px;
+    --md-input-chip-container-shape: 6px;
+    --md-input-chip-icon-size: 14px;
+
+    --md-suggestion-chip-container-height: 24px;
+    --md-suggestion-chip-label-text-size: 0.6875rem;
+    --md-suggestion-chip-leading-space: 8px;
+    --md-suggestion-chip-trailing-space: 8px;
+    --md-suggestion-chip-container-shape: 6px;
+    --md-suggestion-chip-icon-size: 14px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Tailwind's Preflight (`@layer base { *{ padding:0 } }`) wins over these
+   M3 custom elements' own `:host{ padding-inline-start: var(--_leading-space) }`
+   defaults — CSS Cascade Layers make ANY unlayered rule beat ANY layered
+   rule regardless of specificity, and Preflight's reset is layered while a
+   shadow tree's own `:host` rule effectively is not, so the light-DOM `*`
+   selector still wins the padding property outright. This collapses
+   buttons/tabs/list-items/menu-items down to their bare text width with no
+   inset. Deliberately written UNLAYERED (outside any @layer) so it reliably
+   beats Preflight, and it reads the *same* internal tokens the component
+   itself computed — via var(--_private-token, fallback) — so it stays in
+   sync with any theming rather than hard-coding pixel values.
+   Text fields/selects/chips are unaffected: their padding is on an inner
+   shadow element, not the host, so this list only covers components whose
+   box model is host-level padding. (md-dialog has the same conflict on its
+   centering `margin`, fixed separately below.) ─────────────────────────── */
+:is(md-elevated-button, md-filled-button, md-filled-tonal-button, md-outlined-button, md-text-button) {
+  padding-inline-start: var(--_leading-space, 24px);
+  padding-inline-end: var(--_trailing-space, 24px);
+  padding-block: calc(
+    (var(--_container-height, 40px) - max(var(--_label-text-line-height, 1.25rem), var(--_icon-size, 18px))) / 2
+  );
+}
+:is(md-elevated-button, md-filled-button, md-filled-tonal-button, md-outlined-button, md-text-button)[has-icon]:not(
+    [trailing-icon]
+  ) {
+  padding-inline-start: var(--_with-leading-icon-leading-space, 16px);
+  padding-inline-end: var(--_with-leading-icon-trailing-space, 24px);
+}
+:is(md-elevated-button, md-filled-button, md-filled-tonal-button, md-outlined-button, md-text-button)[has-icon][trailing-icon] {
+  padding-inline-start: var(--_with-trailing-icon-leading-space, 24px);
+  padding-inline-end: var(--_with-trailing-icon-trailing-space, 16px);
+}
+:is(md-primary-tab, md-secondary-tab) {
+  padding-inline: 16px;
+}
+:is(md-list-item, md-menu-item) {
+  padding-block: var(--md-list-item-top-space, 12px) var(--md-list-item-bottom-space, 12px);
+  padding-inline: var(--md-list-item-leading-space, 16px) var(--md-list-item-trailing-space, 16px);
+}
+/* Same Preflight-vs-:host conflict, different property: md-dialog centers
+   itself via `:host{ margin: auto }` (inset:0 is set by the native <dialog>'s
+   own UA `:modal` styles, browser-supplied, not overridable — only margin
+   needed restoring here). Without this it renders pinned to the top-left
+   corner instead of centered. */
+md-dialog {
+  margin: auto;
+}
+/* Direct-child combinator only — a descendant selector here would also catch
+   any [slot="icon"] nested deeper inside dialog content/actions (e.g. a
+   Button's own leading/trailing icon slot, which is scoped to that button's
+   own shadow root and has nothing to do with the dialog's header icon), and
+   mis-style it as if it were the dialog icon. */
+md-dialog > [slot="icon"] {
+  width: auto;
+  height: auto;
+  margin-top: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+md-dialog [slot="headline"] {
+  padding: 24px 24px 0;
+}
+md-dialog [slot="content"] {
+  padding: 16px 24px;
+}
+md-dialog [slot="actions"] {
+  padding: 16px 24px 24px;
+}
+md-dialog {
+  z-index: 50;
+}
+
+@media (max-width: 639px) {
+  md-dialog > [slot="icon"] {
+    margin-top: 20px;
+  }
+  md-dialog [slot="headline"] {
+    padding: 20px 16px 0;
+  }
+  md-dialog [slot="content"] {
+    padding: 12px 16px;
+  }
+  md-dialog [slot="actions"] {
+    padding: 12px 16px 20px;
+  }
+}
+
+
+@keyframes marquee-rtl {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee-rtl 24s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* ── Compact green toggle switch ───────────────────────────────────────── */
+.toggle-root {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 36px;
+  height: 20px;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  background: var(--md-sys-color-outline, #75777f);
+  transition: background 0.2s ease;
+  outline: none;
+}
+
+.toggle-root:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--md-extended-color-success, #006e2d) 30%, transparent);
+}
+
+.toggle-root[data-checked="true"] {
+  background: var(--md-extended-color-success, #006e2d);
+}
+
+.toggle-root:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.toggle-thumb {
+  position: absolute;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  transition: left 0.2s ease, width 0.1s ease;
+}
+
+.toggle-root[data-checked="true"] .toggle-thumb {
+  left: 19px;
+}
+
+.toggle-root:active .toggle-thumb {
+  width: 17px;
+}
+
+.toggle-root[data-checked="true"]:active .toggle-thumb {
+  left: 16px;
+}
