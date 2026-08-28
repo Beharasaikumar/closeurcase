@@ -73,15 +73,39 @@ async function requestMicrophone(): Promise<DevicePermissionState> {
 
 async function requestLocation(): Promise<DevicePermissionState> {
   if (typeof navigator === "undefined" || !navigator.geolocation) return "unsupported";
+
+  // Android Chrome throws the same PERMISSION_DENIED (1) error both when the
+  // *site* is blocked and when the device's Location toggle is off system-wide
+  // — err.code alone can't tell those apart. Cross-check the actual site-level
+  // permission via the Permissions API first so we know which one it really is.
+  let siteBlocked = false;
+  let permissionsApiChecked = false;
+  if (navigator.permissions?.query) {
+    try {
+      const status = await navigator.permissions.query({ name: "geolocation" });
+      siteBlocked = status.state === "denied";
+      permissionsApiChecked = true;
+    } catch {
+      // "geolocation" isn't queryable on this browser (e.g. older Safari) — fall through.
+    }
+  }
+
   return new Promise((resolve) => {
     navigator.geolocation.getCurrentPosition(
       () => resolve("granted"),
       (err) => {
-        // PERMISSION_DENIED (1) means the user/browser explicitly blocked us.
-        // POSITION_UNAVAILABLE (2) and TIMEOUT (3) are what we get when the
-        // device's location services (GPS) are switched off at the OS level —
-        // the browser permission itself may be fine, so "denied" would mislead.
-        resolve(err.code === err.PERMISSION_DENIED ? "denied" : "unavailable");
+        if (siteBlocked) {
+          resolve("denied");
+          return;
+        }
+        if (err.code === err.PERMISSION_DENIED && !permissionsApiChecked) {
+          // No way to disambiguate on this browser — keep the old, conservative reading.
+          resolve("denied");
+          return;
+        }
+        // Site-level permission is fine (or unknown but not blocked), so the failure
+        // is the device's own location service being off/unavailable.
+        resolve("unavailable");
       },
       { timeout: 10_000 },
     );

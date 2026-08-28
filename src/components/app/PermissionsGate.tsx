@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { AlertTriangle, CheckCircle2, Loader2, ShieldCheck, XCircle } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Loader2,
+  RefreshCw,
+  ShieldCheck,
+  XCircle,
+} from "lucide-react";
 import { AuthLayout } from "@/layouts/AuthLayout";
 import {
   DEVICE_PERMISSIONS,
@@ -24,6 +31,7 @@ const initialStatus: StatusMap = {
 export function PermissionsGate({ onContinue }: { onContinue: () => void }) {
   const [status, setStatus] = useState<StatusMap>(initialStatus);
   const [requesting, setRequesting] = useState(false);
+  const [retryingId, setRetryingId] = useState<DevicePermissionId | null>(null);
   const settled = DEVICE_PERMISSIONS.every(
     (p) => status[p.id] !== "idle" && status[p.id] !== "pending",
   );
@@ -38,6 +46,14 @@ export function PermissionsGate({ onContinue }: { onContinue: () => void }) {
     setRequesting(false);
   }
 
+  async function retryPermission(id: DevicePermissionId) {
+    setRetryingId(id);
+    setStatus((prev) => ({ ...prev, [id]: "pending" }));
+    const result = await requestDevicePermission(id);
+    setStatus((prev) => ({ ...prev, [id]: result }));
+    setRetryingId(null);
+  }
+
   return (
     <AuthLayout
       centerLogoOnMobile
@@ -46,9 +62,12 @@ export function PermissionsGate({ onContinue }: { onContinue: () => void }) {
     >
       <div className="space-y-3">
         {DEVICE_PERMISSIONS.map((permission) => {
-          const hint = getPermissionHint(permission.id, status[permission.id]);
+          const permissionState = status[permission.id];
+          const hint = getPermissionHint(permission.id, permissionState);
+          const canRetry = permissionState === "denied" || permissionState === "unavailable";
+          const isRetrying = retryingId === permission.id;
           return (
-            <PermissionRow key={permission.id} state={status[permission.id]}>
+            <PermissionRow key={permission.id} state={permissionState}>
               <permission.icon className="h-5 w-5 shrink-0 text-primary" />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-foreground">{permission.label}</p>
@@ -59,6 +78,17 @@ export function PermissionsGate({ onContinue }: { onContinue: () => void }) {
                   <p className="mt-1.5 text-xs leading-relaxed font-medium text-amber-600">
                     {hint}
                   </p>
+                )}
+                {canRetry && (
+                  <button
+                    type="button"
+                    onClick={() => retryPermission(permission.id)}
+                    disabled={requesting || isRetrying}
+                    className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-primary hover:underline disabled:opacity-60"
+                  >
+                    <RefreshCw className={`h-3 w-3 ${isRetrying ? "animate-spin" : ""}`} />
+                    {isRetrying ? "Checking…" : "Try again"}
+                  </button>
                 )}
               </div>
             </PermissionRow>
