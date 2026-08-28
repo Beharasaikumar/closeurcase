@@ -1,5 +1,15 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { Mic, Sparkles, Activity, CheckCircle2, Building2, BookOpen, Download } from "lucide-react";
+import {
+  Mic,
+  Sparkles,
+  Activity,
+  CheckCircle2,
+  Building2,
+  BookOpen,
+  Download,
+  MapPin,
+  ShieldCheck,
+} from "lucide-react";
 import { PublicLayout } from "@/layouts/PublicLayout";
 import { CitizenLoginButton, ProfessionalLoginLink } from "@/components/app/CitizenLoginButton";
 import { CitizenLanguageButtons } from "@/features/citizen/CitizenLanguageButtons";
@@ -50,6 +60,16 @@ const TRUST_DETAILS = [
   "Every Lawyer is bar-verified before they can accept a case",
   "You always know exactly who is representing you",
   "Status updates and hearing dates, never guesswork",
+];
+
+const ABOUT_POINTS = [
+  {
+    icon: Sparkles,
+    text: "AI reads your case description and predicts the right legal category",
+  },
+  { icon: MapPin, text: "Matched with a verified Lawyer near you, or auto-assigned by our team" },
+  { icon: Activity, text: "Track every hearing, document, and status update in real time" },
+  { icon: ShieldCheck, text: "Every Lawyer is bar-verified before they can accept a case" },
 ];
 
 function LandingPage() {
@@ -114,6 +134,37 @@ function LandingPage() {
 
       {/* ── Trusted Lawyers ────────────────────────────────────────────── */}
       <TrustedLawyers />
+
+      {/* ── About ────────────────────────────────────────────────────────── */}
+      <section id="about" className="scroll-mt-20 border-t border-border py-14 sm:py-20">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="max-w-xl mb-8">
+            <span className="text-xs font-bold uppercase tracking-widest text-primary">
+              About CloseurCase
+            </span>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+              Structured legal help, backed by real Lawyers
+            </h2>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8">
+            <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
+              CloseurCase bridges the gap between citizens facing legal challenges and licensed
+              legal professionals. AI helps you get started and finds the right fit fast — but every
+              matter is ultimately handled by a bar-verified Lawyer, so you always know exactly
+              who's representing you, from filing to resolution.
+            </p>
+            <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {ABOUT_POINTS.map((point) => (
+                <li key={point.text} className="flex items-start gap-2.5 text-sm text-foreground">
+                  <point.icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <span>{point.text}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
 
       {/* ── How it works ─────────────────────────────────────────────────── */}
       <section className="border-t border-border py-14 sm:py-20">
