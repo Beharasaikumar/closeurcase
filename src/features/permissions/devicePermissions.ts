@@ -1,8 +1,9 @@
-import { Camera, HardDrive, MapPin, Mic, type LucideIcon } from "lucide-react";
+import { Bell, Camera, MapPin, Mic, type LucideIcon } from "lucide-react";
 
-export type DevicePermissionId = "camera" | "microphone" | "location" | "storage";
+export type DevicePermissionId = "camera" | "microphone" | "location" | "notifications";
 
-export type DevicePermissionState = "idle" | "pending" | "granted" | "denied" | "unsupported";
+export type DevicePermissionState =
+  "idle" | "pending" | "granted" | "denied" | "unavailable" | "unsupported";
 
 export interface DevicePermissionDef {
   id: DevicePermissionId;
@@ -36,11 +37,11 @@ export const DEVICE_PERMISSIONS: DevicePermissionDef[] = [
       "To match you with nearby lawyers and courts, and auto-fill your city while filing a case.",
   },
   {
-    id: "storage",
-    label: "Storage",
-    icon: HardDrive,
+    id: "notifications",
+    label: "Notifications",
+    icon: Bell,
     reason:
-      "To save case documents, drafts, and chat attachments on this device so they're available offline.",
+      "To alert you about case status changes, new messages, and upcoming hearing dates in real time.",
   },
 ];
 
@@ -75,17 +76,23 @@ async function requestLocation(): Promise<DevicePermissionState> {
   return new Promise((resolve) => {
     navigator.geolocation.getCurrentPosition(
       () => resolve("granted"),
-      () => resolve("denied"),
+      (err) => {
+        // PERMISSION_DENIED (1) means the user/browser explicitly blocked us.
+        // POSITION_UNAVAILABLE (2) and TIMEOUT (3) are what we get when the
+        // device's location services (GPS) are switched off at the OS level —
+        // the browser permission itself may be fine, so "denied" would mislead.
+        resolve(err.code === err.PERMISSION_DENIED ? "denied" : "unavailable");
+      },
       { timeout: 10_000 },
     );
   });
 }
 
-async function requestStorage(): Promise<DevicePermissionState> {
-  if (typeof navigator === "undefined" || !navigator.storage?.persist) return "unsupported";
+async function requestNotifications(): Promise<DevicePermissionState> {
+  if (typeof window === "undefined" || !("Notification" in window)) return "unsupported";
   try {
-    const granted = await navigator.storage.persist();
-    return granted ? "granted" : "denied";
+    const permission = await Notification.requestPermission();
+    return permission === "granted" ? "granted" : "denied";
   } catch {
     return "unsupported";
   }
@@ -95,9 +102,22 @@ const REQUESTERS: Record<DevicePermissionId, () => Promise<DevicePermissionState
   camera: requestCamera,
   microphone: requestMicrophone,
   location: requestLocation,
-  storage: requestStorage,
+  notifications: requestNotifications,
 };
 
 export function requestDevicePermission(id: DevicePermissionId) {
   return REQUESTERS[id]();
+}
+
+/** Extra context shown under a permission row once it settles into a state
+ * that isn't self-explanatory from the icon alone (e.g. GPS off vs. blocked,
+ * or "no prompt was shown, that's normal for this one"). */
+export function getPermissionHint(
+  id: DevicePermissionId,
+  state: DevicePermissionState,
+): string | null {
+  if (id === "location" && state === "unavailable") {
+    return "Your device's location is turned off. Turn on location/GPS in your phone or browser settings, then try again.";
+  }
+  return null;
 }

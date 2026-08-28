@@ -22,7 +22,7 @@ import { UserAvatar } from "@/components/app/UserAvatar";
 import { LawyerProfileCard } from "@/components/app/LawyerProfileCard";
 import { addCase, getLawyers } from "@/data/appStore";
 import { addSubmittedCase } from "@/data/caseStore";
-import { generateMockTranscript } from "@/features/citizen/voiceMock";
+import { useSpeechToText } from "@/features/citizen/useSpeechToText";
 import { distanceToCity } from "@/lib/geo";
 import { useUserLocation } from "@/lib/useUserLocation";
 import { MAX_ATTACHMENT_BYTES, readFileAsDataUrl } from "@/lib/files";
@@ -87,7 +87,19 @@ export function FindLawyerWizard() {
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<File[]>([]);
   const [documents, setDocuments] = useState<File[]>([]);
-  const [isRecording, setIsRecording] = useState(false);
+  const baseDescriptionRef = useRef("");
+  const {
+    isRecording,
+    error: voiceError,
+    start: startVoiceRecognition,
+    stop: stopVoiceRecognition,
+  } = useSpeechToText((finalText, interimText) => {
+    const combined = [baseDescriptionRef.current, finalText, interimText]
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .join(" ");
+    setDescription(combined);
+  });
 
   // AI category analysis
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -167,13 +179,12 @@ export function FindLawyerWizard() {
   const selectedLawyer: Lawyer | undefined = sortedLawyers.find((l) => l.id === selectedLawyerId);
 
   function handleRecordVoiceNote() {
-    if (isRecording) return;
-    setIsRecording(true);
-    setTimeout(() => {
-      const transcript = generateMockTranscript();
-      setDescription((prev) => (prev.trim() ? `${prev.trim()} ${transcript}` : transcript));
-      setIsRecording(false);
-    }, 1400);
+    if (isRecording) {
+      stopVoiceRecognition();
+      return;
+    }
+    baseDescriptionRef.current = description.trim();
+    startVoiceRecognition();
   }
 
   function handleContinueFromDetails() {
@@ -449,10 +460,9 @@ export function FindLawyerWizard() {
                         <Mic className="h-4 w-4" />
                       )
                     }
-                    disabled={isRecording}
                     onClick={handleRecordVoiceNote}
                   >
-                    {isRecording ? "Recording…" : "Voice Note"}
+                    {isRecording ? "Tap to stop…" : "Voice Note"}
                   </Button>
                   <input
                     ref={imageInputRef}
@@ -478,6 +488,13 @@ export function FindLawyerWizard() {
                     }}
                   />
                 </div>
+
+                {voiceError && <p className="text-[11px] text-destructive">{voiceError}</p>}
+                {isRecording && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Listening… speak now, then tap the button again to stop.
+                  </p>
+                )}
 
                 {(images.length > 0 || documents.length > 0) && (
                   <ul className="space-y-1.5">

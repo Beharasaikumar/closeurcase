@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { CheckCircle2, Loader2, ShieldCheck, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, ShieldCheck, XCircle } from "lucide-react";
 import { AuthLayout } from "@/layouts/AuthLayout";
 import {
   DEVICE_PERMISSIONS,
+  getPermissionHint,
   requestDevicePermission,
   type DevicePermissionId,
   type DevicePermissionState,
@@ -14,11 +15,11 @@ const initialStatus: StatusMap = {
   camera: "idle",
   microphone: "idle",
   location: "idle",
-  storage: "idle",
+  notifications: "idle",
 };
 
 /** Full-screen gate shown once per browser session before any login/signup
- * screen, requesting the native camera/microphone/location/storage
+ * screen, requesting the native camera/microphone/location/notifications
  * permissions up front with a plain-language reason for each. */
 export function PermissionsGate({ onContinue }: { onContinue: () => void }) {
   const [status, setStatus] = useState<StatusMap>(initialStatus);
@@ -44,17 +45,25 @@ export function PermissionsGate({ onContinue }: { onContinue: () => void }) {
       subtitle="CloseurCase needs a few device permissions to work well. We'll tell you why for each one."
     >
       <div className="space-y-3">
-        {DEVICE_PERMISSIONS.map((permission) => (
-          <PermissionRow key={permission.id} state={status[permission.id]}>
-            <permission.icon className="h-5 w-5 shrink-0 text-primary" />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-foreground">{permission.label}</p>
-              <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-                {permission.reason}
-              </p>
-            </div>
-          </PermissionRow>
-        ))}
+        {DEVICE_PERMISSIONS.map((permission) => {
+          const hint = getPermissionHint(permission.id, status[permission.id]);
+          return (
+            <PermissionRow key={permission.id} state={status[permission.id]}>
+              <permission.icon className="h-5 w-5 shrink-0 text-primary" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-foreground">{permission.label}</p>
+                <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                  {permission.reason}
+                </p>
+                {hint && (
+                  <p className="mt-1.5 text-xs leading-relaxed font-medium text-amber-600">
+                    {hint}
+                  </p>
+                )}
+              </div>
+            </PermissionRow>
+          );
+        })}
 
         <div className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
           <ShieldCheck className="h-4 w-4 shrink-0 text-primary" />
@@ -113,6 +122,8 @@ function StatusBadge({ state }: { state: DevicePermissionState }) {
       return <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-label="Allowed" />;
     case "denied":
       return <XCircle className="h-4 w-4 text-destructive" aria-label="Denied" />;
+    case "unavailable":
+      return <AlertTriangle className="h-4 w-4 text-amber-600" aria-label="Turned off" />;
     case "unsupported":
       return <span className="text-[10px] font-semibold uppercase text-muted-foreground">N/A</span>;
     default:

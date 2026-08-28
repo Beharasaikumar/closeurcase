@@ -12,7 +12,7 @@ function readAcknowledged(): boolean {
 }
 
 /** Gates the login/signup screens behind a one-time (per browser session)
- * native-permissions prompt for camera, microphone, location, and storage. */
+ * native-permissions prompt for camera, microphone, location, and notifications. */
 export function usePermissionsGate() {
   const [acknowledged, setAcknowledged] = useState(readAcknowledged);
 
