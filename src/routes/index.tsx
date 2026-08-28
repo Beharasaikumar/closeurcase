@@ -78,23 +78,31 @@ function LandingPage() {
   return (
     <PublicLayout>
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="relative flex items-center overflow-hidden bg-primary lg:min-h-[calc(100vh-4rem)]">
-        <div className="mx-auto max-w-6xl w-full px-4 sm:px-6 py-6 sm:py-10 lg:py-12 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center">
+      <section className="relative flex items-center overflow-hidden bg-slate-950 lg:min-h-[calc(100vh-4rem)]">
+        {/* Courtroom Background Image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: "url('/bghero.png')" }}
+        />
+        {/* Gradient Overlay for Readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/75 to-slate-950/55 backdrop-blur-[1px]" />
+
+        <div className="relative z-10 mx-auto max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center">
           <div className="lg:col-span-7 space-y-4 sm:space-y-6 lg:space-y-7">
             <div className="md:hidden">
               <CitizenLanguageButtons size="sm" showLabel={false} className="max-w-fit" />
             </div>
 
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-bold text-white">
-              <Sparkles className="h-3.5 w-3.5" />
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-bold text-white backdrop-blur-md border border-white/10">
+              <Sparkles className="h-3.5 w-3.5 text-amber-300" />
               AI-Powered Legal Platform
             </span>
 
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-white sm:text-5xl lg:text-[3.4rem] leading-[1.1] sm:leading-[1.08]">
+              <h1 className="text-3xl font-bold tracking-tight text-white sm:text-5xl lg:text-[3.4rem] leading-[1.1] sm:leading-[1.08] drop-shadow-sm">
                 {translate("heroTitle")}
               </h1>
-              <p className="mt-3 sm:mt-5 max-w-xl text-sm sm:text-lg text-white/70 leading-relaxed">
+              <p className="mt-3 sm:mt-5 max-w-xl text-sm sm:text-lg text-white/80 leading-relaxed">
                 {translate("heroDesc")}
               </p>
             </div>
@@ -137,7 +145,7 @@ function LandingPage() {
 
       {/* ── About ────────────────────────────────────────────────────────── */}
       <section id="about" className="scroll-mt-20 border-t border-border py-14 sm:py-20">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-xl mb-8">
             <span className="text-xs font-bold uppercase tracking-widest text-primary">
               About CloseurCase
@@ -168,7 +176,7 @@ function LandingPage() {
 
       {/* ── How it works ─────────────────────────────────────────────────── */}
       <section className="border-t border-border py-14 sm:py-20">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-xl mb-14">
             <span className="text-xs font-bold uppercase tracking-widest text-primary">
               How it works
@@ -205,7 +213,7 @@ function LandingPage() {
 
       {/* ── Trust / consultation photo ───────────────────────────────────── */}
       <section className="border-t border-border py-14 sm:py-20">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-16 items-center">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-16 items-center">
           <div className="relative">
             <div className="absolute -inset-6 -z-10 hidden rounded-[2.5rem] bg-primary/5 blur-2xl sm:block" />
             <img
@@ -242,7 +250,7 @@ function LandingPage() {
 
       {/* ── Platform highlights ──────────────────────────────────────────── */}
       <section className="border-t border-border py-14 sm:py-20">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-xl mb-12">
             <span className="text-xs font-bold uppercase tracking-widest text-primary">
               Why CloseurCase
@@ -273,7 +281,7 @@ function LandingPage() {
 
       {/* ── WhatsApp banner ──────────────────────────────────────────────── */}
       <section className="border-t border-border py-10 sm:py-14">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-5 rounded-2xl bg-emerald-50/70 px-6 py-6 sm:px-9 sm:py-7">
             <div className="flex items-center gap-4 text-center sm:text-left">
               <div className="hidden sm:flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white">
@@ -314,7 +322,7 @@ function InstallAppBanner() {
 
   return (
     <section className="border-t border-border py-10 sm:py-14">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-5 rounded-2xl bg-primary/5 px-6 py-6 sm:px-9 sm:py-7">
           <div className="flex items-center gap-4 text-center sm:text-left">
             <div className="hidden sm:flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-white">

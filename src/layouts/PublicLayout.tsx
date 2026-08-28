@@ -40,7 +40,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="border-b border-border bg-white/85 backdrop-blur-md sticky top-0 z-40">
-        <div className="mx-auto grid h-16 w-full max-w-6xl grid-cols-[auto_1fr_auto] items-center gap-3 px-4 sm:px-6">
+        <div className="mx-auto grid h-16 w-full max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-3 px-4 sm:px-6 lg:px-8">
           <Link to="/" className="flex items-center gap-2.5 shrink-0 hover:opacity-90">
             <img src="/logo.png" alt="CloseurCase Logo" className="h-9 w-9 object-contain" />
             <span className="flex flex-col leading-tight">
@@ -178,6 +178,11 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                                       <li key={service}>
                                         <Link
                                           to="/citizen-login"
+                                          search={{
+                                            area: area.name,
+                                            specialization: spec.name,
+                                            service,
+                                          }}
                                           onClick={closeMobileMenu}
                                           className="block py-1 text-[11px] text-muted-foreground hover:text-primary"
                                         >
@@ -225,7 +230,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
       <main className="flex-1">{children}</main>
 
       <footer className="border-t border-border bg-surface">
-        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 py-8">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <Link
               to="/"

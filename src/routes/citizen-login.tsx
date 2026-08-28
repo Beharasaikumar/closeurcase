@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { AuthLayout } from "@/layouts/AuthLayout";
 
-import { Phone, ArrowLeft } from "lucide-react";
+import { Phone, ArrowLeft, ChevronRight, Tag } from "lucide-react";
 
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
@@ -18,8 +18,20 @@ import { CitizenLanguageButtons } from "@/features/citizen/CitizenLanguageButton
 
 import { useCitizenLanguage } from "@/features/citizen/i18n/CitizenLanguageContext";
 
+interface SearchParams {
+  area?: string;
+  specialization?: string;
+  service?: string;
+}
+
 export const Route = createFileRoute("/citizen-login")({
   head: () => ({ meta: [{ title: "Citizen sign in — CloseurCase" }] }),
+
+  validateSearch: (s: Record<string, unknown>): SearchParams => ({
+    area: typeof s.area === "string" ? s.area : undefined,
+    specialization: typeof s.specialization === "string" ? s.specialization : undefined,
+    service: typeof s.service === "string" ? s.service : undefined,
+  }),
 
   component: CitizenLogin,
 });
@@ -30,6 +42,8 @@ const STATIC_OTP = "0000";
 
 export function CitizenLogin() {
   const navigate = useNavigate();
+
+  const { area, specialization, service } = Route.useSearch();
 
   const { translate } = useCitizenLanguage();
 
@@ -98,6 +112,25 @@ export function CitizenLogin() {
       }
     >
       <div className="space-y-5">
+        {(area || specialization || service) && (
+          <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
+            <Tag className="h-3.5 w-3.5 shrink-0 text-primary" />
+            {area && <span>{area}</span>}
+            {specialization && (
+              <>
+                <ChevronRight className="h-3 w-3 shrink-0" />
+                <span>{specialization}</span>
+              </>
+            )}
+            {service && (
+              <>
+                <ChevronRight className="h-3 w-3 shrink-0" />
+                <span className="font-semibold text-foreground">{service}</span>
+              </>
+            )}
+          </div>
+        )}
+
         <CitizenLanguageButtons size="sm" showLabel={false} className="max-w-fit" />
 
         {step === "phone" && (

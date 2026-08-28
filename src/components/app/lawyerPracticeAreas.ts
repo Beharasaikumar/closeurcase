@@ -1,3 +1,5 @@
+import type { LegalCategory } from "@/types";
+
 /* Full practice-area → specialization → legal-service taxonomy for the
    "Find a Lawyer" mega-menu (desktop) and drawer accordion (mobile). These
    are marketing labels for browsing only, not tied to the app's internal
@@ -547,3 +549,19 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
     ],
   },
 ];
+
+/* Bridges a taxonomy practice-area name into the app's internal LegalCategory
+   enum — lawyers are still stored against a single flat `category`, so this
+   is what lets citizen-side "find a lawyer" filtering key off the same
+   Practice Area picker used at registration. */
+export function mapPracticeAreaToCategory(areaName: string): LegalCategory {
+  const lower = areaName.toLowerCase();
+  if (lower.includes("criminal")) return "Criminal";
+  if (lower.includes("corporate")) return "Corporate";
+  if (lower.includes("family")) return "Family";
+  if (lower.includes("property")) return "Property";
+  if (lower.includes("consumer")) return "Consumer";
+  if (lower.includes("cyber")) return "Cyber";
+  if (lower.includes("labour")) return "Labour";
+  return "Civil";
+}

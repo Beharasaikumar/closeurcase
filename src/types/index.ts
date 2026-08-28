@@ -71,6 +71,10 @@ export interface Lawyer {
   languages?: string[];
   practiceAreas?: LawyerPracticeArea[];
   specializations?: string[];
+  /** Specific legal services offered, one level more granular than
+   * `specializations` — e.g. specialization "Divorce" -> legal service
+   * "File for Divorce". Mirrors the 3rd tier of the practice-area picker. */
+  legalServices?: string[];
   courts?: string[];
   awards?: LawyerAward[];
   ratingCount?: number;

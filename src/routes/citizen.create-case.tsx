@@ -16,10 +16,15 @@ import {
   Users,
   Scale,
   ArrowLeft,
+  Briefcase,
 } from "lucide-react";
 import { PageHeader } from "@/components/app/PageHeader";
 import { UserAvatar } from "@/components/app/UserAvatar";
 import { LawyerProfileCard } from "@/components/app/LawyerProfileCard";
+import {
+  LAWYER_PRACTICE_AREAS,
+  mapPracticeAreaToCategory,
+} from "@/components/app/lawyerPracticeAreas";
 import { addCase, getLawyers } from "@/data/appStore";
 import { addSubmittedCase } from "@/data/caseStore";
 import { useSpeechToText } from "@/features/citizen/useSpeechToText";
@@ -82,6 +87,7 @@ export function FindLawyerWizard() {
 
   // Existing case
   const [cnr, setCnr] = useState("");
+  const [existingCaseStatus, setExistingCaseStatus] = useState<"Pending" | "Closed">("Pending");
 
   // New case
   const [description, setDescription] = useState("");
@@ -128,31 +134,47 @@ export function FindLawyerWizard() {
     assignMode === "admin" || (assignMode === "browse" && selectedLawyerId !== "");
 
   const [cityFilter, setCityFilter] = useState("All");
-  const [areaFilter, setAreaFilter] = useState("All");
 
-  function handleCityFilterChange(v: string) {
-    setCityFilter(v);
-    setAreaFilter("All");
+  // Practice Category & Specializations (3-tier) filter — mirrors the
+  // Practice Area -> Specialization -> Legal Service picker on the lawyer
+  // registration form, so citizens can narrow the law hub the same way.
+  const [selectedPracticeArea, setSelectedPracticeArea] = useState("");
+  const [selectedSpecialization, setSelectedSpecialization] = useState("");
+  const [selectedLegalService, setSelectedLegalService] = useState("");
+
+  const currentPracticeAreaObj = useMemo(
+    () => LAWYER_PRACTICE_AREAS.find((pa) => pa.name === selectedPracticeArea),
+    [selectedPracticeArea],
+  );
+  const availableSpecializations = useMemo(
+    () => currentPracticeAreaObj?.specializations ?? [],
+    [currentPracticeAreaObj],
+  );
+
+  const currentSpecializationObj = useMemo(
+    () => availableSpecializations.find((s) => s.name === selectedSpecialization),
+    [availableSpecializations, selectedSpecialization],
+  );
+  const availableLegalServices = currentSpecializationObj?.legalServices ?? [];
+
+  function handlePracticeAreaChange(v: string) {
+    setSelectedPracticeArea(v);
+    setSelectedSpecialization("");
+    setSelectedLegalService("");
+  }
+
+  function handleSpecializationChange(v: string) {
+    setSelectedSpecialization(v);
+    setSelectedLegalService("");
   }
 
   const approvedLawyers = useMemo(() => getLawyers().filter((l) => l.status === "Approved"), []);
 
+  // Cities lawyers actually serve — with only one city registered today,
+  // this naturally surfaces just that one.
   const cityOptions = useMemo(
     () => Array.from(new Set(approvedLawyers.map((l) => l.city))).sort(),
     [approvedLawyers],
-  );
-
-  const areaOptions = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          approvedLawyers
-            .filter((l) => cityFilter === "All" || l.city === cityFilter)
-            .map((l) => l.area)
-            .filter((a): a is string => Boolean(a)),
-        ),
-      ).sort(),
-    [approvedLawyers, cityFilter],
   );
 
   const sortedLawyers = useMemo(() => {
@@ -160,9 +182,17 @@ export function FindLawyerWizard() {
     // rather than being guessed at.
     const distance = (city: string) =>
       distanceToCity(userCoords.lat, userCoords.lng, city) ?? Number.MAX_SAFE_INTEGER;
+    // Prefer the deepest picked level for category mapping — some
+    // specializations (e.g. "Cyber Crime" under "Criminal Defense") carry a
+    // more specific keyword than their parent practice area, so narrowing
+    // that far should surface the right category-tagged lawyers.
+    const categorySource = selectedSpecialization || selectedPracticeArea;
+    const mappedCategory = categorySource ? mapPracticeAreaToCategory(categorySource) : null;
     return approvedLawyers
       .filter((l) => cityFilter === "All" || l.city === cityFilter)
-      .filter((l) => areaFilter === "All" || l.area === areaFilter)
+      .filter((l) => !mappedCategory || l.category === mappedCategory)
+      .filter((l) => !selectedSpecialization || l.specializations?.includes(selectedSpecialization))
+      .filter((l) => !selectedLegalService || l.legalServices?.includes(selectedLegalService))
       .sort((a, b) => {
         const da = distance(a.city);
         const db = distance(b.city);
@@ -174,7 +204,15 @@ export function FindLawyerWizard() {
         }
         return b.rating - a.rating;
       });
-  }, [approvedLawyers, predictedCategory, userCoords, cityFilter, areaFilter]);
+  }, [
+    approvedLawyers,
+    predictedCategory,
+    userCoords,
+    cityFilter,
+    selectedPracticeArea,
+    selectedSpecialization,
+    selectedLegalService,
+  ]);
 
   const selectedLawyer: Lawyer | undefined = sortedLawyers.find((l) => l.id === selectedLawyerId);
 
@@ -235,10 +273,45 @@ export function FindLawyerWizard() {
             ? description.trim().slice(0, 60) + (description.trim().length > 60 ? "…" : "")
             : "New Legal Matter";
 
+      const isExistingClosed = path === "existing" && existingCaseStatus === "Closed";
+
       const caseDescription =
         path === "existing"
-          ? `Linked from an existing court case using CNR number ${cnr.trim()}.`
+          ? `Linked from an existing court case (currently ${existingCaseStatus.toLowerCase()} in court) using CNR number ${cnr.trim()}.`
           : description.trim() || "Submitted with attachments only.";
+
+      const status: CaseStatus = isExistingClosed ? "Closed" : lawyer ? "Assigned" : "Submitted";
+
+      const timeline = isExistingClosed
+        ? [
+            {
+              id: "t1",
+              status: "Closed" as CaseStatus,
+              at: today,
+              note: `Existing case (CNR ${cnr.trim()}) linked as already closed`,
+            },
+          ]
+        : [
+            {
+              id: "t1",
+              status: "Submitted" as CaseStatus,
+              at: today,
+              note: "Case filed via Find a Lawyer",
+            },
+            lawyer
+              ? {
+                  id: "t2",
+                  status: "Assigned" as CaseStatus,
+                  at: today,
+                  note: `Assigned to ${lawyer.name}`,
+                }
+              : {
+                  id: "t2",
+                  status: "Submitted" as CaseStatus,
+                  at: today,
+                  note: "Auto-assign requested — pending admin allocation",
+                },
+          ];
 
       const newCase: LegalCase = {
         id,
@@ -249,32 +322,12 @@ export function FindLawyerWizard() {
         citizenName: CITIZEN_NAME,
         lawyerId: lawyer?.id,
         lawyerName: lawyer?.name,
-        status: (lawyer ? "Assigned" : "Submitted") as CaseStatus,
+        status,
         city: CITIZEN_CITY,
         createdAt: today,
         updatedAt: today,
         documents: documentEntries,
-        timeline: [
-          {
-            id: "t1",
-            status: "Submitted" as CaseStatus,
-            at: today,
-            note: "Case filed via Find a Lawyer",
-          },
-          lawyer
-            ? {
-                id: "t2",
-                status: "Assigned" as CaseStatus,
-                at: today,
-                note: `Assigned to ${lawyer.name}`,
-              }
-            : {
-                id: "t2",
-                status: "Submitted" as CaseStatus,
-                at: today,
-                note: "Auto-assign requested — pending admin allocation",
-              },
-        ],
+        timeline,
         hearings: [],
         source: "manual",
         ...(path === "existing" ? { cnrNumber: cnr.trim() } : {}),
@@ -376,7 +429,37 @@ export function FindLawyerWizard() {
                     <FileSearch className="h-5 w-5" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-bold text-foreground">Existing Case</div>
+                    <div className="text-md font-bold text-foreground flex justify-between items-center">
+                      <span>Existing Case</span>
+                      {path === "existing" && (
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <div className="inline-flex gap-1 rounded-lg border border-border bg-muted p-1">
+                            <button
+                              type="button"
+                              onClick={() => setExistingCaseStatus("Pending")}
+                              className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-all ${
+                                existingCaseStatus === "Pending"
+                                  ? "bg-primary text-primary-foreground shadow-sm"
+                                  : "text-muted-foreground hover:text-foreground"
+                              }`}
+                            >
+                              Pending
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setExistingCaseStatus("Closed")}
+                              className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-all ${
+                                existingCaseStatus === "Closed"
+                                  ? "bg-primary text-primary-foreground shadow-sm"
+                                  : "text-muted-foreground hover:text-foreground"
+                              }`}
+                            >
+                              Closed
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       Already filed in court? Link it with your CNR number.
                     </p>
@@ -625,26 +708,56 @@ export function FindLawyerWizard() {
                     : `Sorted by proximity to ${userCityLabel}${predictedCategory ? ` and ${predictedCategory} Law expertise` : ""}.`}
                 </p>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <Select
-                    label="City"
-                    value={cityFilter}
-                    onChange={handleCityFilterChange}
-                    options={[
-                      { value: "All", label: "All Cities" },
-                      ...cityOptions.map((c) => ({ value: c, label: c })),
-                    ]}
-                  />
-                  <Select
-                    label="Area"
-                    value={areaFilter}
-                    onChange={setAreaFilter}
-                    disabled={areaOptions.length === 0}
-                    options={[
-                      { value: "All", label: "All Areas" },
-                      ...areaOptions.map((a) => ({ value: a, label: a })),
-                    ]}
-                  />
+                <Select
+                  label="City"
+                  value={cityFilter}
+                  onChange={setCityFilter}
+                  options={[
+                    { value: "All", label: "All Cities" },
+                    ...cityOptions.map((c) => ({ value: c, label: c })),
+                  ]}
+                />
+
+                <div className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                      <Briefcase className="h-4 w-4" />
+                    </div>
+                    <h3 className="text-xs font-bold text-foreground">
+                      Practice Category &amp; Specializations (3-Tier Dropdowns)
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <Select
+                      label="Practice Area"
+                      value={selectedPracticeArea}
+                      onChange={handlePracticeAreaChange}
+                      options={[
+                        { value: "", label: "-- Select Practice Area --" },
+                        ...LAWYER_PRACTICE_AREAS.map((pa) => ({ value: pa.name, label: pa.name })),
+                      ]}
+                    />
+                    <Select
+                      label="Specialization"
+                      value={selectedSpecialization}
+                      onChange={handleSpecializationChange}
+                      disabled={!selectedPracticeArea || availableSpecializations.length === 0}
+                      options={[
+                        { value: "", label: "-- Select Specialization --" },
+                        ...availableSpecializations.map((s) => ({ value: s.name, label: s.name })),
+                      ]}
+                    />
+                    <Select
+                      label="Legal Service"
+                      value={selectedLegalService}
+                      onChange={setSelectedLegalService}
+                      disabled={!selectedSpecialization || availableLegalServices.length === 0}
+                      options={[
+                        { value: "", label: "-- Select Legal Service --" },
+                        ...availableLegalServices.map((s) => ({ value: s, label: s })),
+                      ]}
+                    />
+                  </div>
                 </div>
 
                 <div className="max-h-80 space-y-2 overflow-y-auto pr-1">

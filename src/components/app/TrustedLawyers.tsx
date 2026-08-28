@@ -95,7 +95,7 @@ export function TrustedLawyers() {
 
   return (
     <section className="border-t border-border py-14 sm:py-20">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="max-w-xl mb-12">
           <span className="text-xs font-bold uppercase tracking-widest text-primary">
             Our network

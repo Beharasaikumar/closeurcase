@@ -117,6 +117,7 @@ export function PublicNav() {
                         <li key={service}>
                           <Link
                             to="/citizen-login"
+                            search={{ area: activeArea.name, specialization: spec.name, service }}
                             onClick={closeNow}
                             className="text-[11px] leading-relaxed text-muted-foreground transition-colors duration-150 hover:text-primary hover:underline"
                           >

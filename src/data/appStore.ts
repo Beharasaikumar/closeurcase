@@ -21,7 +21,7 @@ import {
   knowledgeBase as seedKnowledgeBase,
 } from "./mock";
 
-const LAWYERS_KEY = "cuc_lawyers_v5";
+const LAWYERS_KEY = "cuc_lawyers_v7";
 const CITIZENS_KEY = "cuc_citizens_v3";
 const NOTIFICATIONS_KEY = "cuc_notifications_v2";
 const KB_KEY = "cuc_kb_v3";

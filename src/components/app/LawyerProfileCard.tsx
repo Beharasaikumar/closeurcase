@@ -14,7 +14,6 @@ import {
   XCircle,
 } from "lucide-react";
 import { UserAvatar } from "./UserAvatar";
-import { LinearProgress } from "@/components/m3";
 import type { Lawyer } from "@/types";
 
 const STATUS_STYLE: Record<
@@ -116,26 +115,16 @@ export function LawyerProfileCard({
       </div>
 
       {lawyer.practiceAreas && lawyer.practiceAreas.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-2">
           <SectionTitle icon={<Briefcase className="h-3.5 w-3.5" />}>Practice Areas</SectionTitle>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="flex flex-wrap gap-1.5">
             {lawyer.practiceAreas.map((pa) => (
-              <div
+              <span
                 key={pa.name}
-                className="rounded-xl border border-border/50 bg-background/50 p-3"
+                className="rounded-full border border-border bg-muted/60 px-2.5 py-1 text-[11px] font-medium text-foreground"
               >
-                <div className="mb-1.5 flex items-center justify-between text-xs">
-                  <span className="font-semibold text-foreground truncate pr-2">{pa.name}</span>
-                  <span className="font-mono text-[11px] font-bold text-primary shrink-0">
-                    {pa.proficiency}%
-                  </span>
-                </div>
-                <LinearProgress
-                  value={pa.proficiency / 100}
-                  ariaLabel={pa.name}
-                  className="w-full"
-                />
-              </div>
+                {pa.name}
+              </span>
             ))}
           </div>
         </div>
@@ -149,6 +138,22 @@ export function LawyerProfileCard({
               <span
                 key={s}
                 className="rounded-full border border-border bg-muted/60 px-2.5 py-1 text-[11px] font-medium text-foreground"
+              >
+                {s}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {lawyer.legalServices && lawyer.legalServices.length > 0 && (
+        <div className="space-y-2">
+          <SectionTitle>Legal Services</SectionTitle>
+          <div className="flex flex-wrap gap-1.5">
+            {lawyer.legalServices.map((s) => (
+              <span
+                key={s}
+                className="rounded-full border border-primary/25 bg-primary/5 px-2.5 py-1 text-[11px] font-medium text-primary"
               >
                 {s}
               </span>
