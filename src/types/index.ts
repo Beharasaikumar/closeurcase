@@ -80,6 +80,23 @@ export interface Lawyer {
   ratingCount?: number;
 }
 
+export type SubscriptionPlanId = "monthly" | "yearly";
+
+/** A citizen's Auto-Assign subscription — created when they pay for a plan
+ * on the "Find a Lawyer" wizard's admin-assign step. */
+export interface Subscription {
+  id: string;
+  citizenId: string;
+  planId: SubscriptionPlanId;
+  planLabel: string;
+  amount: number;
+  /** ISO date (YYYY-MM-DD) the plan was purchased/started. */
+  startedAt: string;
+  status: "Active" | "Cancelled" | "Expired";
+  /** The case this subscription was purchased for, if any. */
+  caseId?: string;
+}
+
 export interface CaseDocument {
   id: string;
   name: string;

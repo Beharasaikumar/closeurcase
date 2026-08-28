@@ -36,8 +36,14 @@ function AdminProfilePage() {
           <AvatarUploadField role="admin" name="Platform Ops" defaultPhotoUrl="/logo.png" />
         </div>
 
-        <div className="space-y-4">
-          <TextField label="Full Name" value={name} onChange={setName} placeholder="Full name" />
+        <div className="min-w-0 space-y-4">
+          <TextField
+            label="Full Name"
+            value={name}
+            onChange={setName}
+            placeholder="Full name"
+            className="w-full"
+          />
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <TextField
@@ -46,6 +52,7 @@ function AdminProfilePage() {
               value={email}
               onChange={setEmail}
               placeholder="email@example.com"
+              className="w-full"
             />
             <TextField
               label="Phone Number"
@@ -53,23 +60,25 @@ function AdminProfilePage() {
               value={phone}
               onChange={setPhone}
               placeholder="+91 98765 43210"
+              className="w-full"
             />
             <TextField
               label="City / District"
               value={city}
               onChange={setCity}
               placeholder="e.g. Hyderabad, Visakhapatnam"
+              className="w-full"
             />
           </div>
 
           {/* Access Level */}
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-3.5 space-y-2">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
               <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
               <span className="text-xs font-bold text-foreground uppercase tracking-wide">
                 Access Level
               </span>
-              <span className="ml-auto text-[10px] font-semibold text-muted-foreground bg-muted rounded-full px-2 py-0.5">
+              <span className="ml-auto whitespace-nowrap text-[10px] font-semibold text-muted-foreground bg-muted rounded-full px-2 py-0.5">
                 Highest Privilege
               </span>
             </div>

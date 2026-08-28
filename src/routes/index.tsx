@@ -1,4 +1,5 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useEffect } from "react";
 import {
   Mic,
   Sparkles,
@@ -74,6 +75,20 @@ const ABOUT_POINTS = [
 
 function LandingPage() {
   const { translate } = useCitizenLanguage();
+  const navigate = useNavigate();
+  const hash = useRouterState({ select: (s) => s.location.hash });
+
+  // `scroll-behavior: smooth` plus a lingering `#about` in the URL can fight
+  // the user's own scrolling afterwards (the browser keeps re-honoring the
+  // anchor target) — once the smooth-scroll has had time to land, drop the
+  // hash so nothing keeps pulling the page back to it.
+  useEffect(() => {
+    if (hash !== "about") return;
+    const timer = setTimeout(() => {
+      navigate({ to: "/", hash: "", replace: true, resetScroll: false });
+    }, 900);
+    return () => clearTimeout(timer);
+  }, [hash, navigate]);
 
   return (
     <PublicLayout>
@@ -87,8 +102,8 @@ function LandingPage() {
         {/* Gradient Overlay for Readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/75 to-slate-950/55 backdrop-blur-[1px]" />
 
-        <div className="relative z-10 mx-auto max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center">
-          <div className="lg:col-span-7 space-y-4 sm:space-y-6 lg:space-y-7">
+        <div className="relative z-10 mx-auto flex w-full max-w-7xl justify-center px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
+          <div className="flex max-w-3xl flex-col items-center space-y-4 text-center sm:space-y-6 lg:space-y-7">
             <div className="md:hidden">
               <CitizenLanguageButtons size="sm" showLabel={false} className="max-w-fit" />
             </div>
@@ -102,17 +117,17 @@ function LandingPage() {
               <h1 className="text-3xl font-bold tracking-tight text-white sm:text-5xl lg:text-[3.4rem] leading-[1.1] sm:leading-[1.08] drop-shadow-sm">
                 {translate("heroTitle")}
               </h1>
-              <p className="mt-3 sm:mt-5 max-w-xl text-sm sm:text-lg text-white/80 leading-relaxed">
+              <p className="mt-3 sm:mt-5 text-sm sm:text-lg text-white/80 leading-relaxed">
                 {translate("heroDesc")}
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 max-w-md">
+            <div className="flex w-full max-w-md flex-col justify-center gap-2.5 sm:flex-row sm:gap-3">
               <CitizenLoginButton label={translate("citizenLoginLabel")} />
               <ProfessionalLoginLink className="border-white/25 bg-transparent text-white hover:bg-white/10" />
             </div>
 
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-1">
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 pt-1">
               {TRUST_POINTS.map((point) => (
                 <span
                   key={point}
@@ -122,19 +137,6 @@ function LandingPage() {
                   {point}
                 </span>
               ))}
-            </div>
-          </div>
-
-          {/* Lawyer portrait */}
-          <div className="lg:col-span-5">
-            <div className="relative mx-auto max-h-[32vh] max-w-[220px] sm:max-h-[45vh] sm:max-w-xs lg:max-h-[60vh] lg:max-w-none">
-              <div className="absolute -inset-6 -z-10 rounded-[2.5rem] bg-white/5 blur-2xl" />
-              <img
-                src="https://images.unsplash.com/photo-1742981365880-698cfb84492d?w=800&h=1000&fit=crop&crop=faces&q=80"
-                alt="An Lawyer on the CloseurCase network, ready to take your case"
-                className="aspect-square max-h-[32vh] sm:max-h-[45vh] lg:max-h-[60vh] w-full rounded-[2rem] object-cover shadow-[0_30px_70px_-20px_rgba(0,0,0,0.55)]"
-                loading="eager"
-              />
             </div>
           </div>
         </div>

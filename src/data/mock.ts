@@ -6,6 +6,7 @@ import type {
   Lawyer,
   LegalCase,
   LegalCategory,
+  Subscription,
 } from "@/types";
 
 export const categories: LegalCategory[] = [
@@ -798,6 +799,29 @@ export const cases: LegalCase[] = [
     petitionerLawyers: ["Swathi Reddy"],
     respondentLawyers: ["APSRTC Legal Cell"],
     source: "ecourt",
+  },
+];
+
+export const subscriptions: Subscription[] = [
+  {
+    id: "sub_001",
+    citizenId: "u_001",
+    planId: "monthly",
+    planLabel: "Monthly",
+    amount: 499,
+    startedAt: "2026-06-01",
+    status: "Expired",
+    caseId: "CS-91101",
+  },
+  {
+    id: "sub_002",
+    citizenId: "u_001",
+    planId: "yearly",
+    planLabel: "Yearly",
+    amount: 4999,
+    startedAt: "2026-07-05",
+    status: "Active",
+    caseId: "CS-34253",
   },
 ];
 

@@ -25,13 +25,21 @@ import {
   LAWYER_PRACTICE_AREAS,
   mapPracticeAreaToCategory,
 } from "@/components/app/lawyerPracticeAreas";
-import { addCase, getLawyers } from "@/data/appStore";
+import { addCase, addSubscription, getLawyers } from "@/data/appStore";
 import { addSubmittedCase } from "@/data/caseStore";
+import { SUBSCRIPTION_PLANS } from "@/data/subscriptionPlans";
 import { useSpeechToText } from "@/features/citizen/useSpeechToText";
 import { distanceToCity } from "@/lib/geo";
 import { useUserLocation } from "@/lib/useUserLocation";
 import { MAX_ATTACHMENT_BYTES, readFileAsDataUrl } from "@/lib/files";
-import type { CaseDocument, CaseStatus, LegalCase, LegalCategory, Lawyer } from "@/types";
+import type {
+  CaseDocument,
+  CaseStatus,
+  LegalCase,
+  LegalCategory,
+  Lawyer,
+  SubscriptionPlanId,
+} from "@/types";
 import {
   Button,
   TextField,
@@ -115,6 +123,7 @@ export function FindLawyerWizard() {
   const [assignMode, setAssignMode] = useState<AssignMode>(null);
   const [selectedLawyerId, setSelectedLawyerId] = useState("");
   const [profileLawyer, setProfileLawyer] = useState<Lawyer | null>(null);
+  const [subscriptionPlan, setSubscriptionPlan] = useState<SubscriptionPlanId | null>(null);
 
   const [isPaying, setIsPaying] = useState(false);
   const [createdCaseId, setCreatedCaseId] = useState("");
@@ -131,7 +140,8 @@ export function FindLawyerWizard() {
     path === "existing" ? cnr.trim().length > 0 : path === "new" ? hasNewCaseContent : false;
 
   const canContinueAssign =
-    assignMode === "admin" || (assignMode === "browse" && selectedLawyerId !== "");
+    (assignMode === "admin" && subscriptionPlan !== null) ||
+    (assignMode === "browse" && selectedLawyerId !== "");
 
   const [cityFilter, setCityFilter] = useState("All");
 
@@ -215,6 +225,8 @@ export function FindLawyerWizard() {
   ]);
 
   const selectedLawyer: Lawyer | undefined = sortedLawyers.find((l) => l.id === selectedLawyerId);
+  const selectedPlan = SUBSCRIPTION_PLANS.find((p) => p.id === subscriptionPlan);
+  const totalFee = assignMode === "admin" && selectedPlan ? selectedPlan.price : FEE;
 
   function handleRecordVoiceNote() {
     if (isRecording) {
@@ -335,6 +347,15 @@ export function FindLawyerWizard() {
 
       addCase(newCase);
       addSubmittedCase(newCase);
+      if (assignMode === "admin" && selectedPlan) {
+        addSubscription({
+          citizenId: CITIZEN_ID,
+          planId: selectedPlan.id,
+          planLabel: selectedPlan.label,
+          amount: selectedPlan.price,
+          caseId: id,
+        });
+      }
       setCreatedCaseId(id);
       setAssignedLawyerName(lawyer?.name || "");
       setAdminAssignRequested(assignMode === "admin");
@@ -616,7 +637,11 @@ export function FindLawyerWizard() {
               >
                 {isAnalyzing ? (
                   <span className="flex items-center gap-2">
-                    <CircularProgress indeterminate ariaLabel="Analyzing case" />
+                    <CircularProgress
+                      indeterminate
+                      ariaLabel="Analyzing case"
+                      className="h-4 w-4"
+                    />
                     Analyzing case…
                   </span>
                 ) : (
@@ -810,11 +835,53 @@ export function FindLawyerWizard() {
             )}
 
             {assignMode === "admin" && (
-              <Card variant="elevated" className="p-4 sm:p-6">
+              <Card variant="elevated" className="p-4 sm:p-6 space-y-4">
                 <p className="text-xs leading-relaxed text-muted-foreground">
                   We'll send your case details to our admin team, and they'll assign the best
                   available Lawyer on your behalf. You'll be notified as soon as it's assigned.
                 </p>
+
+                <div>
+                  <h3 className="mb-2 text-xs font-bold text-foreground">Choose a plan</h3>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {SUBSCRIPTION_PLANS.map((plan) => (
+                      <Card
+                        key={plan.id}
+                        variant="outlined"
+                        onClick={() => setSubscriptionPlan(plan.id)}
+                        className={`relative p-4 ${
+                          subscriptionPlan === plan.id
+                            ? "border-primary ring-1 ring-primary bg-primary/5"
+                            : ""
+                        }`}
+                      >
+                        {plan.badge && (
+                          <span className="absolute -top-2.5 right-4 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                            {plan.badge}
+                          </span>
+                        )}
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="text-sm font-bold text-foreground">{plan.label}</div>
+                            <div className="mt-1 flex items-baseline gap-0.5">
+                              <IndianRupee className="h-3.5 w-3.5 text-primary" />
+                              <span className="text-lg font-extrabold text-primary">
+                                {plan.price}
+                              </span>
+                              <span className="text-[11px] text-muted-foreground">
+                                {plan.cadence}
+                              </span>
+                            </div>
+                          </div>
+                          {subscriptionPlan === plan.id && (
+                            <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />
+                          )}
+                        </div>
+                        <p className="mt-2 text-[11px] text-muted-foreground">{plan.description}</p>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
               </Card>
             )}
 
@@ -844,7 +911,12 @@ export function FindLawyerWizard() {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-foreground">Payment</h3>
-                  <p className="text-[11px] text-muted-foreground">Secure · One-time fee</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Secure ·{" "}
+                    {assignMode === "admin" && selectedPlan
+                      ? `${selectedPlan.label} plan`
+                      : "One-time fee"}
+                  </p>
                 </div>
               </div>
 
@@ -861,11 +933,19 @@ export function FindLawyerWizard() {
                     {assignMode === "browse" ? selectedLawyer?.name : "Assigned by admin"}
                   </span>
                 </div>
+                {assignMode === "admin" && selectedPlan && (
+                  <div className="flex justify-between px-4 py-2.5">
+                    <span className="text-muted-foreground">Plan</span>
+                    <span className="font-medium text-foreground">
+                      {selectedPlan.label} ({selectedPlan.cadence.replace("/", "billed per ")})
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between px-4 py-3 bg-primary/5">
                   <span className="font-bold text-foreground">Total</span>
                   <div className="flex items-center font-extrabold text-primary text-sm">
                     <IndianRupee className="h-3.5 w-3.5" />
-                    <span>{FEE}</span>
+                    <span>{totalFee}</span>
                   </div>
                 </div>
               </div>
@@ -887,11 +967,15 @@ export function FindLawyerWizard() {
                 <Button className="flex-1" disabled={isPaying} onClick={handlePay}>
                   {isPaying ? (
                     <span className="flex items-center justify-center gap-2">
-                      <CircularProgress indeterminate ariaLabel="Processing payment" />
+                      <CircularProgress
+                        indeterminate
+                        ariaLabel="Processing payment"
+                        className="h-4 w-4"
+                      />
                       Processing…
                     </span>
                   ) : (
-                    `Pay ₹${FEE}`
+                    `Pay ₹${totalFee}`
                   )}
                 </Button>
               </div>

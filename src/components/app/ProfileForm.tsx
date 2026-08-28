@@ -39,6 +39,7 @@ export function ProfileForm({
         value={name}
         onChange={setName}
         placeholder="Enter your full name"
+        className="w-full"
       />
 
       <div className={`grid grid-cols-1 gap-3 sm:grid-cols-2 ${wide ? "lg:grid-cols-3" : ""}`}>
@@ -48,6 +49,7 @@ export function ProfileForm({
           value={email}
           onChange={setEmail}
           placeholder="email@example.com"
+          className="w-full"
         />
         <TextField
           label="Phone Number"
@@ -55,13 +57,14 @@ export function ProfileForm({
           value={phone}
           onChange={setPhone}
           placeholder="+91 98765 43210"
+          className="w-full"
         />
         <TextField
           label="City / District"
           value={city}
           onChange={setCity}
           placeholder="e.g. Hyderabad, Visakhapatnam"
-          className={wide ? "" : "sm:col-span-2"}
+          className={`w-full ${wide ? "" : "sm:col-span-2"}`}
         />
       </div>
     </>
@@ -69,12 +72,12 @@ export function ProfileForm({
 
   const aadhaarField = (
     <div className="rounded-lg border border-primary/20 bg-primary/5 p-3.5 space-y-2">
-      <div className="flex items-center gap-2 mb-1">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
         <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
         <span className="text-xs font-bold text-foreground uppercase tracking-wide">
           Aadhaar Card Number
         </span>
-        <span className="ml-auto text-[10px] font-semibold text-muted-foreground bg-muted rounded-full px-2 py-0.5">
+        <span className="ml-auto whitespace-nowrap text-[10px] font-semibold text-muted-foreground bg-muted rounded-full px-2 py-0.5">
           Sensitive · Encrypted
         </span>
       </div>
@@ -83,7 +86,7 @@ export function ProfileForm({
         onChange={(v) => setAadhar(formatAadhar(v))}
         placeholder="XXXX XXXX XXXX"
         maxLength={14}
-        className="font-mono tracking-widest"
+        className="w-full font-mono tracking-widest"
         error={Boolean(aadhar && !aadharValid)}
       />
       {aadhar && !aadharValid && (
@@ -129,7 +132,7 @@ export function ProfileForm({
         <div className="lg:pt-1">
           <AvatarUploadField role={role} name={defaults.name} defaultPhotoUrl={defaultPhotoUrl} />
         </div>
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           {nameAndContactFields}
           {aadhaarField}
           {saveRow}

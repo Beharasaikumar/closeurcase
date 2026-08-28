@@ -1,6 +1,6 @@
 import { Outlet, createFileRoute, redirect, useRouterState } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { LayoutGrid, Search, Folder, User, Bell } from "lucide-react";
+import { LayoutGrid, Search, Folder, User, Bell, CreditCard } from "lucide-react";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
 import { useCitizenLanguage } from "@/features/citizen/i18n/CitizenLanguageContext";
 import { getCitizenSession } from "@/features/citizen/session";
@@ -30,6 +30,11 @@ function CitizenLayout() {
       { to: "/citizen", label: translate("navDashboard"), icon: LayoutGrid },
       { to: "/citizen/create-case", label: translate("navFindLawyer"), icon: Search },
       { to: "/citizen/my-cases", label: translate("navMyCases"), icon: Folder },
+      {
+        to: "/citizen/subscriptions",
+        label: translate("navMySubscriptions"),
+        icon: CreditCard,
+      },
       { to: "/citizen/notifications", label: translate("navNotifications"), icon: Bell },
       { to: "/citizen/profile", label: translate("navMyProfile"), icon: User },
     ],

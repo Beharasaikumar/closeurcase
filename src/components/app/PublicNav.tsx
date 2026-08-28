@@ -1,7 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, ChevronDown, ChevronRight } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { LAWYER_PRACTICE_AREAS } from "@/components/app/lawyerPracticeAreas";
+import { GOVERNMENT_SERVICES } from "@/data/governmentServices";
+
+type MenuKey = "lawyer" | "gov";
 
 const CLOSE_DELAY_MS = 150;
 
@@ -10,28 +13,30 @@ const CLOSE_DELAY_MS = 150;
  * reveals its specializations on the right, each with its specific legal
  * services listed underneath (mirrors the practice area -> specialization ->
  * legal service taxonomy). "About" smooth-scrolls to the About section on
- * the landing page (no separate route). Both triggers are real links, so
- * they still work with JS/hover disabled or on click; hover just reveals
- * the preview. */
+ * the landing page (no separate route). "Government Services" opens a wide
+ * grid mega-menu of official Government of India portals, grouped by
+ * category — all external links, opened in a new tab. Every trigger is a
+ * real link, so it still works with JS/hover disabled or on click; hover
+ * just reveals the preview. */
 export function PublicNav() {
-  const [lawyerMenuOpen, setLawyerMenuOpen] = useState(false);
+  const [openMenu, setOpenMenu] = useState<MenuKey | null>(null);
   const [activeAreaIndex, setActiveAreaIndex] = useState(0);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navRef = useRef<HTMLElement>(null);
 
-  function openNow() {
+  function openNow(key: MenuKey) {
     if (closeTimer.current) clearTimeout(closeTimer.current);
-    setLawyerMenuOpen(true);
+    setOpenMenu(key);
   }
 
   function closeSoon() {
     if (closeTimer.current) clearTimeout(closeTimer.current);
-    closeTimer.current = setTimeout(() => setLawyerMenuOpen(false), CLOSE_DELAY_MS);
+    closeTimer.current = setTimeout(() => setOpenMenu(null), CLOSE_DELAY_MS);
   }
 
   function closeNow() {
     if (closeTimer.current) clearTimeout(closeTimer.current);
-    setLawyerMenuOpen(false);
+    setOpenMenu(null);
   }
 
   useEffect(() => {
@@ -56,7 +61,7 @@ export function PublicNav() {
     <nav ref={navRef} className="relative hidden md:flex items-center justify-center gap-1">
       <Link
         to="/citizen-login"
-        onMouseEnter={openNow}
+        onMouseEnter={() => openNow("lawyer")}
         onMouseLeave={closeSoon}
         onClick={closeNow}
         className="flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-semibold text-foreground transition-colors duration-150 hover:bg-muted hover:text-primary"
@@ -64,12 +69,29 @@ export function PublicNav() {
         Find a Lawyer
         <ChevronDown
           className={`h-3.5 w-3.5 transition-transform duration-200 ${
-            lawyerMenuOpen ? "rotate-180" : ""
+            openMenu === "lawyer" ? "rotate-180" : ""
           }`}
         />
       </Link>
 
-      <Link
+  
+
+      <button
+        type="button"
+        onMouseEnter={() => openNow("gov")}
+        onMouseLeave={closeSoon}
+        onClick={() => setOpenMenu((v) => (v === "gov" ? null : "gov"))}
+        className="flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-semibold text-foreground transition-colors duration-150 hover:bg-muted hover:text-primary"
+      >
+        Government Services
+        <ChevronDown
+          className={`h-3.5 w-3.5 transition-transform duration-200 ${
+            openMenu === "gov" ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+
+          <Link
         to="/"
         hash="about"
         className="rounded-lg px-3 py-2 text-xs font-semibold text-foreground transition-colors duration-150 hover:bg-muted hover:text-primary"
@@ -77,11 +99,12 @@ export function PublicNav() {
         About
       </Link>
 
+      {/* Find a Lawyer mega-menu */}
       <div
-        onMouseEnter={openNow}
+        onMouseEnter={() => openNow("lawyer")}
         onMouseLeave={closeSoon}
-        className={`absolute left-1/2 top-full z-50 w-205 max-w-[96vw] -translate-x-1/2 pt-2 transition-all duration-200 ease-out ${
-          lawyerMenuOpen
+        className={`absolute left-1/2 top-full z-50 w-[80vw] max-w-6xl -translate-x-1/2 pt-2 transition-all duration-200 ease-out ${
+          openMenu === "lawyer"
             ? "pointer-events-auto translate-y-0 opacity-100"
             : "pointer-events-none -translate-y-1 opacity-0"
         }`}
@@ -108,7 +131,7 @@ export function PublicNav() {
             </div>
 
             <div className="max-h-105 flex-1 overflow-y-auto p-5">
-              <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-5 lg:grid-cols-3">
                 {activeArea.specializations.map((spec) => (
                   <div key={spec.name}>
                     <h4 className="text-xs font-bold text-foreground">{spec.name}</h4>
@@ -144,6 +167,51 @@ export function PublicNav() {
               File a Case
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Government Services mega-menu */}
+      <div
+        onMouseEnter={() => openNow("gov")}
+        onMouseLeave={closeSoon}
+        className={`absolute left-1/2 top-full z-50 w-[80vw] max-w-6xl -translate-x-1/2 pt-2 transition-all duration-200 ease-out ${
+          openMenu === "gov"
+            ? "pointer-events-auto translate-y-0 opacity-100"
+            : "pointer-events-none -translate-y-1 opacity-0"
+        }`}
+      >
+        <div className="overflow-hidden rounded-xl border border-border bg-white shadow-lg">
+          <div className="max-h-[70vh] overflow-y-auto p-5">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3 xl:grid-cols-4">
+              {GOVERNMENT_SERVICES.map((category) => (
+                <div key={category.title}>
+                  <h4 className="text-xs font-bold text-foreground">{category.title}</h4>
+                  <ul className="mt-1.5 space-y-1">
+                    {category.links.map((link) => (
+                      <li key={link.url + link.label}>
+                        <a
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={closeNow}
+                          className="inline-flex items-start gap-1 text-[11px] leading-relaxed text-muted-foreground transition-colors duration-150 hover:text-primary hover:underline"
+                        >
+                          {link.label}
+                          <ExternalLink className="mt-0.5 h-2.5 w-2.5 shrink-0 opacity-60" />
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="border-t border-border px-5 py-3">
+            <span className="text-[11px] text-muted-foreground">
+              Official Government of India portals — external sites, not operated by CloseurCase.
+            </span>
           </div>
         </div>
       </div>

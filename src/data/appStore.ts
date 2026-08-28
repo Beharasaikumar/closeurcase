@@ -10,6 +10,7 @@ import type {
   Lawyer,
   LawyerDocument,
   LegalCase,
+  Subscription,
   UserRole,
 } from "@/types";
 import {
@@ -17,6 +18,7 @@ import {
   citizens as seedCitizens,
   lawyers as seedLawyers,
   cases as seedCases,
+  subscriptions as seedSubscriptions,
   notifications as seedNotifications,
   knowledgeBase as seedKnowledgeBase,
 } from "./mock";
@@ -29,6 +31,7 @@ const LAWYER_DOCS_KEY = "cuc_lawyer_docs_v1";
 const PROFILE_PHOTOS_KEY = "cuc_profile_photos_v1";
 const CASES_KEY = "cuc_cases_v7";
 const NOTES_KEY = "cuc_case_notes_v1";
+const SUBSCRIPTIONS_KEY = "cuc_subscriptions_v1";
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
@@ -437,4 +440,38 @@ export function addLawyerDocument(doc: Omit<LawyerDocument, "id" | "uploadedAt">
 export function deleteLawyerDocument(id: string) {
   const updated = getAllLawyerDocuments().filter((d) => d.id !== id);
   save(LAWYER_DOCS_KEY, updated);
+}
+
+/* ── SUBSCRIPTIONS STORE ("My Subscriptions") ────────────────────────────── */
+export function getSubscriptions(citizenId?: string): Subscription[] {
+  const all = load<Subscription[]>(SUBSCRIPTIONS_KEY, seedSubscriptions);
+  const sorted = [...all].sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+  return citizenId ? sorted.filter((s) => s.citizenId === citizenId) : sorted;
+}
+
+export function addSubscription(
+  sub: Omit<Subscription, "id" | "startedAt" | "status">,
+): Subscription {
+  const current = load<Subscription[]>(SUBSCRIPTIONS_KEY, seedSubscriptions);
+  // A citizen only has one active plan at a time — starting a new one
+  // supersedes whichever plan they were previously on.
+  const withPriorExpired = current.map((s) =>
+    s.citizenId === sub.citizenId && s.status === "Active"
+      ? { ...s, status: "Expired" as const }
+      : s,
+  );
+  const newSub: Subscription = {
+    ...sub,
+    id: `sub_${Date.now()}`,
+    startedAt: new Date().toISOString().slice(0, 10),
+    status: "Active",
+  };
+  save(SUBSCRIPTIONS_KEY, [newSub, ...withPriorExpired]);
+
+  addNotification({
+    title: "Subscription Activated",
+    body: `Your ${sub.planLabel} Auto-Assign plan (₹${sub.amount}) is now active.`,
+  });
+
+  return newSub;
 }

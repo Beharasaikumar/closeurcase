@@ -23,6 +23,7 @@ export type TranslationKey =
   | "navDashboard"
   | "navFindLawyer"
   | "navMyCases"
+  | "navMySubscriptions"
   | "navNotifications"
   | "navMyProfile"
   | "newCasePath"
@@ -72,6 +73,7 @@ const en: Record<TranslationKey, string> = {
   navDashboard: "Home",
   navFindLawyer: "Find a Lawyer",
   navMyCases: "My Cases",
+  navMySubscriptions: "My Subscriptions",
   navNotifications: "Notifications",
   navMyProfile: "My Profile",
   newCasePath: "New Case",
@@ -123,6 +125,7 @@ const hi: Record<TranslationKey, string> = {
   navDashboard: "होम",
   navFindLawyer: "वकील खोजें",
   navMyCases: "मेरे केस",
+  navMySubscriptions: "मेरी सदस्यता",
   navNotifications: "सूचनाएं",
   navMyProfile: "मेरी प्रोफ़ाइल",
   newCasePath: "नया केस",
@@ -174,6 +177,7 @@ const te: Record<TranslationKey, string> = {
   navDashboard: "హోమ్",
   navFindLawyer: "న్యాయవాదిని కనుగొనండి",
   navMyCases: "నా కేసులు",
+  navMySubscriptions: "నా చందాలు",
   navNotifications: "నోటిఫికేషన్లు",
   navMyProfile: "నా ప్రొఫైల్",
   newCasePath: "కొత్త కేసు",

@@ -6,6 +6,7 @@ import { CitizenLoginButton } from "@/components/app/CitizenLoginButton";
 import { CitizenLanguageButtons } from "@/features/citizen/CitizenLanguageButtons";
 import { PublicNav } from "@/components/app/PublicNav";
 import { LAWYER_PRACTICE_AREAS } from "@/components/app/lawyerPracticeAreas";
+import { GOVERNMENT_SERVICES } from "@/data/governmentServices";
 import { useCitizenLanguage } from "@/features/citizen/i18n/CitizenLanguageContext";
 
 export function PublicLayout({ children }: { children: ReactNode }) {
@@ -13,6 +14,8 @@ export function PublicLayout({ children }: { children: ReactNode }) {
   const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false);
   const [openAreaName, setOpenAreaName] = useState<string | null>(null);
   const [openSpecName, setOpenSpecName] = useState<string | null>(null);
+  const [govServicesOpen, setGovServicesOpen] = useState(false);
+  const [openGovCategory, setOpenGovCategory] = useState<string | null>(null);
   const { translate } = useCitizenLanguage();
 
   function closeMobileMenu() {
@@ -20,6 +23,8 @@ export function PublicLayout({ children }: { children: ReactNode }) {
     setMobileCategoriesOpen(false);
     setOpenAreaName(null);
     setOpenSpecName(null);
+    setGovServicesOpen(false);
+    setOpenGovCategory(null);
   }
 
   // Lock background scroll while the drawer is open, and let Escape close it.
@@ -202,7 +207,75 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                 })}
               </div>
             </div>
+          </div>  
+
+          <div className="overflow-hidden rounded-xl border border-border bg-background">
+            <button
+              type="button"
+              onClick={() => setGovServicesOpen((v) => !v)}
+              className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold text-foreground hover:bg-muted"
+            >
+              Government Services
+              <ChevronDown
+                className={`h-4 w-4 transition-transform duration-200 ${
+                  govServicesOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+            <div
+              className={`overflow-hidden transition-[max-height] duration-300 ease-out ${
+                govServicesOpen ? "max-h-500" : "max-h-0"
+              }`}
+            >
+              <div className="max-h-96 overflow-y-auto border-t border-border">
+                {GOVERNMENT_SERVICES.map((category) => {
+                  const isOpen = openGovCategory === category.title;
+                  return (
+                    <div key={category.title} className="border-b border-border last:border-b-0">
+                      <button
+                        type="button"
+                        onClick={() => setOpenGovCategory(isOpen ? null : category.title)}
+                        className="flex w-full items-center justify-between px-4 py-2.5 text-left text-xs font-semibold text-foreground hover:bg-muted"
+                      >
+                        {category.title}
+                        <ChevronDown
+                          className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${
+                            isOpen ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+                      {isOpen && (
+                        <ul className="space-y-1 bg-muted/30 px-4 pb-2">
+                          {category.links.map((link) => (
+                            <li key={link.url + link.label}>
+                              <a
+                                href={link.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={closeMobileMenu}
+                                className="block py-1 text-[11px] text-muted-foreground hover:text-primary"
+                              >
+                                {link.label}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
+
+               <Link
+            to="/"
+            hash="about"
+            onClick={closeMobileMenu}
+            className="block w-full text-center rounded-xl border border-border bg-background px-4 py-3 text-sm font-semibold text-foreground hover:bg-muted"
+          >
+            About
+          </Link>
 
           <div onClick={closeMobileMenu}>
             <CitizenLoginButton label="File a Case" />
@@ -216,15 +289,10 @@ export function PublicLayout({ children }: { children: ReactNode }) {
             {translate("lawyerAdminLogin")}
           </Link>
 
-          <Link
-            to="/"
-            hash="about"
-            onClick={closeMobileMenu}
-            className="block w-full text-center rounded-xl border border-border bg-background px-4 py-3 text-sm font-semibold text-foreground hover:bg-muted"
-          >
-            About
-          </Link>
+      
         </div>
+
+        
       </div>
 
       <main className="flex-1">{children}</main>

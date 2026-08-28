@@ -38,12 +38,13 @@ function LawyerProfilePage() {
           <AvatarUploadField role="lawyer" name="Swathi Reddy" />
         </div>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <TextField
             label="Full Name"
             value={name}
             onChange={setName}
             placeholder="Full legal name"
+            className="w-full"
           />
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -53,6 +54,7 @@ function LawyerProfilePage() {
               value={email}
               onChange={setEmail}
               placeholder="email@example.com"
+              className="w-full"
             />
             <TextField
               label="Phone Number"
@@ -60,30 +62,33 @@ function LawyerProfilePage() {
               value={phone}
               onChange={setPhone}
               placeholder="+91 98765 43210"
+              className="w-full"
             />
             <TextField
               label="City / District"
               value={city}
               onChange={setCity}
               placeholder="e.g. Hyderabad, Visakhapatnam"
+              className="w-full"
             />
           </div>
 
           <TextField
-            label="Practice Area / Specialisation"
+            label="Practice Area"
             value={practiceArea}
             onChange={setPracticeArea}
             placeholder="e.g. Criminal Law, Family Law"
+            className="w-full"
           />
 
           {/* Bar Registration Number */}
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-3.5 space-y-2">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
               <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
               <span className="text-xs font-bold text-foreground uppercase tracking-wide">
                 Bar Council Registration Number
               </span>
-              <span className="ml-auto text-[10px] font-semibold text-muted-foreground bg-muted rounded-full px-2 py-0.5">
+              <span className="ml-auto whitespace-nowrap text-[10px] font-semibold text-muted-foreground bg-muted rounded-full px-2 py-0.5">
                 Verified
               </span>
             </div>
@@ -91,7 +96,7 @@ function LawyerProfilePage() {
               value={barId}
               onChange={setBarId}
               placeholder="e.g. TS/2014/1023"
-              className="font-mono tracking-wider"
+              className="w-full font-mono tracking-wider"
             />
             <p className="text-[10px] text-muted-foreground leading-relaxed">
               Your Bar Council registration number is used for identity verification and is visible

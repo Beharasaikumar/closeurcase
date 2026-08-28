@@ -34,6 +34,7 @@ import { Route as CitizenMyCasesRouteImport } from './routes/citizen.my-cases'
 import { Route as CitizenNotificationsRouteImport } from './routes/citizen.notifications'
 import { Route as CitizenProfileRouteImport } from './routes/citizen.profile'
 import { Route as CitizenSettingsRouteImport } from './routes/citizen.settings'
+import { Route as CitizenSubscriptionsRouteImport } from './routes/citizen.subscriptions'
 import { Route as CitizenTrackCaseRouteImport } from './routes/citizen.track-case'
 import { Route as LawyerIndexRouteImport } from './routes/lawyer.index'
 import { Route as LawyerAiAssistantRouteImport } from './routes/lawyer.ai-assistant'
@@ -175,6 +176,11 @@ const CitizenSettingsRoute = CitizenSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => CitizenRoute,
 } as any)
+const CitizenSubscriptionsRoute = CitizenSubscriptionsRouteImport.update({
+  id: '/subscriptions',
+  path: '/subscriptions',
+  getParentRoute: () => CitizenRoute,
+} as any)
 const CitizenTrackCaseRoute = CitizenTrackCaseRouteImport.update({
   id: '/track-case',
   path: '/track-case',
@@ -275,6 +281,7 @@ export interface FileRoutesByFullPath {
   '/citizen/notifications': typeof CitizenNotificationsRoute
   '/citizen/profile': typeof CitizenProfileRoute
   '/citizen/settings': typeof CitizenSettingsRoute
+  '/citizen/subscriptions': typeof CitizenSubscriptionsRoute
   '/citizen/track-case': typeof CitizenTrackCaseRoute
   '/lawyer/ai-assistant': typeof LawyerAiAssistantRoute
   '/lawyer/cases': typeof LawyerCasesRouteWithChildren
@@ -314,6 +321,7 @@ export interface FileRoutesByTo {
   '/citizen/notifications': typeof CitizenNotificationsRoute
   '/citizen/profile': typeof CitizenProfileRoute
   '/citizen/settings': typeof CitizenSettingsRoute
+  '/citizen/subscriptions': typeof CitizenSubscriptionsRoute
   '/citizen/track-case': typeof CitizenTrackCaseRoute
   '/lawyer/ai-assistant': typeof LawyerAiAssistantRoute
   '/lawyer/knowledge-base': typeof LawyerKnowledgeBaseRoute
@@ -356,6 +364,7 @@ export interface FileRoutesById {
   '/citizen/notifications': typeof CitizenNotificationsRoute
   '/citizen/profile': typeof CitizenProfileRoute
   '/citizen/settings': typeof CitizenSettingsRoute
+  '/citizen/subscriptions': typeof CitizenSubscriptionsRoute
   '/citizen/track-case': typeof CitizenTrackCaseRoute
   '/lawyer/ai-assistant': typeof LawyerAiAssistantRoute
   '/lawyer/cases': typeof LawyerCasesRouteWithChildren
@@ -400,6 +409,7 @@ export interface FileRouteTypes {
     | '/citizen/notifications'
     | '/citizen/profile'
     | '/citizen/settings'
+    | '/citizen/subscriptions'
     | '/citizen/track-case'
     | '/lawyer/ai-assistant'
     | '/lawyer/cases'
@@ -439,6 +449,7 @@ export interface FileRouteTypes {
     | '/citizen/notifications'
     | '/citizen/profile'
     | '/citizen/settings'
+    | '/citizen/subscriptions'
     | '/citizen/track-case'
     | '/lawyer/ai-assistant'
     | '/lawyer/knowledge-base'
@@ -480,6 +491,7 @@ export interface FileRouteTypes {
     | '/citizen/notifications'
     | '/citizen/profile'
     | '/citizen/settings'
+    | '/citizen/subscriptions'
     | '/citizen/track-case'
     | '/lawyer/ai-assistant'
     | '/lawyer/cases'
@@ -689,6 +701,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CitizenSettingsRouteImport
       parentRoute: typeof CitizenRoute
     }
+    '/citizen/subscriptions': {
+      id: '/citizen/subscriptions'
+      path: '/subscriptions'
+      fullPath: '/citizen/subscriptions'
+      preLoaderRoute: typeof CitizenSubscriptionsRouteImport
+      parentRoute: typeof CitizenRoute
+    }
     '/citizen/track-case': {
       id: '/citizen/track-case'
       path: '/track-case'
@@ -829,6 +848,7 @@ interface CitizenRouteChildren {
   CitizenNotificationsRoute: typeof CitizenNotificationsRoute
   CitizenProfileRoute: typeof CitizenProfileRoute
   CitizenSettingsRoute: typeof CitizenSettingsRoute
+  CitizenSubscriptionsRoute: typeof CitizenSubscriptionsRoute
   CitizenTrackCaseRoute: typeof CitizenTrackCaseRoute
   CitizenIndexRoute: typeof CitizenIndexRoute
   CitizenChatIdRoute: typeof CitizenChatIdRoute
@@ -841,6 +861,7 @@ const CitizenRouteChildren: CitizenRouteChildren = {
   CitizenNotificationsRoute: CitizenNotificationsRoute,
   CitizenProfileRoute: CitizenProfileRoute,
   CitizenSettingsRoute: CitizenSettingsRoute,
+  CitizenSubscriptionsRoute: CitizenSubscriptionsRoute,
   CitizenTrackCaseRoute: CitizenTrackCaseRoute,
   CitizenIndexRoute: CitizenIndexRoute,
   CitizenChatIdRoute: CitizenChatIdRoute,
