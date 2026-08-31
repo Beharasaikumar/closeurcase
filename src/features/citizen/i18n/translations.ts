@@ -87,7 +87,7 @@ const en: Record<TranslationKey, string> = {
   pickCaseTypeDesc: "Pick one option before using the microphone or upload form.",
   heroTitle: "Structured Resolution for Every Legal Matter",
   heroDesc:
-    "CloseurCase helps citizens file cases, match with Lawyers, and track progress — in English, Hindi, or Telugu.",
+    "CloseUrCase helps citizens file cases, match with Lawyers, and track progress — in English, Hindi, or Telugu.",
   getStarted: "Get Started Now",
   citizenLoginLabel: "Find a Lawyer",
   citizenLoginSubtitle: "Mobile number only · No password",
@@ -139,7 +139,7 @@ const hi: Record<TranslationKey, string> = {
   pickCaseTypeDesc: "माइक या अपलोड से पहले एक विकल्प चुनें।",
   heroTitle: "हर कानूनी मामले के लिए सुव्यवस्थित समाधान",
   heroDesc:
-    "CloseurCase नागरिकों को केस दाखिल करने, वकील से जुड़ने और प्रगति ट्रैक करने में मदद करता है — हिंदी, English या తెలుగు में।",
+    "CloseUrCase नागरिकों को केस दाखिल करने, वकील से जुड़ने और प्रगति ट्रैक करने में मदद करता है — हिंदी, English या తెలుగు में।",
   getStarted: "अभी शुरू करें",
   citizenLoginLabel: "नागरिक लॉगिन",
   citizenLoginSubtitle: "केवल मोबाइल नंबर · पासवर्ड नहीं",
@@ -191,7 +191,7 @@ const te: Record<TranslationKey, string> = {
   pickCaseTypeDesc: "మైక్ లేదా అప్‌లోడ్ కు ముందు ఒక ఎంపిక ఎంచుకోండి.",
   heroTitle: "ప్రతి న్యాయ విషయానికి నిర్మాణాత్మక పరిష్కారం",
   heroDesc:
-    "CloseurCase పౌరులకు కేసులు దాఖలు, న్యాయవాదుల మ్యాచ్, ట్రాకింగ్ — English, हिन्दी, తెలుగు లో.",
+    "CloseUrCase పౌరులకు కేసులు దాఖలు, న్యాయవాదుల మ్యాచ్, ట్రాకింగ్ — English, हिन्दी, తెలుగు లో.",
   getStarted: "ఇప్పుడే ప్రారంభించండి",
   citizenLoginLabel: "పౌర లాగిన్",
   citizenLoginSubtitle: "మొబైల్ నంబర్ మాత్రమే · పాస్‌వర్డ్ లేదు",

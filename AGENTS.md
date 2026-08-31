@@ -1,1 +1,1 @@
-# CloseurCase Platform
+# CloseUrCase Platform

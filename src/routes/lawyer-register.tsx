@@ -48,7 +48,7 @@ function mapPracticeAreaToCategory(areaName: string): LegalCategory {
 }
 
 export const Route = createFileRoute("/lawyer-register")({
-  head: () => ({ meta: [{ title: "Lawyer registration — CloseurCase" }] }),
+  head: () => ({ meta: [{ title: "Lawyer registration — CloseUrCase" }] }),
   component: LawyerRegister,
 });
 

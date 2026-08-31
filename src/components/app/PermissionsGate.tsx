@@ -58,7 +58,7 @@ export function PermissionsGate({ onContinue }: { onContinue: () => void }) {
     <AuthLayout
       centerLogoOnMobile
       title="Before you continue"
-      subtitle="CloseurCase needs a few device permissions to work well. We'll tell you why for each one."
+      subtitle="CloseUrCase needs a few device permissions to work well. We'll tell you why for each one."
     >
       <div className="space-y-3">
         {DEVICE_PERMISSIONS.map((permission) => {

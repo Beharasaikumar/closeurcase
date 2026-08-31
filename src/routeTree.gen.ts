@@ -45,6 +45,7 @@ import { Route as LawyerProfileRouteImport } from './routes/lawyer.profile'
 import { Route as LawyerQaAssistantRouteImport } from './routes/lawyer.qa-assistant'
 import { Route as LawyerSettingsRouteImport } from './routes/lawyer.settings'
 import { Route as LawyerSummarizerRouteImport } from './routes/lawyer.summarizer'
+import { Route as CitizenCasesIdRouteImport } from './routes/citizen.cases.$id'
 import { Route as CitizenChatIdRouteImport } from './routes/citizen.chat.$id'
 import { Route as CitizenLawyerIdRouteImport } from './routes/citizen.lawyer.$id'
 import { Route as LawyerCasesIndexRouteImport } from './routes/lawyer.cases.index'
@@ -231,6 +232,11 @@ const LawyerSummarizerRoute = LawyerSummarizerRouteImport.update({
   path: '/summarizer',
   getParentRoute: () => LawyerRoute,
 } as any)
+const CitizenCasesIdRoute = CitizenCasesIdRouteImport.update({
+  id: '/cases/$id',
+  path: '/cases/$id',
+  getParentRoute: () => CitizenRoute,
+} as any)
 const CitizenChatIdRoute = CitizenChatIdRouteImport.update({
   id: '/chat/$id',
   path: '/chat/$id',
@@ -294,6 +300,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/citizen/': typeof CitizenIndexRoute
   '/lawyer/': typeof LawyerIndexRoute
+  '/citizen/cases/$id': typeof CitizenCasesIdRoute
   '/citizen/chat/$id': typeof CitizenChatIdRoute
   '/citizen/lawyer/$id': typeof CitizenLawyerIdRoute
   '/lawyer/cases/$id': typeof LawyerCasesIdRoute
@@ -333,6 +340,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/citizen': typeof CitizenIndexRoute
   '/lawyer': typeof LawyerIndexRoute
+  '/citizen/cases/$id': typeof CitizenCasesIdRoute
   '/citizen/chat/$id': typeof CitizenChatIdRoute
   '/citizen/lawyer/$id': typeof CitizenLawyerIdRoute
   '/lawyer/cases/$id': typeof LawyerCasesIdRoute
@@ -377,6 +385,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/citizen/': typeof CitizenIndexRoute
   '/lawyer/': typeof LawyerIndexRoute
+  '/citizen/cases/$id': typeof CitizenCasesIdRoute
   '/citizen/chat/$id': typeof CitizenChatIdRoute
   '/citizen/lawyer/$id': typeof CitizenLawyerIdRoute
   '/lawyer/cases/$id': typeof LawyerCasesIdRoute
@@ -422,6 +431,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/citizen/'
     | '/lawyer/'
+    | '/citizen/cases/$id'
     | '/citizen/chat/$id'
     | '/citizen/lawyer/$id'
     | '/lawyer/cases/$id'
@@ -461,6 +471,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/citizen'
     | '/lawyer'
+    | '/citizen/cases/$id'
     | '/citizen/chat/$id'
     | '/citizen/lawyer/$id'
     | '/lawyer/cases/$id'
@@ -504,6 +515,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/citizen/'
     | '/lawyer/'
+    | '/citizen/cases/$id'
     | '/citizen/chat/$id'
     | '/citizen/lawyer/$id'
     | '/lawyer/cases/$id'
@@ -778,6 +790,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LawyerSummarizerRouteImport
       parentRoute: typeof LawyerRoute
     }
+    '/citizen/cases/$id': {
+      id: '/citizen/cases/$id'
+      path: '/cases/$id'
+      fullPath: '/citizen/cases/$id'
+      preLoaderRoute: typeof CitizenCasesIdRouteImport
+      parentRoute: typeof CitizenRoute
+    }
     '/citizen/chat/$id': {
       id: '/citizen/chat/$id'
       path: '/chat/$id'
@@ -851,6 +870,7 @@ interface CitizenRouteChildren {
   CitizenSubscriptionsRoute: typeof CitizenSubscriptionsRoute
   CitizenTrackCaseRoute: typeof CitizenTrackCaseRoute
   CitizenIndexRoute: typeof CitizenIndexRoute
+  CitizenCasesIdRoute: typeof CitizenCasesIdRoute
   CitizenChatIdRoute: typeof CitizenChatIdRoute
   CitizenLawyerIdRoute: typeof CitizenLawyerIdRoute
 }
@@ -864,6 +884,7 @@ const CitizenRouteChildren: CitizenRouteChildren = {
   CitizenSubscriptionsRoute: CitizenSubscriptionsRoute,
   CitizenTrackCaseRoute: CitizenTrackCaseRoute,
   CitizenIndexRoute: CitizenIndexRoute,
+  CitizenCasesIdRoute: CitizenCasesIdRoute,
   CitizenChatIdRoute: CitizenChatIdRoute,
   CitizenLawyerIdRoute: CitizenLawyerIdRoute,
 }

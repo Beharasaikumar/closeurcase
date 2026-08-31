@@ -71,6 +71,19 @@ function save<T>(key: string, data: T) {
 }
 
 /* ── CASES STORE ─────────────────────────────────────────────────────────── */
+
+/** CloseUrCase ID for a newly-filed case — derived from the filing datetime
+ * (down to the second) so it's unique, sortable, and traceable to when the
+ * citizen actually registered the case, e.g. "CUC-20260831154512". */
+export function generateCloseUrCaseId(): string {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const stamp =
+    `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}` +
+    `${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+  return `CUC ID - ${stamp}`;
+}
+
 export function getCases(): LegalCase[] {
   const cases = load<LegalCase[]>(CASES_KEY, seedCases);
   const existingIds = new Set(cases.map((c) => c.id));
@@ -108,7 +121,9 @@ export function addCase(c: LegalCase) {
 
 export function updateCaseStatus(id: string, newStatus: CaseStatus, note?: string) {
   const current = getCases();
-  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
+  const time = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
   const updated = current.map((c) => {
     if (c.id !== id) return c;
@@ -119,6 +134,7 @@ export function updateCaseStatus(id: string, newStatus: CaseStatus, note?: strin
         id: `t_${Date.now()}`,
         status: newStatus,
         at: today,
+        time,
         note: note || `Status updated to ${newStatus}`,
       },
     ];
@@ -144,7 +160,9 @@ export function updateCaseStatus(id: string, newStatus: CaseStatus, note?: strin
 
 export function assignLawyerToCase(caseId: string, lawyerId?: string, lawyerName?: string) {
   const current = getCases();
-  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
+  const time = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
   const updated = current.map((c) => {
     if (c.id !== caseId) return c;
@@ -156,7 +174,7 @@ export function assignLawyerToCase(caseId: string, lawyerId?: string, lawyerName
     const note = lawyerName ? `Assigned to ${lawyerName}` : "Unassigned by admin";
     const timeline = [
       ...(c.timeline || []),
-      { id: `t_${Date.now()}`, status: newStatus, at: today, note },
+      { id: `t_${Date.now()}`, status: newStatus, at: today, time, note },
     ];
     return {
       ...c,

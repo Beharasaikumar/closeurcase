@@ -403,7 +403,7 @@ export const lawyers: Lawyer[] = [
   },
 ];
 
-export const cases: LegalCase[] = [
+const allSeedCases: LegalCase[] = [
   {
     id: "CS-91101",
     title: "Urgent Bail Application — Detention at Cyberabad Police Station",
@@ -801,6 +801,11 @@ export const cases: LegalCase[] = [
     source: "ecourt",
   },
 ];
+
+// Seed cases are hidden for now while testing the new case-status/stage-history
+// flows — the mock list was cluttering "My Cases". Swap back to `allSeedCases`
+// to restore it.
+export const cases: LegalCase[] = [];
 
 export const subscriptions: Subscription[] = [
   {

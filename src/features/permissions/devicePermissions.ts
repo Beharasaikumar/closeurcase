@@ -10,7 +10,7 @@ export interface DevicePermissionDef {
   label: string;
   icon: LucideIcon;
   /** Shown to the user before the native browser prompt fires, so they know
-   * why CloseurCase is asking. */
+   * why CloseUrCase is asking. */
   reason: string;
 }
 

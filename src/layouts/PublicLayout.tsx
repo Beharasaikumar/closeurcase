@@ -47,10 +47,10 @@ export function PublicLayout({ children }: { children: ReactNode }) {
       <header className="border-b border-border bg-white/85 backdrop-blur-md sticky top-0 z-40">
         <div className="mx-auto grid h-16 w-full max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-3 px-4 sm:px-6 lg:px-8">
           <Link to="/" className="flex items-center gap-2.5 shrink-0 hover:opacity-90">
-            <img src="/logo.png" alt="CloseurCase Logo" className="h-9 w-9 object-contain" />
+            <img src="/logo.png" alt="CloseUrCase Logo" className="h-9 w-9 object-contain" />
             <span className="flex flex-col leading-tight">
               <span className="text-base font-bold tracking-tight text-foreground">
-                CloseurCase
+                CloseUrCase
               </span>
               <span className="text-[10px] font-medium tracking-wide text-muted-foreground">
                 Just click for justice
@@ -304,8 +304,8 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               to="/"
               className="inline-flex items-center gap-2 text-sm font-bold text-foreground hover:opacity-90"
             >
-              <img src="/logo.png" alt="CloseurCase Logo" className="h-7 w-7 object-contain" />
-              <span>CloseurCase</span>
+              <img src="/logo.png" alt="CloseUrCase Logo" className="h-7 w-7 object-contain" />
+              <span>CloseUrCase</span>
             </Link>
             <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
               <Link to="/citizen-login" className="font-semibold text-emerald-700 hover:underline">
@@ -320,7 +320,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            © 2026 CloseurCase. All rights reserved.
+            © 2026 CloseUrCase. All rights reserved.
           </p>
         </div>
       </footer>

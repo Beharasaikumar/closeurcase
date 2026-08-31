@@ -24,11 +24,11 @@ import { PublicLayout } from "@/layouts/PublicLayout";
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "About Platform & How It Works — CloseurCase" },
+      { title: "About Platform & How It Works — CloseUrCase" },
       {
         name: "description",
         content:
-          "Discover how CloseurCase connects citizens, Lawyers, and admins with AI-powered legal workflows.",
+          "Discover how CloseUrCase connects citizens, Lawyers, and admins with AI-powered legal workflows.",
       },
     ],
   }),
@@ -111,14 +111,14 @@ function AboutPage() {
 
   const faqs = [
     {
-      question: "What is CloseurCase and who is it designed for?",
+      question: "What is CloseUrCase and who is it designed for?",
       answer:
-        "CloseurCase is an integrated legal workflow management platform connecting three key stakeholders: Citizens seeking structured dispute resolution, Licensed Lawyers managing cases with AI research support, and Super Administrators overseeing compliance and platform knowledge bases.",
+        "CloseUrCase is an integrated legal workflow management platform connecting three key stakeholders: Citizens seeking structured dispute resolution, Licensed Lawyers managing cases with AI research support, and Super Administrators overseeing compliance and platform knowledge bases.",
     },
     {
-      question: "Is AI output on CloseurCase legally binding or a replacement for a lawyer?",
+      question: "Is AI output on CloseUrCase legally binding or a replacement for a lawyer?",
       answer:
-        "No. AI tools within CloseurCase (such as statutory category prediction and argument drafting) are assistant utilities engineered to streamline research and case preparation for qualified Lawyers. All legal strategy and representation remain strictly with licensed attorneys.",
+        "No. AI tools within CloseUrCase (such as statutory category prediction and argument drafting) are assistant utilities engineered to streamline research and case preparation for qualified Lawyers. All legal strategy and representation remain strictly with licensed attorneys.",
     },
     {
       question: "How are Lawyers verified on the platform?",
@@ -155,7 +155,7 @@ function AboutPage() {
             Empowering Transparent Legal Resolution
           </h1>
           <p className="mt-4 text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            CloseurCase bridges the gap between citizens facing legal challenges and legal
+            CloseUrCase bridges the gap between citizens facing legal challenges and legal
             professionals. Discover how our AI-assisted workflows bring clarity, speed, and
             statutory precision to every step.
           </p>
@@ -191,7 +191,7 @@ function AboutPage() {
             Tailored Experiences for Every Stakeholder
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Click a role below to explore how CloseurCase serves citizens, Lawyers, and
+            Click a role below to explore how CloseUrCase serves citizens, Lawyers, and
             administrators.
           </p>
         </div>
@@ -248,7 +248,7 @@ function AboutPage() {
                   Effortless Intake & Real-time Progress Tracking
                 </h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  For individuals navigating legal matters, CloseurCase removes confusion. Simply
+                  For individuals navigating legal matters, CloseUrCase removes confusion. Simply
                   state your issue, receive instant category guidance, select an Lawyer near you,
                   and follow every hearing milestone online.
                 </p>
@@ -547,7 +547,7 @@ function AboutPage() {
               Interactive Journey
             </span>
             <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              How CloseurCase Works Step-by-Step
+              How CloseUrCase Works Step-by-Step
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
               Click on any step below to explore what happens at each stage of case resolution.
@@ -682,7 +682,7 @@ function AboutPage() {
             Built for Precision & Scale
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            A look under the hood at the architectural principles powering CloseurCase.
+            A look under the hood at the architectural principles powering CloseUrCase.
           </p>
         </div>
 
@@ -745,7 +745,7 @@ function AboutPage() {
               Frequently Asked Questions
             </h2>
             <p className="mt-1.5 text-xs text-muted-foreground">
-              Everything you need to know about CloseurCase operations and legal compliance
+              Everything you need to know about CloseUrCase operations and legal compliance
               boundaries.
             </p>
           </div>
@@ -789,7 +789,7 @@ function AboutPage() {
           </h2>
           <p className="mt-3 text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed">
             Whether you are a citizen needing legal assistance or a licensed Lawyer seeking AI
-            research tools, CloseurCase provides the structure you need.
+            research tools, CloseUrCase provides the structure you need.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">

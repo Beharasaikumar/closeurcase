@@ -6,7 +6,7 @@ import { usePermissionsGate } from "@/features/permissions/usePermissionsGate";
 import { Scale } from "lucide-react";
 
 export const Route = createFileRoute("/register")({
-  head: () => ({ meta: [{ title: "Join CloseurCase" }] }),
+  head: () => ({ meta: [{ title: "Join CloseUrCase" }] }),
   component: Register,
 });
 
@@ -21,7 +21,7 @@ function Register() {
   return (
     <AuthLayout
       centerLogoOnMobile
-      title="Join CloseurCase"
+      title="Join CloseUrCase"
       subtitle="Citizens sign in with a mobile number. Lawyers register separately."
       footer={
         <>

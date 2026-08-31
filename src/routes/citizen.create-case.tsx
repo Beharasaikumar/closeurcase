@@ -25,7 +25,7 @@ import {
   LAWYER_PRACTICE_AREAS,
   mapPracticeAreaToCategory,
 } from "@/components/app/lawyerPracticeAreas";
-import { addCase, addSubscription, getLawyers } from "@/data/appStore";
+import { addCase, addSubscription, getLawyers, generateCloseUrCaseId } from "@/data/appStore";
 import { addSubmittedCase } from "@/data/caseStore";
 import { SUBSCRIPTION_PLANS } from "@/data/subscriptionPlans";
 import { useSpeechToText } from "@/features/citizen/useSpeechToText";
@@ -54,7 +54,7 @@ import {
 } from "@/components/m3";
 
 export const Route = createFileRoute("/citizen/create-case")({
-  head: () => ({ meta: [{ title: "Find a Lawyer — CloseurCase" }] }),
+  head: () => ({ meta: [{ title: "Find a Lawyer — CloseUrCase" }] }),
   component: FindLawyerWizard,
 });
 
@@ -270,7 +270,7 @@ export function FindLawyerWizard() {
 
     setTimeout(async () => {
       const lawyer = assignMode === "browse" ? selectedLawyer : undefined;
-      const id = `CS-${Math.floor(10000 + Math.random() * 90000)}`;
+      const id = generateCloseUrCaseId();
       const today = new Date().toISOString().split("T")[0];
 
       const documentEntries: CaseDocument[] = await Promise.all([

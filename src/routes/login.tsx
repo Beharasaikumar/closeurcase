@@ -6,13 +6,13 @@ import { usePermissionsGate } from "@/features/permissions/usePermissionsGate";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Lawyer & Admin sign in — CloseurCase" }] }),
+  head: () => ({ meta: [{ title: "Lawyer & Admin sign in — CloseUrCase" }] }),
   component: Login,
 });
 
 export function Login() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("lawyer@closeurcase.app");
+  const [email, setEmail] = useState("lawyer@CloseUrCase.app");
   const [password, setPassword] = useState("••••••••");
   const [showPassword, setShowPassword] = useState(false);
   const [permissionsAcknowledged, acknowledgePermissions] = usePermissionsGate();

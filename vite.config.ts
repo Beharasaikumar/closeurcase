@@ -17,10 +17,10 @@ export default defineConfig({
       devOptions: { enabled: true },
       includeAssets: ["favicon.ico", "icons/apple-touch-icon.png"],
       manifest: {
-        name: "CloseurCase — AI-powered legal case management",
-        short_name: "CloseurCase",
+        name: "CloseUrCase — AI-powered legal case management",
+        short_name: "CloseUrCase",
         description:
-          "CloseurCase connects citizens, lawyers, and administrators on a single platform for managing legal cases end-to-end.",
+          "CloseUrCase connects citizens, lawyers, and administrators on a single platform for managing legal cases end-to-end.",
         theme_color: "#06213e",
         background_color: "#fafafa",
         display: "standalone",

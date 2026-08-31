@@ -23,7 +23,7 @@ function formatDate(iso?: string): string | undefined {
 
 export function CaseListCard({ caseItem }: { caseItem: LegalCase }) {
   const hearing = formatDate(nextHearingDate(caseItem));
-  const caseRef = caseItem.caseNumber ?? caseItem.id;
+  const caseRef = caseItem.caseNumber;
   const isImported = caseItem.source === "ecourt";
 
   return (
@@ -34,7 +34,13 @@ export function CaseListCard({ caseItem }: { caseItem: LegalCase }) {
             {caseItem.title}
           </h3>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
-            <span className="font-mono font-semibold text-foreground/80">{caseRef}</span>
+            <span className="font-mono font-semibold text-primary">{caseItem.id}</span>
+            {caseRef && (
+              <>
+                <span aria-hidden>•</span>
+                <span className="font-mono font-semibold text-foreground/80">{caseRef}</span>
+              </>
+            )}
             {caseItem.courtName && (
               <>
                 <span aria-hidden>•</span>

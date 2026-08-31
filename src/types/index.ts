@@ -112,6 +112,8 @@ export interface TimelineEvent {
   id: string;
   status: CaseStatus;
   at: string;
+  /** Time of day the status changed, e.g. "3:45 PM" — kept separate from `at` (a bare date) like `Hearing.time`. */
+  time?: string;
   note?: string;
 }
 

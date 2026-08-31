@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const STORAGE_KEY = "closeurcase.permissions.acknowledged";
+const STORAGE_KEY = "CloseUrCase.permissions.acknowledged";
 
 function readAcknowledged(): boolean {
   if (typeof window === "undefined") return false;

@@ -10,7 +10,7 @@ import type { Subscription, SubscriptionPlanId } from "@/types";
 const CITIZEN_ID = "u_001";
 
 export const Route = createFileRoute("/citizen/subscriptions")({
-  head: () => ({ meta: [{ title: "My Subscriptions — CloseurCase" }] }),
+  head: () => ({ meta: [{ title: "My Subscriptions — CloseUrCase" }] }),
   component: MySubscriptions,
 });
 

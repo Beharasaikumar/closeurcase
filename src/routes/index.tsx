@@ -28,7 +28,7 @@ export const Route = createFileRoute("/")({
       throw redirect({ to: session.authenticated ? "/citizen" : "/citizen-login" });
     }
   },
-  head: () => ({ meta: [{ title: "CloseurCase — Legal Platform" }] }),
+  head: () => ({ meta: [{ title: "CloseUrCase — Legal Platform" }] }),
   component: LandingPage,
 });
 
@@ -150,7 +150,7 @@ function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-xl mb-8">
             <span className="text-xs font-bold uppercase tracking-widest text-primary">
-              About CloseurCase
+              About CloseUrCase
             </span>
             <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               Structured legal help, backed by real Lawyers
@@ -159,7 +159,7 @@ function LandingPage() {
 
           <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8">
             <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
-              CloseurCase bridges the gap between citizens facing legal challenges and licensed
+              CloseUrCase bridges the gap between citizens facing legal challenges and licensed
               legal professionals. AI helps you get started and finds the right fit fast — but every
               matter is ultimately handled by a bar-verified Lawyer, so you always know exactly
               who's representing you, from filing to resolution.
@@ -255,7 +255,7 @@ function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-xl mb-12">
             <span className="text-xs font-bold uppercase tracking-widest text-primary">
-              Why CloseurCase
+              Why CloseUrCase
             </span>
             <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               Platform highlights
@@ -299,7 +299,7 @@ function LandingPage() {
               </div>
             </div>
             <a
-              href={whatsappUrl("Hi, I'd like to know more about CloseurCase.")}
+              href={whatsappUrl("Hi, I'd like to know more about CloseUrCase.")}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-xl bg-[#25D366] px-6 py-3 text-sm font-bold text-white hover:bg-[#20bd5a] transition-colors"
@@ -332,10 +332,10 @@ function InstallAppBanner() {
             </div>
             <div>
               <h2 className="text-base font-bold text-foreground sm:text-lg">
-                Get the CloseurCase app
+                Get the CloseUrCase app
               </h2>
               <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-                Install CloseurCase on your device for quick, one-tap access anytime.
+                Install CloseUrCase on your device for quick, one-tap access anytime.
               </p>
             </div>
           </div>

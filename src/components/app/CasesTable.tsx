@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import {
   Pencil,
   Eye,
@@ -10,6 +11,8 @@ import {
   Image as ImageIcon,
   Maximize2,
   Minimize2,
+  ShieldCheck,
+  ChevronRight,
 } from "lucide-react";
 import { Button, IconButton } from "@/components/m3";
 import {
@@ -20,6 +23,7 @@ import {
   subscribeToStore,
 } from "@/data/appStore";
 import { MAX_ATTACHMENT_BYTES, formatFileSize, readFileAsDataUrl } from "@/lib/files";
+import { searchCourtCases, type ImportableCourtCase } from "@/data/courtCasesFixture";
 import type { LegalCase, Hearing, CaseStatus, CaseDocument } from "@/types";
 import { ChatButton } from "@/components/app/CaseChat";
 import {
@@ -27,17 +31,15 @@ import {
   STATUS_META,
   STORED_STATUS_TO_FILTER,
   COURTS_FLAT,
+  PRE_CNR_STAGES,
   StatusBadge,
   fmtDate,
   todayISO,
   getJourney,
   getNextEntry,
+  getStageHistory,
   type DocketHearing,
 } from "@/components/app/caseDocketShared";
-
-function cryptoId() {
-  return "c" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-}
 
 function docLooksLikeImage(doc: CaseDocument): boolean {
   if (doc.fileMimeType) return doc.fileMimeType.startsWith("image/");
@@ -52,7 +54,7 @@ function docDisplayTitle(doc: CaseDocument): string {
 
 /** A case is "Existing" if it was linked via a real court CNR number (either
  * through the wizard's Existing Case path, or imported from eCourts) —
- * everything else was freshly filed through CloseurCase itself. */
+ * everything else was freshly filed through CloseUrCase itself. */
 export function caseTypeOf(c: LegalCase): "New" | "Existing" {
   return c.cnrNumber ? "Existing" : "New";
 }
@@ -80,6 +82,7 @@ function CaseTypeBadge({ caseItem }: { caseItem: LegalCase }) {
  * full store list so editing a filtered-down view never drops other cases.
  */
 export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer" | "citizen" }) {
+  const navigate = useNavigate();
   const [allCases, setAllCases] = useState<LegalCase[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCase, setEditingCase] = useState<LegalCase | null>(null);
@@ -96,12 +99,8 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
   const [cnr, setCnr] = useState("");
   const [caseStatus, setCaseStatus] = useState("Submitted");
   const [journey, setJourney] = useState<DocketHearing[]>([]);
-
-  const [nextDate, setNextDate] = useState("");
-  const [nextPlace, setNextPlace] = useState("");
-  const [nextPurpose, setNextPurpose] = useState("");
-  const [nextNature, setNextNature] = useState("");
-  const [nextAdv, setNextAdv] = useState("");
+  const [cnrVerifyStatus, setCnrVerifyStatus] = useState<"idle" | "found" | "not-found">("idle");
+  const [cnrVerifiedMatch, setCnrVerifiedMatch] = useState<ImportableCourtCase | null>(null);
 
   const isLawyer = role === "lawyer";
 
@@ -118,42 +117,43 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
     setCnr(c.cnrNumber || "");
     setCaseStatus(c.status || "Submitted");
     setJourney(getJourney(c));
-
-    setNextDate("");
-    setNextPlace("");
-    setNextPurpose("");
-    setNextNature("");
-    setNextAdv("");
+    setCnrVerifyStatus("idle");
+    setCnrVerifiedMatch(null);
 
     setDialogOpen(true);
   }
 
-  function handleAddNextStep() {
-    if (!nextDate && !nextPlace && !nextPurpose) {
-      alert("Add at least a date, place or purpose for this step.");
-      return;
-    }
-
-    const newStep: DocketHearing = {
-      id: cryptoId(),
-      date: nextDate,
-      place: nextPlace.trim(),
-      purpose: nextPurpose.trim(),
-      natureOfSuit: nextNature.trim(),
-      adv: nextAdv.trim(),
-    };
-
-    setJourney((prev) => [...prev, newStep]);
-
-    setNextDate("");
-    setNextPlace("");
-    setNextPurpose("");
-    setNextNature("");
-    setNextAdv("");
+  function handleCnrChange(value: string) {
+    setCnr(value);
+    setCnrVerifyStatus("idle");
+    setCnrVerifiedMatch(null);
   }
 
-  function handleRemoveStep(id: string) {
-    setJourney((prev) => prev.filter((item) => item.id !== id));
+  function handleVerifyCnr() {
+    const query = cnr.trim();
+    if (!query) return;
+    const match =
+      searchCourtCases({ method: "CNR Number", query }).find(
+        (m) => m.cnrNumber.toLowerCase() === query.toLowerCase(),
+      ) ?? null;
+    setCnrVerifiedMatch(match);
+    setCnrVerifyStatus(match ? "found" : "not-found");
+  }
+
+  function handleImportCnr() {
+    if (!cnrVerifiedMatch) return;
+    setPartyNames(cnrVerifiedMatch.title);
+    setCaseNo(cnrVerifiedMatch.caseNumber);
+    setJourney(
+      (cnrVerifiedMatch.hearings || []).map((h) => ({
+        id: h.id,
+        date: h.date,
+        place: h.courtOrVenue || "",
+        purpose: h.note || "",
+        natureOfSuit: h.hearingType || "",
+        adv: h.Lawyer || (h.judges ? h.judges.join(", ") : ""),
+      })),
+    );
   }
 
   function handleApprove(c: LegalCase) {
@@ -184,8 +184,21 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
     }));
 
     if (editingCase) {
+      const statusChanged = editingCase.status !== caseStatus;
       const updatedCases = allCases.map((c) => {
         if (c.id !== editingCase.id) return c;
+        const timeline = statusChanged
+          ? [
+              ...(c.timeline || []),
+              {
+                id: `t_${Date.now()}`,
+                status: caseStatus as CaseStatus,
+                at: today,
+                time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+                note: `Status updated to ${STATUS_META[caseStatus]?.label ?? caseStatus}`,
+              },
+            ]
+          : c.timeline;
         return {
           ...c,
           title: partyNames.trim(),
@@ -193,6 +206,7 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
           cnrNumber: cnr.trim(),
           status: caseStatus as CaseStatus,
           hearings: hearingsList,
+          timeline,
           updatedAt: today,
         };
       });
@@ -291,15 +305,18 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
                         <div className="font-semibold text-foreground leading-snug">
                           {c.title || "Untitled Matter"}
                         </div>
+                        <div className="font-mono text-[11px] font-semibold text-primary mt-0.5">
+                          {c.id}
+                        </div>
                         <div className="font-mono text-xs text-muted-foreground mt-0.5">
-                          {c.caseNumber || "No case no."}
+                         CASE NO - {c.caseNumber || "N/A"}
                         </div>
                         <div
                           className={`font-mono text-[11.5px] mt-0.5 ${
                             c.cnrNumber ? "text-muted-foreground" : "text-muted-foreground/50"
                           }`}
                         >
-                          {c.cnrNumber || "—"}
+                         CNR No - {c.cnrNumber || "N/A"}
                         </div>
                       </td>
 
@@ -425,30 +442,6 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
                       />
                     </div>
 
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11px] font-semibold text-muted-foreground">
-                        Case No.
-                      </label>
-                      <input
-                        value={caseNo}
-                        onChange={(e) => setCaseNo(e.target.value)}
-                        placeholder="e.g. OS 4/2025"
-                        className="h-11 rounded-lg border border-border bg-card px-3.5 text-sm text-foreground outline-hidden focus:border-primary focus:ring-1 focus:ring-primary"
-                      />
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11px] font-semibold text-muted-foreground">
-                        CNR No.
-                      </label>
-                      <input
-                        value={cnr}
-                        onChange={(e) => setCnr(e.target.value)}
-                        placeholder="e.g. TSNI08..."
-                        className="h-11 rounded-lg border border-border bg-card px-3.5 text-sm text-foreground outline-hidden focus:border-primary focus:ring-1 focus:ring-primary"
-                      />
-                    </div>
-
                     <div className="sm:col-span-2 flex flex-col gap-1">
                       <label className="text-[11px] font-semibold text-muted-foreground">
                         Case Status
@@ -468,6 +461,50 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
                         {STATUS_META[caseStatus]?.meaning}
                       </div>
                     </div>
+
+                    {caseStatus === "CNR Generated" && (
+                      <div className="sm:col-span-2 flex flex-col gap-1">
+                        <label className="text-[11px] font-semibold text-muted-foreground">
+                          CNR No.
+                        </label>
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                          <input
+                            value={cnr}
+                            onChange={(e) => handleCnrChange(e.target.value)}
+                            placeholder="e.g. TSNI08..."
+                            className="h-11 flex-1 rounded-lg border border-border bg-card px-3.5 text-sm text-foreground outline-hidden focus:border-primary focus:ring-1 focus:ring-primary"
+                          />
+                          <div className="flex shrink-0 gap-2">
+                            <Button
+                              variant="outlined"
+                              icon={<ShieldCheck className="h-4 w-4" />}
+                              onClick={handleVerifyCnr}
+                              disabled={!cnr.trim()}
+                            >
+                              Verify
+                            </Button>
+                            <Button
+                              variant="tonal"
+                              icon={<Download className="h-4 w-4" />}
+                              onClick={handleImportCnr}
+                              disabled={cnrVerifyStatus !== "found"}
+                            >
+                              Import
+                            </Button>
+                          </div>
+                        </div>
+                        {cnrVerifyStatus === "found" && (
+                          <p className="text-xs font-semibold text-[var(--md-extended-color-success)]">
+                            Verified — matches "{cnrVerifiedMatch?.title}"
+                          </p>
+                        )}
+                        {cnrVerifyStatus === "not-found" && (
+                          <p className="text-xs font-semibold text-destructive">
+                            No matching case found in eCourts records for this CNR.
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="rounded-2xl border border-border bg-card p-4 shadow-xs">
@@ -509,91 +546,78 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
                 )}
               </div>
 
-              {/* Section: Add Next Step (Lawyer Only) */}
-              {isLawyer && (
-                <div className="rounded-2xl bg-[var(--md-sys-color-surface-container,#efedf1)] p-4 my-3 space-y-3">
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    ADD NEXT STEP
+              {/* Section: Stage History — shown to both roles while the case is still in the pre-CNR pipeline */}
+              {editingCase &&
+                PRE_CNR_STAGES.includes(STORED_STATUS_TO_FILTER[caseStatus] ?? caseStatus) && (
+                  <div>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-primary mb-3">
+                    STAGE HISTORY
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11px] font-semibold text-muted-foreground">
-                        Next Hearing Date
-                      </label>
-                      <input
-                        type="date"
-                        value={nextDate}
-                        onChange={(e) => setNextDate(e.target.value)}
-                        className="h-10 rounded-lg border border-border bg-card px-3 text-sm text-foreground outline-hidden focus:border-primary focus:ring-1 focus:ring-primary"
-                      />
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11px] font-semibold text-muted-foreground">
-                        Place / Court
-                      </label>
-                      <input
-                        list="courtsList"
-                        value={nextPlace}
-                        onChange={(e) => setNextPlace(e.target.value)}
-                        placeholder="Type or pick a court…"
-                        autoComplete="off"
-                        className="h-10 rounded-lg border border-border bg-card px-3 text-sm text-foreground outline-hidden focus:border-primary focus:ring-1 focus:ring-primary"
-                      />
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11px] font-semibold text-muted-foreground">
-                        Purpose
-                      </label>
-                      <input
-                        value={nextPurpose}
-                        onChange={(e) => setNextPurpose(e.target.value)}
-                        placeholder="e.g. Call with IAs."
-                        className="h-10 rounded-lg border border-border bg-card px-3 text-sm text-foreground outline-hidden focus:border-primary focus:ring-1 focus:ring-primary"
-                      />
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11px] font-semibold text-muted-foreground">
-                        Nature of Suit
-                      </label>
-                      <input
-                        value={nextNature}
-                        onChange={(e) => setNextNature(e.target.value)}
-                        placeholder="e.g. Enquiry"
-                        className="h-10 rounded-lg border border-border bg-card px-3 text-sm text-foreground outline-hidden focus:border-primary focus:ring-1 focus:ring-primary"
-                      />
-                    </div>
-
-                    <div className="sm:col-span-2 flex flex-col gap-1">
-                      <label className="text-[11px] font-semibold text-muted-foreground">
-                        Lawyer
-                      </label>
-                      <input
-                        value={nextAdv}
-                        onChange={(e) => setNextAdv(e.target.value)}
-                        placeholder="e.g. Ramulu Bdn"
-                        className="h-10 rounded-lg border border-border bg-card px-3 text-sm text-foreground outline-hidden focus:border-primary focus:ring-1 focus:ring-primary"
-                      />
-                    </div>
+                  <div className="relative border-l-2 border-border ml-3 space-y-3.5 pl-6 py-1">
+                    {getStageHistory(editingCase).map((stage) => (
+                      <div key={stage.key} className="relative">
+                        <span
+                          className={`absolute -left-[29px] top-0.5 h-[14px] w-[14px] rounded-full border-2 ${
+                            stage.at
+                              ? "border-primary bg-primary"
+                              : "border-muted-foreground/50 bg-card"
+                          }`}
+                        />
+                        <div className="flex items-center justify-between gap-3">
+                          <span
+                            className={`text-xs font-semibold ${
+                              stage.isCurrent
+                                ? "text-primary"
+                                : stage.at
+                                  ? "text-foreground"
+                                  : "text-muted-foreground"
+                            }`}
+                          >
+                            {stage.label}
+                            {stage.isCurrent && (
+                              <span className="ml-2 rounded-md bg-primary/10 px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-primary">
+                                Current
+                              </span>
+                            )}
+                          </span>
+                          <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
+                            {stage.at
+                              ? `${fmtDate(stage.at)}${stage.time ? ", " + stage.time : ""}`
+                              : "—"}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
 
-                  <Button variant="tonal" onClick={handleAddNextStep} className="mt-2 text-xs">
-                    + Add to Roadmap
-                  </Button>
+                  {(STORED_STATUS_TO_FILTER[caseStatus] ?? caseStatus) === "CNR Generated" && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(
+                          isLawyer
+                            ? { to: "/lawyer/cases/$id", params: { id: editingCase.id } }
+                            : { to: "/citizen/cases/$id", params: { id: editingCase.id } },
+                        )
+                      }
+                      className="mt-3.5 inline-flex cursor-pointer items-center gap-1 text-xs font-bold text-primary hover:underline"
+                    >
+                      View Details <ChevronRight className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </div>
               )}
 
-              {/* Section: Case Roadmap */}
-              <div>
-                <div className="text-[11px] font-bold uppercase tracking-wider text-primary mb-3">
-                  CASE ROADMAP
-                </div>
+              {/* Section: Case Roadmap (Citizen view only) */}
+              {!isLawyer && (
+                <div>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-primary mb-3">
+                    CASE ROADMAP
+                  </div>
 
                 {sortedModalJourney.length === 0 ? (
                   <div className="text-xs text-muted-foreground italic py-2">
-                    No hearings logged yet.{isLawyer ? " Add the first one above." : ""}
+                    No hearings logged yet.
                   </div>
                 ) : (
                   <div className="relative border-l-2 border-border ml-3 space-y-4 pl-6 py-1">
@@ -666,17 +690,6 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
                               >
                                 {badgeLabel}
                               </span>
-
-                              {isLawyer && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveStep(e.id)}
-                                  className="text-sm text-muted-foreground hover:text-destructive transition-colors p-1 cursor-pointer"
-                                  title="Remove step"
-                                >
-                                  ✕
-                                </button>
-                              )}
                             </div>
                           </div>
                         </div>
@@ -684,7 +697,8 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
                     })}
                   </div>
                 )}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Dialog Actions */}
@@ -965,7 +979,7 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
                       <p>{previewDoc.name}</p>
                     </div>
                     <div className="text-right font-mono">
-                      <p>CLOSEURCASE FILE</p>
+                      <p>CloseUrCase FILE</p>
                       <p>ADDED {previewDoc.uploadedAt}</p>
                     </div>
                   </div>

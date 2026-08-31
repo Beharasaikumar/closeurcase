@@ -472,7 +472,7 @@ function PdfModalBody({
                 </p>
                 <p className="bg-muted/40 p-4 rounded-xl border border-border/50 font-sans">
                   This document represents an indexed statutory publication for{" "}
-                  <strong>{item.title}</strong> in the CloseurCase admin legal index.
+                  <strong>{item.title}</strong> in the CloseUrCase admin legal index.
                 </p>
                 <p>
                   1. Provisions contained herein are automatically referenced by Lawyer AI during

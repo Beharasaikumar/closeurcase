@@ -25,7 +25,7 @@ export function WhatsAppFloatingButton({
   const bottomCls = raised ? "bottom-20 sm:bottom-6" : "bottom-4 sm:bottom-6";
   return (
     <a
-      href={whatsappUrl("Hi, I need help with my legal case on CloseurCase.")}
+      href={whatsappUrl("Hi, I need help with my legal case on CloseUrCase.")}
       target="_blank"
       rel="noopener noreferrer"
       title="Chat with us on WhatsApp"

@@ -26,7 +26,7 @@ import {
 } from "@/components/m3";
 
 export const Route = createFileRoute("/admin/cases")({
-  head: () => ({ meta: [{ title: "Manage Platform Cases — CloseurCase" }] }),
+  head: () => ({ meta: [{ title: "Manage Platform Cases — CloseUrCase" }] }),
   component: CasesPage,
 });
 

@@ -34,9 +34,9 @@ export function AuthLayout({
             to="/"
             className="flex items-center gap-3 font-semibold tracking-tight hover:opacity-90 transition-opacity"
           >
-            <img src="/logo.png" alt="CloseurCase Logo" className="h-10 w-10 object-contain" />
+            <img src="/logo.png" alt="CloseUrCase Logo" className="h-10 w-10 object-contain" />
             <span className="text-foreground text-xl font-extrabold tracking-tight">
-              CloseurCase
+              CloseUrCase
             </span>
           </Link>
         </div>
@@ -61,9 +61,9 @@ export function AuthLayout({
           >
             {centerLogoOnMobile && (
               <div className="mb-6 flex flex-col items-center gap-3 sm:hidden">
-                <img src="/logo.png" alt="CloseurCase Logo" className="h-24 w-24 object-contain" />
+                <img src="/logo.png" alt="CloseUrCase Logo" className="h-24 w-24 object-contain" />
                 <span className="text-2xl font-extrabold tracking-tight text-foreground">
-                  CloseurCase
+                  CloseUrCase
                 </span>
               </div>
             )}
@@ -97,7 +97,7 @@ export function AuthLayout({
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/40 to-transparent p-6 sm:p-8 flex flex-col justify-end">
                 <span className="inline-block rounded-full bg-primary/20 px-3 py-1 text-xs font-semibold text-primary backdrop-blur-xs w-fit">
-                  CloseurCase Platform
+                  CloseUrCase Platform
                 </span>
                 <h3 className="mt-2.5 text-xl font-bold text-foreground sm:text-2xl">
                   AI-Powered Legal Case Management

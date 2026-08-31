@@ -815,7 +815,7 @@ function DocumentsTab({ caseItem: c }: { caseItem: LegalCase }) {
             </div>
             <div className="flex flex-col gap-2 border-t border-border px-4 sm:px-6 py-3 bg-surface sm:flex-row sm:items-center sm:justify-between">
               <span className="hidden text-xs text-muted-foreground sm:inline">
-                Viewing PDF Document in CloseurCase Viewer
+                Viewing PDF Document in CloseUrCase Viewer
               </span>
               <Button onClick={() => setActivePdf(null)} className="w-full sm:w-auto">
                 Close Preview

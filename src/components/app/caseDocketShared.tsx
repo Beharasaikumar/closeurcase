@@ -29,45 +29,15 @@ export const STATUS_META: Record<string, StatusMetaItem> = {
     color: "info",
     meaning: "Lawyer has agreed to take the case and is preparing to file",
   },
-  Registered: {
-    label: "Registered [In Court]",
-    color: "info",
-    meaning: "Case accepted, number assigned, not yet heard",
-  },
-  Pending: {
-    label: "Pending [In Court]",
+  "Filing in progress": {
+    label: "Filing in progress",
     color: "soon",
-    meaning: "Active, next hearing date not yet reached",
+    meaning: "Lawyer is preparing the filing documents for the case",
   },
-  Disposed: {
-    label: "Disposed [In Court]",
-    color: "closed",
-    meaning: "Case closed — check the order to know how",
-  },
-  Dismissed: {
-    label: "Dismissed [In Court]",
-    color: "needs",
-    meaning: "Court rejected the case",
-  },
-  Allowed: {
-    label: "Allowed [In Court]",
-    color: "upcoming",
-    meaning: "Court granted the petition or appeal",
-  },
-  Withdrawn: {
-    label: "Withdrawn [In Court]",
-    color: "neutral",
-    meaning: "Party chose to withdraw the case",
-  },
-  Abated: {
-    label: "Abated [In Court]",
-    color: "neutral",
-    meaning: "Case lapsed because a party died with no substitution",
-  },
-  Settled: {
-    label: "Settled [In Court]",
-    color: "upcoming",
-    meaning: "Parties agreed out of court, case closed by consent",
+  "CNR Generated": {
+    label: "CNR Generated",
+    color: "info",
+    meaning: "Case filed and a CNR number has been generated",
   },
 };
 
@@ -86,6 +56,46 @@ export const STORED_STATUS_TO_FILTER: Record<string, string> = {
   Resolved: "Disposed",
   Closed: "Disposed",
 };
+
+/** The pre-court pipeline a case moves through before it gets a CNR and is
+ * registered in court — shown as a timestamped stage history in the lawyer's
+ * case dialog while the case is still somewhere in this pipeline. */
+export const PRE_CNR_STAGES = [
+  "Pending by Lawyer",
+  "Rejected by Lawyer",
+  "Accepted by Lawyer",
+  "Filing in progress",
+  "CNR Generated",
+];
+
+export interface StageHistoryEntry {
+  key: string;
+  label: string;
+  at: string | null;
+  time: string | null;
+  isCurrent: boolean;
+}
+
+/** Reconstructs when (if ever) each pre-CNR stage was reached, from the
+ * case's timeline — falling back to updatedAt for the current stage if no
+ * matching timeline entry exists (e.g. older seed data, which predates the
+ * time-of-day field and so only carries a date). */
+export function getStageHistory(c: LegalCase): StageHistoryEntry[] {
+  const currentKey = STORED_STATUS_TO_FILTER[c.status] ?? c.status;
+  return PRE_CNR_STAGES.map((key) => {
+    const match = [...(c.timeline || [])]
+      .reverse()
+      .find((t) => (STORED_STATUS_TO_FILTER[t.status] ?? t.status) === key);
+    const isCurrent = key === currentKey;
+    return {
+      key,
+      label: STATUS_META[key]?.label ?? key,
+      at: match?.at ?? (isCurrent ? c.updatedAt : null),
+      time: match?.time ?? null,
+      isCurrent,
+    };
+  });
+}
 
 export const COURTS_DATA = {
   courts: [

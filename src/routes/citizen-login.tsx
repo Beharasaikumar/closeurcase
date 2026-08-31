@@ -25,7 +25,7 @@ interface SearchParams {
 }
 
 export const Route = createFileRoute("/citizen-login")({
-  head: () => ({ meta: [{ title: "Citizen sign in — CloseurCase" }] }),
+  head: () => ({ meta: [{ title: "Citizen sign in — CloseUrCase" }] }),
 
   validateSearch: (s: Record<string, unknown>): SearchParams => ({
     area: typeof s.area === "string" ? s.area : undefined,

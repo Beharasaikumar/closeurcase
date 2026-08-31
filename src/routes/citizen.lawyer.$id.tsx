@@ -7,7 +7,7 @@ import { getLawyers, subscribeToStore } from "@/data/appStore";
 import type { Lawyer } from "@/types";
 
 export const Route = createFileRoute("/citizen/lawyer/$id")({
-  head: () => ({ meta: [{ title: "Lawyer Profile — CloseurCase" }] }),
+  head: () => ({ meta: [{ title: "Lawyer Profile — CloseUrCase" }] }),
   component: CitizenLawyerDetail,
 });
 

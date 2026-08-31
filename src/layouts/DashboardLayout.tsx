@@ -271,10 +271,10 @@ export function DashboardLayout({
                 className="flex items-center gap-2.5 tracking-tight"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <img src="/logo.png" alt="CloseurCase Logo" className="h-9 w-9 object-contain" />
+                <img src="/logo.png" alt="CloseUrCase Logo" className="h-9 w-9 object-contain" />
                 <span className="flex flex-col leading-tight">
                   <span className="text-base font-bold tracking-tight text-foreground">
-                    CloseurCase
+                    CloseUrCase
                   </span>
                   <span className="text-[10px] font-medium tracking-wide text-muted-foreground">
                     Just click for justice
@@ -319,10 +319,10 @@ export function DashboardLayout({
             to="/"
             className="flex items-center gap-2.5 tracking-tight hover:opacity-90 transition-opacity"
           >
-            <img src="/logo.png" alt="CloseurCase Logo" className="h-9 w-9 object-contain" />
+            <img src="/logo.png" alt="CloseUrCase Logo" className="h-9 w-9 object-contain" />
             <span className="flex flex-col leading-tight">
               <span className="text-base font-bold tracking-tight text-foreground">
-                CloseurCase
+                CloseUrCase
               </span>
               <span className="text-[10px] font-medium tracking-wide text-muted-foreground">
                 Just click for justice

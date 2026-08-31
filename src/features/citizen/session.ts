@@ -9,7 +9,7 @@ export interface CitizenSession {
   language: CitizenLanguage;
 }
 
-const STORAGE_KEY = "closeurcase.citizen.session";
+const STORAGE_KEY = "CloseUrCase.citizen.session";
 
 const defaultSession: CitizenSession = {
   authenticated: false,

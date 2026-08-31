@@ -12,7 +12,7 @@ import { TextField } from "@/components/m3";
 import { Toggle } from "@/components/app/Toggle";
 
 export const Route = createFileRoute("/admin/users")({
-  head: () => ({ meta: [{ title: "Manage Users — CloseurCase" }] }),
+  head: () => ({ meta: [{ title: "Manage Users — CloseUrCase" }] }),
   component: UsersPage,
 });
 

@@ -21,11 +21,11 @@ import { PublicLayout } from "@/layouts/PublicLayout";
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Contact Us — CloseurCase Legal Platform" },
+      { title: "Contact Us — CloseUrCase Legal Platform" },
       {
         name: "description",
         content:
-          "Get in touch with CloseurCase support for inquiries, lawyer registration help, and technical assistance.",
+          "Get in touch with CloseUrCase support for inquiries, lawyer registration help, and technical assistance.",
       },
     ],
   }),
@@ -57,7 +57,7 @@ function ContactPage() {
             <span>We're Here to Help</span>
           </div>
           <h1 className="mt-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-            Get in Touch with CloseurCase
+            Get in Touch with CloseUrCase
           </h1>
           <p className="mt-4 text-sm sm:text-base text-muted-foreground max-w-xl mx-auto leading-relaxed">
             Have a question about filing a case, Lawyer verification, or platform features? Send us
@@ -89,7 +89,7 @@ function ContactPage() {
                     Email Us
                   </h4>
                   <p className="mt-1 text-sm font-semibold text-foreground">
-                    support@closeurcase.com
+                    support@CloseUrCase.com
                   </p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     For general support & onboarding assistance

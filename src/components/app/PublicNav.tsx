@@ -210,7 +210,7 @@ export function PublicNav() {
 
           <div className="border-t border-border px-5 py-3">
             <span className="text-[11px] text-muted-foreground">
-              Official Government of India portals — external sites, not operated by CloseurCase.
+              Official Government of India portals — external sites, not operated by CloseUrCase.
             </span>
           </div>
         </div>

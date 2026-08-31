@@ -19,7 +19,7 @@ import {
 import { Card } from "@/components/m3";
 
 export const Route = createFileRoute("/admin/")({
-  head: () => ({ meta: [{ title: "Super Admin Dashboard — CloseurCase" }] }),
+  head: () => ({ meta: [{ title: "Super Admin Dashboard — CloseUrCase" }] }),
   component: AdminDashboard,
 });
 
