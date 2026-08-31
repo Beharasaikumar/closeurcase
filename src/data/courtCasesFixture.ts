@@ -1,4 +1,11 @@
-import type { CaseStatus, Hearing, LegalCase, LegalCategory } from "@/types";
+import type {
+  CaseStatus,
+  FirDetails,
+  HistoryOfHearing,
+  InterimOrder,
+  LegalCase,
+  LegalCategory,
+} from "@/types";
 
 export type ImportSearchMethod =
   "Party Name" | "Case Number" | "Diary Number" | "Lawyer Name" | "CNR Number";
@@ -22,58 +29,46 @@ export interface ImportableCourtCase {
   status: CaseStatus;
   city: string;
   description: string;
-  hearings: Hearing[];
+  historyOfCaseHearings: HistoryOfHearing[];
+  interimOrders?: InterimOrder[];
+  firDetails?: FirDetails;
 }
 
-const bodhanHearings: Hearing[] = [
+const bodhanHearings: HistoryOfHearing[] = [
   {
-    id: "ih1",
-    date: "2026-08-12",
+    judge: "V Additional District And Sessions Judge, Hyderabad",
+    businessOnDate: "2025-12-10",
+    hearingDate: "2026-03-11",
     time: "10:30 AM",
-    courtOrVenue: "City Civil Court, Hyderabad",
-    judges: ["V Additional District And Sessions Judge, Hyderabad"],
-    hearingType: "Civil-dailylist",
-    createdAt: "2026-07-01",
+    purposeOfListing: "Civil-dailylist",
   },
   {
-    id: "ih2",
-    date: "2026-07-28",
+    judge: "V Additional District And Sessions Judge, Hyderabad",
+    businessOnDate: "2026-03-11",
+    hearingDate: "2026-03-18",
     time: "10:30 AM",
-    courtOrVenue: "City Civil Court, Hyderabad",
-    judges: ["V Additional District And Sessions Judge, Hyderabad"],
-    businessDetails: "Written statement filed by respondent; matter posted for evidence.",
-    hearingType: "Civil-dailylist",
-    createdAt: "2026-06-15",
+    purposeOfListing: "Civil-dailylist",
   },
   {
-    id: "ih3",
-    date: "2026-07-15",
+    judge: "V Additional District And Sessions Judge, Hyderabad, Smt. D.Varoodhini",
+    businessOnDate: "2026-03-18",
+    hearingDate: "2026-07-15",
     time: "10:30 AM",
-    courtOrVenue: "City Civil Court, Hyderabad",
-    courtRoom: "1-SMT. D.VAROODHINI-V Additional District and Sessions Judge, Hyderabad",
-    itemNo: "7",
-    judges: ["V Additional District And Sessions Judge, Hyderabad", "Smt. D.Varoodhini"],
-    businessDetails: "Parties present; adjourned for filing of written statement.",
-    hearingType: "Civil-dailylist",
-    createdAt: "2026-06-01",
+    purposeOfListing: "Parties present; adjourned for filing of written statement.",
   },
   {
-    id: "ih4",
-    date: "2026-03-18",
+    judge: "V Additional District And Sessions Judge, Hyderabad",
+    businessOnDate: "2026-07-15",
+    hearingDate: "2026-07-28",
     time: "10:30 AM",
-    courtOrVenue: "City Civil Court, Hyderabad",
-    judges: ["V Additional District And Sessions Judge, Hyderabad"],
-    hearingType: "Civil-dailylist",
-    createdAt: "2026-03-01",
+    purposeOfListing: "Written statement filed by respondent; matter posted for evidence.",
   },
   {
-    id: "ih5",
-    date: "2026-03-11",
+    judge: "V Additional District And Sessions Judge, Hyderabad",
+    businessOnDate: "2026-07-28",
+    hearingDate: "2026-08-12",
     time: "10:30 AM",
-    courtOrVenue: "City Civil Court, Hyderabad",
-    judges: ["V Additional District And Sessions Judge, Hyderabad"],
-    hearingType: "Civil-dailylist",
-    createdAt: "2026-02-20",
+    purposeOfListing: "Civil-dailylist",
   },
 ];
 
@@ -101,7 +96,7 @@ export const importableCourtCases: ImportableCourtCase[] = [
     city: "Hyderabad",
     description:
       "Original suit filed before the City Civil Court, Hyderabad concerning a civil dispute between Yadamakanti Laxmi Narayana Reddy and Nizam Sugars LTD (Nsl). Matter is currently at the written statement stage.",
-    hearings: bodhanHearings,
+    historyOfCaseHearings: bodhanHearings,
   },
   {
     id: "ec_2",
@@ -123,15 +118,13 @@ export const importableCourtCases: ImportableCourtCase[] = [
     city: "Visakhapatnam",
     description:
       "Consumer complaint regarding a disputed loan foreclosure charge, pending before the District Consumer Disputes Redressal Commission, Visakhapatnam.",
-    hearings: [
+    historyOfCaseHearings: [
       {
-        id: "ih6",
-        date: "2026-08-20",
+        judge: "President, DCDRC Visakhapatnam",
+        businessOnDate: "2026-01-20",
+        hearingDate: "2026-08-20",
         time: "11:00 AM",
-        courtOrVenue: "District Consumer Disputes Redressal Commission, Visakhapatnam",
-        judges: ["President, DCDRC Visakhapatnam"],
-        hearingType: "Consumer-dailylist",
-        createdAt: "2026-07-10",
+        purposeOfListing: "Consumer-dailylist",
       },
     ],
   },
@@ -155,15 +148,21 @@ export const importableCourtCases: ImportableCourtCase[] = [
     city: "Hyderabad",
     description:
       "Writ petition concerning compliance with effluent discharge norms, pending before the High Court for the State of Telangana.",
-    hearings: [
+    historyOfCaseHearings: [
       {
-        id: "ih7",
-        date: "2026-09-02",
+        judge: "Hon'ble Justice Bench-II",
+        businessOnDate: "2026-02-02",
+        hearingDate: "2026-09-02",
         time: "10:00 AM",
-        courtOrVenue: "High Court for the State of Telangana",
-        judges: ["Hon'ble Justice Bench-II"],
-        hearingType: "WP-dailylist",
-        createdAt: "2026-07-25",
+        purposeOfListing: "WP-dailylist",
+      },
+    ],
+    interimOrders: [
+      {
+        orderDate: "2026-02-15",
+        description:
+          "Interim direction to maintain effluent discharge within prescribed limits pending disposal.",
+        orderUrl: "order-ec3-1.pdf",
       },
     ],
   },
@@ -187,17 +186,16 @@ export const importableCourtCases: ImportableCourtCase[] = [
     city: "Hyderabad",
     description:
       "Sessions case concerning charges under the Indian Penal Code, presently at the evidence recording stage before the Metropolitan Criminal Court, Hyderabad.",
-    hearings: [
+    historyOfCaseHearings: [
       {
-        id: "ih8",
-        date: "2026-09-05",
+        judge: "II Metropolitan Sessions Judge, Hyderabad",
+        businessOnDate: "2025-09-14",
+        hearingDate: "2026-09-05",
         time: "11:30 AM",
-        courtOrVenue: "Metropolitan Criminal Court, Hyderabad",
-        judges: ["II Metropolitan Sessions Judge, Hyderabad"],
-        hearingType: "Criminal-dailylist",
-        createdAt: "2026-08-01",
+        purposeOfListing: "Criminal-dailylist",
       },
     ],
+    firDetails: { caseNumber: "612", policeStation: "Cyberabad Police Station", year: "2025" },
   },
   {
     id: "ec_5",
@@ -219,15 +217,13 @@ export const importableCourtCases: ImportableCourtCase[] = [
     city: "Visakhapatnam",
     description:
       "Original suit for declaration of title and permanent injunction over ancestral property, pending before the District Court, Visakhapatnam.",
-    hearings: [
+    historyOfCaseHearings: [
       {
-        id: "ih9",
-        date: "2026-09-10",
+        judge: "III Additional District Judge, Visakhapatnam",
+        businessOnDate: "2025-11-05",
+        hearingDate: "2026-09-10",
         time: "10:15 AM",
-        courtOrVenue: "District Court, Visakhapatnam",
-        judges: ["III Additional District Judge, Visakhapatnam"],
-        hearingType: "Civil-dailylist",
-        createdAt: "2026-08-05",
+        purposeOfListing: "Civil-dailylist",
       },
     ],
   },
@@ -251,15 +247,13 @@ export const importableCourtCases: ImportableCourtCase[] = [
     city: "Hyderabad",
     description:
       "Petition seeking dissolution of marriage by mutual consent, currently referred for mediation before the Family Court, Hyderabad.",
-    hearings: [
+    historyOfCaseHearings: [
       {
-        id: "ih10",
-        date: "2026-09-08",
+        judge: "Principal Judge, Family Court, Hyderabad",
+        businessOnDate: "2026-03-18",
+        hearingDate: "2026-09-08",
         time: "9:45 AM",
-        courtOrVenue: "Family Court, Hyderabad",
-        judges: ["Principal Judge, Family Court, Hyderabad"],
-        hearingType: "Family-dailylist",
-        createdAt: "2026-08-10",
+        purposeOfListing: "Family-dailylist",
       },
     ],
   },
@@ -283,15 +277,13 @@ export const importableCourtCases: ImportableCourtCase[] = [
     city: "Hyderabad",
     description:
       "Complaint alleging unauthorized online financial fraud under the Information Technology Act, pending investigation report before the Chief Metropolitan Magistrate Court, Hyderabad.",
-    hearings: [
+    historyOfCaseHearings: [
       {
-        id: "ih11",
-        date: "2026-09-15",
+        judge: "Chief Metropolitan Magistrate, Hyderabad",
+        businessOnDate: "2026-04-22",
+        hearingDate: "2026-09-15",
         time: "11:00 AM",
-        courtOrVenue: "Chief Metropolitan Magistrate Court, Hyderabad",
-        judges: ["Chief Metropolitan Magistrate, Hyderabad"],
-        hearingType: "Criminal-dailylist",
-        createdAt: "2026-08-18",
+        purposeOfListing: "Criminal-dailylist",
       },
     ],
   },
@@ -315,15 +307,13 @@ export const importableCourtCases: ImportableCourtCase[] = [
     city: "Hyderabad",
     description:
       "Company petition seeking compounding of an offence under the Companies Act, admitted and pending before the National Company Law Tribunal, Hyderabad Bench.",
-    hearings: [
+    historyOfCaseHearings: [
       {
-        id: "ih12",
-        date: "2026-09-20",
+        judge: "Judicial Member, NCLT Hyderabad",
+        businessOnDate: "2026-05-11",
+        hearingDate: "2026-09-20",
         time: "2:30 PM",
-        courtOrVenue: "National Company Law Tribunal, Hyderabad Bench",
-        judges: ["Judicial Member, NCLT Hyderabad"],
-        hearingType: "NCLT-dailylist",
-        createdAt: "2026-08-22",
+        purposeOfListing: "NCLT-dailylist",
       },
     ],
   },
@@ -347,15 +337,13 @@ export const importableCourtCases: ImportableCourtCase[] = [
     city: "Visakhapatnam",
     description:
       "Industrial dispute concerning alleged wrongful termination of workers, presently at the cross-examination stage before the Labour Court, Visakhapatnam.",
-    hearings: [
+    historyOfCaseHearings: [
       {
-        id: "ih13",
-        date: "2026-09-12",
+        judge: "Presiding Officer, Labour Court, Visakhapatnam",
+        businessOnDate: "2025-10-02",
+        hearingDate: "2026-09-12",
         time: "10:00 AM",
-        courtOrVenue: "Labour Court, Visakhapatnam",
-        judges: ["Presiding Officer, Labour Court, Visakhapatnam"],
-        hearingType: "Labour-dailylist",
-        createdAt: "2026-08-14",
+        purposeOfListing: "Labour-dailylist",
       },
     ],
   },
@@ -379,15 +367,13 @@ export const importableCourtCases: ImportableCourtCase[] = [
     city: "Hyderabad",
     description:
       "Appeal against disallowance of business expenditure, pending before the Income Tax Appellate Tribunal, Hyderabad.",
-    hearings: [
+    historyOfCaseHearings: [
       {
-        id: "ih14",
-        date: "2026-09-25",
+        judge: "Accountant Member, ITAT Hyderabad, Judicial Member, ITAT Hyderabad",
+        businessOnDate: "2026-06-09",
+        hearingDate: "2026-09-25",
         time: "11:15 AM",
-        courtOrVenue: "Income Tax Appellate Tribunal (ITAT) Hyderabad",
-        judges: ["Accountant Member, ITAT Hyderabad", "Judicial Member, ITAT Hyderabad"],
-        hearingType: "ITAT-dailylist",
-        createdAt: "2026-08-28",
+        purposeOfListing: "ITAT-dailylist",
       },
     ],
   },
@@ -454,7 +440,11 @@ export function toLegalCase(
   lawyerId: string,
   lawyerName: string,
 ): LegalCase {
-  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
+  const time = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const nowIso = now.toISOString();
+  const lastEntry = source.historyOfCaseHearings[source.historyOfCaseHearings.length - 1];
   return {
     id: `CS-${Math.floor(10000 + Math.random() * 90000)}`,
     title: source.title,
@@ -468,25 +458,64 @@ export function toLegalCase(
     city: source.city,
     createdAt: today,
     updatedAt: today,
-    documents: [],
+    source: "ecourt",
     timeline: [
       {
         id: "t1",
         status: source.status,
         at: today,
+        time,
         note: `Imported from eCourts (${source.cnrNumber})`,
       },
     ],
-    hearings: source.hearings,
-    caseNumber: source.caseNumber,
-    cnrNumber: source.cnrNumber,
-    courtName: source.courtName,
-    stage: source.stage,
-    filingDate: source.filingDate,
-    petitioners: source.petitioners,
-    respondents: source.respondents,
-    petitionerLawyers: source.petitionerLawyers,
-    respondentLawyers: source.respondentLawyers,
-    source: "ecourt",
+    caseDetails: {
+      caseNumber: source.caseNumber,
+      cnr: source.cnrNumber,
+      caseType: source.caseType,
+      courtName: source.courtName,
+      purpose: source.stage,
+      filingDate: source.filingDate,
+      historyOfCaseHearings: source.historyOfCaseHearings,
+      interimOrders: source.interimOrders ?? [],
+      firDetails: source.firDetails,
+      judges: Array.from(new Set(source.historyOfCaseHearings.map((h) => h.judge))),
+      petitioners: source.petitioners,
+      petitionerAdvocates: source.petitionerLawyers,
+      respondents: source.respondents,
+      respondentAdvocates: source.respondentLawyers,
+      caseCategoryFacetPath: `${source.category} Law`,
+      hasOrders: (source.interimOrders?.length ?? 0) > 0,
+      hasJudgments: false,
+      orderCount: source.interimOrders?.length ?? 0,
+      interimOrderCount: source.interimOrders?.length ?? 0,
+      judgmentCount: 0,
+      hearingCount: source.historyOfCaseHearings.length,
+      iaCount: 0,
+      taggedMatters: [],
+      judgmentOrders: [],
+    },
+    entityInfo: {
+      cnr: source.cnrNumber,
+      nextDateOfHearing: lastEntry?.hearingDate ? `${lastEntry.hearingDate}T00:00:00Z` : undefined,
+      lastDateOfHearing: lastEntry?.businessOnDate
+        ? `${lastEntry.businessOnDate}T00:00:00Z`
+        : undefined,
+      dateCreated: nowIso,
+      dateModified: nowIso,
+    },
+    files: { files: [] },
+    descriptions: {
+      enumFields: [
+        "caseType",
+        "caseStatus",
+        "courtCode",
+        "judicialSection",
+        "caseCategory",
+        "benchType",
+        "stateCode",
+      ],
+      enumLookup: {},
+    },
+    caseAiAnalysis: null,
   };
 }

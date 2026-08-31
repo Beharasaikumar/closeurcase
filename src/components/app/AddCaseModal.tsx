@@ -51,11 +51,11 @@ export function AddCaseModal({
   const [title, setTitle] = useState(editingCase?.title ?? "");
   const [clientName, setClientName] = useState(editingCase?.citizenName ?? "");
   const [category, setCategory] = useState(editingCase?.category ?? categories[0]);
-  const [courtName, setCourtName] = useState(editingCase?.courtName ?? "");
-  const [caseNumber, setCaseNumber] = useState(editingCase?.caseNumber ?? "");
-  const [cnrNumber, setCnrNumber] = useState(editingCase?.cnrNumber ?? "");
-  const [filingDate, setFilingDate] = useState(editingCase?.filingDate ?? "");
-  const [stage, setStage] = useState(editingCase?.stage ?? "");
+  const [courtName, setCourtName] = useState(editingCase?.caseDetails.courtName ?? "");
+  const [caseNumber, setCaseNumber] = useState(editingCase?.caseDetails.caseNumber ?? "");
+  const [cnrNumber, setCnrNumber] = useState(editingCase?.caseDetails.cnr ?? "");
+  const [filingDate, setFilingDate] = useState(editingCase?.caseDetails.filingDate ?? "");
+  const [stage, setStage] = useState(editingCase?.caseDetails.purpose ?? "");
   const [status, setStatus] = useState<CaseStatus>(editingCase?.status ?? "Submitted");
   const [city, setCity] = useState(editingCase?.city ?? "");
 
@@ -76,7 +76,9 @@ export function AddCaseModal({
     e.preventDefault();
     if (!title.trim() || !clientName.trim()) return;
 
-    const today = new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+    const time = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
     const linkedCitizen = citizens.find(
       (c) => c.name.toLowerCase() === clientName.trim().toLowerCase(),
     );
@@ -88,11 +90,14 @@ export function AddCaseModal({
           citizenName: clientName.trim(),
           citizenId: linkedCitizen?.id ?? editingCase.citizenId,
           category,
-          courtName: courtName.trim() || undefined,
-          caseNumber: caseNumber.trim() || undefined,
-          cnrNumber: cnrNumber.trim() || undefined,
-          filingDate: filingDate || undefined,
-          stage: stage.trim() || undefined,
+          caseDetails: {
+            ...editingCase.caseDetails,
+            courtName: courtName.trim() || editingCase.caseDetails.courtName,
+            caseNumber: caseNumber.trim() || undefined,
+            cnr: cnrNumber.trim() || undefined,
+            filingDate: filingDate || undefined,
+            purpose: stage.trim() || undefined,
+          },
           status,
           city: city.trim() || editingCase.city,
           updatedAt: today,
@@ -110,15 +115,46 @@ export function AddCaseModal({
           city: city.trim() || "Not specified",
           createdAt: today,
           updatedAt: today,
-          documents: [],
-          timeline: [{ id: "t1", status, at: today, note: "Case added manually" }],
-          hearings: [],
-          courtName: courtName.trim() || undefined,
-          caseNumber: caseNumber.trim() || undefined,
-          cnrNumber: cnrNumber.trim() || undefined,
-          filingDate: filingDate || undefined,
-          stage: stage.trim() || undefined,
+          timeline: [{ id: "t1", status, at: today, time, note: "Case added manually" }],
           source: "manual",
+          caseDetails: {
+            courtName: courtName.trim() || "Not yet determined",
+            caseNumber: caseNumber.trim() || undefined,
+            cnr: cnrNumber.trim() || undefined,
+            filingDate: filingDate || undefined,
+            purpose: stage.trim() || undefined,
+            historyOfCaseHearings: [],
+            interimOrders: [],
+            judges: [],
+            petitioners: [],
+            petitionerAdvocates: [],
+            respondents: [],
+            respondentAdvocates: [],
+            hasOrders: false,
+            hasJudgments: false,
+            orderCount: 0,
+            interimOrderCount: 0,
+            judgmentCount: 0,
+            hearingCount: 0,
+            iaCount: 0,
+            taggedMatters: [],
+            judgmentOrders: [],
+          },
+          entityInfo: { dateCreated: now.toISOString(), dateModified: now.toISOString() },
+          files: { files: [] },
+          descriptions: {
+            enumFields: [
+              "caseType",
+              "caseStatus",
+              "courtCode",
+              "judicialSection",
+              "caseCategory",
+              "benchType",
+              "stateCode",
+            ],
+            enumLookup: {},
+          },
+          caseAiAnalysis: null,
         };
 
     addCase(legalCase);

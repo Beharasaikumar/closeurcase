@@ -47,11 +47,13 @@ export function CasesListView() {
   const bySource = tab === "Imported" ? importedCases : assignedCases;
 
   const clients = Array.from(new Set(bySource.map((c) => c.citizenName))).sort();
-  const respondents = Array.from(new Set(bySource.flatMap((c) => c.respondents ?? []))).sort();
+  const respondents = Array.from(
+    new Set(bySource.flatMap((c) => c.caseDetails.respondents)),
+  ).sort();
 
   const respondentCounts = new Map<string, number>();
   bySource.forEach((c) =>
-    (c.respondents ?? []).forEach((resp) =>
+    c.caseDetails.respondents.forEach((resp) =>
       respondentCounts.set(resp, (respondentCounts.get(resp) ?? 0) + 1),
     ),
   );
@@ -69,13 +71,13 @@ export function CasesListView() {
 
   const filtered = bySource.filter((r) => {
     const matchesSearch =
-      `${r.id} ${r.title} ${r.citizenName} ${r.city} ${r.caseNumber ?? ""} ${r.courtName ?? ""}`
+      `${r.id} ${r.title} ${r.citizenName} ${r.city} ${r.caseDetails.caseNumber ?? ""} ${r.caseDetails.courtName ?? ""}`
         .toLowerCase()
         .includes(search.toLowerCase());
     const matchesClient = clientFilter === "All" || r.citizenName === clientFilter;
     const matchesRespondent =
       respondentFilters.length === 0 ||
-      (r.respondents ?? []).some((resp) => respondentFilters.includes(resp));
+      r.caseDetails.respondents.some((resp) => respondentFilters.includes(resp));
     return matchesSearch && matchesClient && matchesRespondent;
   });
 
@@ -111,7 +113,7 @@ export function CasesListView() {
               onClick={() => setImportOpen(true)}
               className="order-1 w-full sm:order-2 sm:ml-auto sm:w-auto"
             >
-              Import/Search Case
+              Import for eCourts
             </Button>
 
             {/* Client Name filter */}

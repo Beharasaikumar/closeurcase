@@ -6,10 +6,10 @@ import { ChatButton } from "@/components/app/CaseChat";
 
 function nextHearingDate(caseItem: LegalCase): string | undefined {
   const today = new Date().toISOString().slice(0, 10);
-  const upcoming = caseItem.hearings
-    .filter((h) => h.date >= today)
-    .sort((a, b) => a.date.localeCompare(b.date));
-  return upcoming[0]?.date;
+  const upcoming = caseItem.caseDetails.historyOfCaseHearings
+    .filter((h) => h.hearingDate && h.hearingDate >= today)
+    .sort((a, b) => (a.hearingDate ?? "").localeCompare(b.hearingDate ?? ""));
+  return upcoming[0]?.hearingDate;
 }
 
 function formatDate(iso?: string): string | undefined {
@@ -23,7 +23,7 @@ function formatDate(iso?: string): string | undefined {
 
 export function CaseListCard({ caseItem }: { caseItem: LegalCase }) {
   const hearing = formatDate(nextHearingDate(caseItem));
-  const caseRef = caseItem.caseNumber;
+  const caseRef = caseItem.caseDetails.caseNumber;
   const isImported = caseItem.source === "ecourt";
 
   return (
@@ -41,12 +41,12 @@ export function CaseListCard({ caseItem }: { caseItem: LegalCase }) {
                 <span className="font-mono font-semibold text-foreground/80">{caseRef}</span>
               </>
             )}
-            {caseItem.courtName && (
+            {caseItem.caseDetails.courtName && (
               <>
                 <span aria-hidden>•</span>
                 <span className="inline-flex items-center gap-1">
                   <Landmark className="h-3 w-3" />
-                  {caseItem.courtName}
+                  {caseItem.caseDetails.courtName}
                 </span>
               </>
             )}
@@ -56,10 +56,10 @@ export function CaseListCard({ caseItem }: { caseItem: LegalCase }) {
               <User className="h-3 w-3" />
               Client: {caseItem.citizenName}
             </span>
-            {caseItem.cnrNumber && (
+            {caseItem.caseDetails.cnr && (
               <span className="inline-flex items-center gap-1">
                 <Hash className="h-3 w-3" />
-                CNR: <span className="font-mono">{caseItem.cnrNumber}</span>
+                CNR: <span className="font-mono">{caseItem.caseDetails.cnr}</span>
               </span>
             )}
           </div>

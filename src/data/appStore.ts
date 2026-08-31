@@ -1,11 +1,10 @@
 import type {
-  AIReport,
   AppNotification,
   CaseDocument,
   CaseNote,
   CaseStatus,
   Citizen,
-  Hearing,
+  HistoryOfHearing,
   KnowledgeItem,
   Lawyer,
   LawyerDocument,
@@ -29,7 +28,7 @@ const NOTIFICATIONS_KEY = "cuc_notifications_v2";
 const KB_KEY = "cuc_kb_v3";
 const LAWYER_DOCS_KEY = "cuc_lawyer_docs_v1";
 const PROFILE_PHOTOS_KEY = "cuc_profile_photos_v1";
-const CASES_KEY = "cuc_cases_v7";
+const CASES_KEY = "cuc_cases_v10";
 const NOTES_KEY = "cuc_case_notes_v1";
 const SUBSCRIPTIONS_KEY = "cuc_subscriptions_v1";
 
@@ -91,9 +90,9 @@ export function getCases(): LegalCase[] {
   if (missingSeedEmergency.length > 0) {
     const merged = [...missingSeedEmergency, ...cases];
     save(CASES_KEY, merged);
-    return merged.map((c) => (c.hearings ? c : { ...c, hearings: [] }));
+    return merged;
   }
-  return cases.map((c) => (c.hearings ? c : { ...c, hearings: [] }));
+  return cases;
 }
 
 export function saveCases(cases: LegalCase[]) {
@@ -208,7 +207,7 @@ export function addCaseAttachments(caseId: string, docs: CaseDocument[]) {
   const current = getCases();
   const today = new Date().toISOString().slice(0, 10);
   const updated = current.map((c) =>
-    c.id === caseId ? { ...c, documents: [...c.documents, ...docs], updatedAt: today } : c,
+    c.id === caseId ? { ...c, files: { files: [...c.files.files, ...docs] }, updatedAt: today } : c,
   );
   saveCases(updated);
 
@@ -221,14 +220,19 @@ export function addCaseAttachments(caseId: string, docs: CaseDocument[]) {
   }
 }
 
-/* ── HEARINGS (per-case) ─────────────────────────────────────────────────── */
-export function addHearing(caseId: string, hearing: Omit<Hearing, "id" | "createdAt">) {
+/* ── COURT HISTORY (per-case, caseDetails.historyOfCaseHearings) ─────────── */
+export function addCourtHearing(caseId: string, hearing: HistoryOfHearing) {
   const current = getCases();
-  const today = new Date().toISOString().slice(0, 10);
-  const newHearing: Hearing = { ...hearing, id: `h_${Date.now()}`, createdAt: today };
-
   const updated = current.map((c) =>
-    c.id === caseId ? { ...c, hearings: [...c.hearings, newHearing] } : c,
+    c.id === caseId
+      ? {
+          ...c,
+          caseDetails: {
+            ...c.caseDetails,
+            historyOfCaseHearings: [...c.caseDetails.historyOfCaseHearings, hearing],
+          },
+        }
+      : c,
   );
   saveCases(updated);
 
@@ -236,22 +240,27 @@ export function addHearing(caseId: string, hearing: Omit<Hearing, "id" | "create
   if (found) {
     addNotification({
       title: "Hearing Scheduled",
-      body: `A hearing for case ${caseId} (${found.title}) has been scheduled on ${hearing.date}${hearing.time ? ` at ${hearing.time}` : ""}.`,
+      body: `A hearing for case ${caseId} (${found.title}) has been scheduled on ${hearing.hearingDate ?? hearing.businessOnDate}.`,
     });
   }
 }
 
-export function updateHearing(
+export function updateCourtHearing(
   caseId: string,
-  hearingId: string,
-  patch: Partial<Omit<Hearing, "id" | "createdAt">>,
+  index: number,
+  patch: Partial<HistoryOfHearing>,
 ) {
   const current = getCases();
   const updated = current.map((c) => {
     if (c.id !== caseId) return c;
     return {
       ...c,
-      hearings: c.hearings.map((h) => (h.id === hearingId ? { ...h, ...patch } : h)),
+      caseDetails: {
+        ...c.caseDetails,
+        historyOfCaseHearings: c.caseDetails.historyOfCaseHearings.map((h, i) =>
+          i === index ? { ...h, ...patch } : h,
+        ),
+      },
     };
   });
   saveCases(updated);
@@ -265,10 +274,20 @@ export function updateHearing(
   }
 }
 
-export function deleteHearing(caseId: string, hearingId: string) {
+export function deleteCourtHearing(caseId: string, index: number) {
   const current = getCases();
   const updated = current.map((c) =>
-    c.id === caseId ? { ...c, hearings: c.hearings.filter((h) => h.id !== hearingId) } : c,
+    c.id === caseId
+      ? {
+          ...c,
+          caseDetails: {
+            ...c.caseDetails,
+            historyOfCaseHearings: c.caseDetails.historyOfCaseHearings.filter(
+              (_, i) => i !== index,
+            ),
+          },
+        }
+      : c,
   );
   saveCases(updated);
 }

@@ -112,24 +112,9 @@ export interface TimelineEvent {
   id: string;
   status: CaseStatus;
   at: string;
-  /** Time of day the status changed, e.g. "3:45 PM" — kept separate from `at` (a bare date) like `Hearing.time`. */
+  /** Time of day the status changed, e.g. "3:45 PM" — kept separate from `at` (a bare date). */
   time?: string;
   note?: string;
-}
-
-export interface Hearing {
-  id: string;
-  date: string;
-  time?: string;
-  courtOrVenue?: string;
-  note?: string;
-  createdAt: string;
-  judges?: string[];
-  courtRoom?: string;
-  itemNo?: string;
-  hearingType?: string;
-  businessDetails?: string;
-  Lawyer?: string;
 }
 
 export interface CaseNote {
@@ -138,37 +123,6 @@ export interface CaseNote {
   text: string;
   author: string;
   createdAt: string;
-}
-
-export interface LegalCase {
-  id: string;
-  title: string;
-  description: string;
-  category: LegalCategory;
-  citizenId?: string;
-  citizenName: string;
-  lawyerId?: string;
-  lawyerName?: string;
-  status: CaseStatus;
-  city: string;
-  createdAt: string;
-  updatedAt: string;
-  documents: CaseDocument[];
-  timeline: TimelineEvent[];
-  hearings: Hearing[];
-  caseNumber?: string;
-  cnrNumber?: string;
-  courtName?: string;
-  stage?: string;
-  filingDate?: string;
-  fileNo?: string;
-  petitioners?: string[];
-  respondents?: string[];
-  petitionerLawyers?: string[];
-  respondentLawyers?: string[];
-  source?: "manual" | "ecourt";
-  isEmergency?: boolean;
-  emergencyReason?: string;
 }
 
 export interface AIReport {
@@ -180,6 +134,157 @@ export interface AIReport {
   counterArguments: string[];
   recommendations: string[];
   confidenceScore: number;
+}
+
+/** One row of an eCourts case's "Case History" table — mirrors
+ * `case_structure.json`'s `caseDetails.historyOfCaseHearings[]` exactly. */
+export interface HistoryOfHearing {
+  judge: string;
+  /** ISO date — the previous hearing's date (or the filing date for the
+   * first entry). */
+  businessOnDate: string;
+  /** ISO date — omitted on the final/disposed entry, which has no future
+   * hearing. */
+  hearingDate?: string;
+  /** Time of day of the hearing, e.g. "11:00 AM" — kept separate from
+   * `hearingDate` (a bare date), like `TimelineEvent.time`. Not part of
+   * case_structure.json's own shape, but useful when this app schedules
+   * the hearing itself rather than importing a historical record. */
+  time?: string;
+  purposeOfListing: string;
+}
+
+export interface InterimOrder {
+  orderDate: string;
+  description: string;
+  orderUrl?: string;
+}
+
+export interface JudgmentOrder {
+  orderDate: string;
+  orderType: string;
+  orderUrl?: string;
+}
+
+export interface FirDetails {
+  caseNumber: string;
+  policeStation: string;
+  year: string;
+}
+
+export interface TaggedMatter {
+  type: string;
+  caseNumber: string;
+}
+
+/** The eCourts-shaped court record for a case — mirrors
+ * `case_structure.json`'s `caseDetails` object. Nested (rather than flat on
+ * `LegalCase`) so the shape tracks the source JSON exactly. */
+export interface CaseDetails {
+  caseNumber?: string;
+  district?: string;
+  state?: string;
+  stateCode?: string;
+  districtCode?: string;
+  courtCode?: string;
+  caseTypeSub?: string;
+  courtName: string;
+  courtNo?: number;
+  firDetails?: FirDetails;
+  historyOfCaseHearings: HistoryOfHearing[];
+  purpose?: string;
+  disposalType?: string;
+  disposalTypeRaw?: string;
+  contestedStatus?: "CONTESTED" | "UNCONTESTED";
+  lastHearingDate?: string;
+  interimOrders: InterimOrder[];
+  /** CNR (Case Number Record) — the unique eCourts identifier. */
+  cnr?: string;
+  cnrCourtCode?: string;
+  cnrCaseNumber?: string;
+  cnrYear?: string;
+  caseType?: string;
+  caseTypeRaw?: string;
+  /** eCourts' own case-lifecycle status (e.g. "DISPOSED") — distinct from
+   * `LegalCase.status`, this app's own lawyer-workflow pipeline status. */
+  caseStatus?: string;
+  filingNumber?: string;
+  filingDate?: string;
+  registrationNumber?: string;
+  registrationDate?: string;
+  firstHearingDate?: string;
+  nextHearingDate?: string;
+  decisionDate?: string;
+  caseDurationDays?: number;
+  filingToFirstHearingDays?: number;
+  judges: string[];
+  petitioners: string[];
+  petitionerAdvocates: string[];
+  respondents: string[];
+  respondentAdvocates: string[];
+  /** Slash-delimited taxonomy path, e.g. "Criminal Law/Other Criminal Matters". */
+  caseCategoryFacetPath?: string;
+  hasOrders: boolean;
+  hasJudgments: boolean;
+  orderCount: number;
+  interimOrderCount: number;
+  judgmentCount: number;
+  hearingCount: number;
+  iaCount: number;
+  taggedMatters: TaggedMatter[];
+  judgmentOrders: JudgmentOrder[];
+}
+
+/** Compact CNR/date summary — mirrors `case_structure.json`'s `entityInfo`. */
+export interface EntityInfo {
+  cnr?: string;
+  /** ISO datetime. */
+  nextDateOfHearing?: string;
+  /** ISO datetime. */
+  lastDateOfHearing?: string;
+  /** ISO datetime. */
+  dateCreated: string;
+  /** ISO datetime. */
+  dateModified: string;
+}
+
+/** Enum-code lookups — mirrors `case_structure.json`'s `descriptions`. */
+export interface CaseDescriptions {
+  enumFields: string[];
+  enumLookup: Record<string, Record<string, string>>;
+}
+
+export interface LegalCase {
+  // Platform / CloseUrCase workflow fields — no case_structure.json
+  // equivalent, so these stay flat rather than nesting.
+  id: string;
+  /** "X vs Y" display title — a platform concept, not part of eCourts data. */
+  title: string;
+  /** Citizen's own free-text case description. */
+  description: string;
+  category: LegalCategory;
+  citizenId?: string;
+  citizenName: string;
+  lawyerId?: string;
+  lawyerName?: string;
+  /** This app's own lawyer-workflow pipeline status. */
+  status: CaseStatus;
+  city: string;
+  createdAt: string;
+  updatedAt: string;
+  /** Platform status-change log (Pending by Lawyer → Accepted → …). */
+  timeline: TimelineEvent[];
+  fileNo?: string;
+  source?: "manual" | "ecourt";
+  isEmergency?: boolean;
+  emergencyReason?: string;
+
+  // eCourts-shaped nested data — mirrors case_structure.json exactly.
+  caseDetails: CaseDetails;
+  entityInfo: EntityInfo;
+  files: { files: CaseDocument[] };
+  descriptions: CaseDescriptions;
+  caseAiAnalysis: AIReport | null;
 }
 
 export interface AppNotification {

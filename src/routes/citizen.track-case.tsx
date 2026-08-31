@@ -171,7 +171,7 @@ export function TrackCase() {
               Files Attached
             </span>
             <span className="font-bold text-foreground mt-0.5 block truncate">
-              {c.documents.length} document(s)
+              {c.files.files.length} document(s)
             </span>
           </div>
         </div>

@@ -28,7 +28,10 @@ function CitizenDashboard() {
 
   const today = new Date().toISOString().slice(0, 10);
   const upcomingHearingsCount = allCases.reduce(
-    (count, c) => count + c.hearings.filter((h) => h.date >= today).length,
+    (count, c) =>
+      count +
+      c.caseDetails.historyOfCaseHearings.filter((h) => h.hearingDate && h.hearingDate >= today)
+        .length,
     0,
   );
 

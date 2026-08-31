@@ -110,7 +110,9 @@ function buildSummaryParagraphs(c: LegalCase): string[] {
   const LawyerLine = c.lawyerName
     ? `${c.citizenName} is being represented by Lawyer ${c.lawyerName}`
     : `${c.citizenName} has not yet been assigned an Lawyer on the platform`;
-  const respondentLine = c.respondents?.length ? ` against ${c.respondents.join(", ")}` : "";
+  const respondentLine = c.caseDetails.respondents.length
+    ? ` against ${c.caseDetails.respondents.join(", ")}`
+    : "";
   paragraphs.push(
     `This is a ${c.category} Law matter titled "${c.title}", filed in ${c.city} on ${formatDateShort(c.createdAt)} and currently at the "${c.status}" stage. ${LawyerLine}${respondentLine}.`,
   );
@@ -140,10 +142,11 @@ function buildSummaryParagraphs(c: LegalCase): string[] {
 
   // 4. Hearings, from the case's own hearing calendar
   const today = new Date().toISOString().slice(0, 10);
-  const upcomingHearings = c.hearings
-    .filter((h) => h.date >= today)
-    .sort((a, b) => a.date.localeCompare(b.date));
-  const pastHearingsCount = c.hearings.length - upcomingHearings.length;
+  const allHearings = c.caseDetails.historyOfCaseHearings;
+  const upcomingHearings = allHearings
+    .filter((h) => h.hearingDate && h.hearingDate >= today)
+    .sort((a, b) => (a.hearingDate ?? "").localeCompare(b.hearingDate ?? ""));
+  const pastHearingsCount = allHearings.length - upcomingHearings.length;
   if (upcomingHearings.length > 0) {
     const next = upcomingHearings[0];
     const priorClause =
@@ -151,7 +154,7 @@ function buildSummaryParagraphs(c: LegalCase): string[] {
         ? `, following ${pastHearingsCount} prior hearing${pastHearingsCount > 1 ? "s" : ""}`
         : "";
     paragraphs.push(
-      `The next hearing is scheduled for ${formatDateShort(next.date)}${next.time ? ` at ${next.time}` : ""}${next.courtOrVenue ? ` before ${next.courtOrVenue}` : ""}${priorClause}.`,
+      `The next hearing is scheduled for ${formatDateShort(next.hearingDate ?? next.businessOnDate)} before ${c.caseDetails.courtName}${priorClause}.`,
     );
   } else if (pastHearingsCount > 0) {
     paragraphs.push(

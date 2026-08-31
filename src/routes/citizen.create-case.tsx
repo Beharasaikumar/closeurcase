@@ -26,7 +26,6 @@ import {
   mapPracticeAreaToCategory,
 } from "@/components/app/lawyerPracticeAreas";
 import { addCase, addSubscription, getLawyers, generateCloseUrCaseId } from "@/data/appStore";
-import { addSubmittedCase } from "@/data/caseStore";
 import { SUBSCRIPTION_PLANS } from "@/data/subscriptionPlans";
 import { useSpeechToText } from "@/features/citizen/useSpeechToText";
 import { distanceToCity } from "@/lib/geo";
@@ -271,7 +270,9 @@ export function FindLawyerWizard() {
     setTimeout(async () => {
       const lawyer = assignMode === "browse" ? selectedLawyer : undefined;
       const id = generateCloseUrCaseId();
-      const today = new Date().toISOString().split("T")[0];
+      const now = new Date();
+      const today = now.toISOString().split("T")[0];
+      const time = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
       const documentEntries: CaseDocument[] = await Promise.all([
         ...images.map((f, i) => readEntry(f, `d_img_${i}`, today)),
@@ -300,6 +301,7 @@ export function FindLawyerWizard() {
               id: "t1",
               status: "Closed" as CaseStatus,
               at: today,
+              time,
               note: `Existing case (CNR ${cnr.trim()}) linked as already closed`,
             },
           ]
@@ -308,6 +310,7 @@ export function FindLawyerWizard() {
               id: "t1",
               status: "Submitted" as CaseStatus,
               at: today,
+              time,
               note: "Case filed via Find a Lawyer",
             },
             lawyer
@@ -315,12 +318,14 @@ export function FindLawyerWizard() {
                   id: "t2",
                   status: "Assigned" as CaseStatus,
                   at: today,
+                  time,
                   note: `Assigned to ${lawyer.name}`,
                 }
               : {
                   id: "t2",
                   status: "Submitted" as CaseStatus,
                   at: today,
+                  time,
                   note: "Auto-assign requested — pending admin allocation",
                 },
           ];
@@ -338,15 +343,46 @@ export function FindLawyerWizard() {
         city: CITIZEN_CITY,
         createdAt: today,
         updatedAt: today,
-        documents: documentEntries,
         timeline,
-        hearings: [],
         source: "manual",
-        ...(path === "existing" ? { cnrNumber: cnr.trim() } : {}),
+        caseDetails: {
+          courtName: "Not yet determined",
+          cnr: path === "existing" ? cnr.trim() : undefined,
+          historyOfCaseHearings: [],
+          interimOrders: [],
+          judges: [],
+          petitioners: [],
+          petitionerAdvocates: [],
+          respondents: [],
+          respondentAdvocates: [],
+          hasOrders: false,
+          hasJudgments: false,
+          orderCount: 0,
+          interimOrderCount: 0,
+          judgmentCount: 0,
+          hearingCount: 0,
+          iaCount: 0,
+          taggedMatters: [],
+          judgmentOrders: [],
+        },
+        entityInfo: { dateCreated: now.toISOString(), dateModified: now.toISOString() },
+        files: { files: documentEntries },
+        descriptions: {
+          enumFields: [
+            "caseType",
+            "caseStatus",
+            "courtCode",
+            "judicialSection",
+            "caseCategory",
+            "benchType",
+            "stateCode",
+          ],
+          enumLookup: {},
+        },
+        caseAiAnalysis: null,
       };
 
       addCase(newCase);
-      addSubmittedCase(newCase);
       if (assignMode === "admin" && selectedPlan) {
         addSubscription({
           citizenId: CITIZEN_ID,

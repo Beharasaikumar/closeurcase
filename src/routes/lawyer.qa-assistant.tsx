@@ -34,16 +34,17 @@ function answerFromCase(question: string, c: LegalCase): string {
   }
   if (/hearing|court date|next date/.test(q)) {
     const today = new Date().toISOString().slice(0, 10);
-    const upcoming = c.hearings
-      .filter((h) => h.date >= today)
-      .sort((a, b) => a.date.localeCompare(b.date));
+    const upcoming = c.caseDetails.historyOfCaseHearings
+      .filter((h) => h.hearingDate && h.hearingDate >= today)
+      .sort((a, b) => (a.hearingDate ?? "").localeCompare(b.hearingDate ?? ""));
     if (upcoming.length === 0) return "There are no upcoming hearings scheduled for this case.";
     const next = upcoming[0];
-    return `The next hearing is on ${next.date}${next.time ? ` at ${next.time}` : ""}${next.courtOrVenue ? ` (${next.courtOrVenue})` : ""}.`;
+    return `The next hearing is on ${next.hearingDate} before ${c.caseDetails.courtName}.`;
   }
   if (/document|file|upload|evidence/.test(q)) {
-    return c.documents.length
-      ? `There are ${c.documents.length} document(s) on file: ${c.documents.map((d) => d.name).join(", ")}.`
+    const docs = c.files.files;
+    return docs.length
+      ? `There are ${docs.length} document(s) on file: ${docs.map((d) => d.name).join(", ")}.`
       : "No documents have been uploaded for this case yet.";
   }
   if (/categor|type of case|law\b/.test(q)) {

@@ -1,4 +1,4 @@
-import type { LegalCase } from "@/types";
+import type { LegalCase, HistoryOfHearing } from "@/types";
 
 /**
  * Shared constants/helpers used by both CaseDocketRegister (search/filter
@@ -271,37 +271,38 @@ export function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export interface DocketHearing {
+/** One row of the court roadmap (Part 2 of the case journey — Lawyer to
+ * Court), shaped exactly like `case_structure.json`'s
+ * `caseDetails.historyOfCaseHearings[]` — Judge / Business on Date / Hearing
+ * Date / Purpose of Listing — plus a synthetic `id` for React list keys. */
+export interface CourtHistoryRow extends HistoryOfHearing {
   id: string;
-  date: string;
-  place: string;
-  purpose: string;
-  natureOfSuit: string;
-  adv: string;
 }
 
-export function getJourney(c: LegalCase): DocketHearing[] {
-  const list: DocketHearing[] = (c.hearings || []).map((h) => ({
-    id: h.id,
-    date: h.date,
-    place: h.courtOrVenue || "",
-    purpose: h.note || "",
-    natureOfSuit: h.hearingType || "",
-    adv: h.Lawyer || (h.judges ? h.judges.join(", ") : ""),
+/** Part 2 of the case journey (Lawyer to Court): the case's own eCourts-shaped
+ * hearing history, sorted ascending by hearing (falling back to business)
+ * date. */
+export function getCourtHistory(c: LegalCase): CourtHistoryRow[] {
+  const list: CourtHistoryRow[] = c.caseDetails.historyOfCaseHearings.map((h, i) => ({
+    ...h,
+    id: `h_${i}`,
   }));
-  return list.sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"));
+  return list.sort((a, b) =>
+    (a.hearingDate ?? a.businessOnDate).localeCompare(b.hearingDate ?? b.businessOnDate),
+  );
 }
 
-export function getNextEntry(c: LegalCase): DocketHearing | null {
-  const j = getJourney(c);
+export function getNextEntry(c: LegalCase): CourtHistoryRow | null {
+  const j = getCourtHistory(c);
   if (j.length === 0) return null;
   const today = todayISO();
-  return j.find((e) => e.date && e.date >= today) || j[j.length - 1];
+  return j.find((e) => e.hearingDate && e.hearingDate >= today) || j[j.length - 1];
 }
 
 /** Sort key for "soonest hearing first" ordering — cases with no hearing sort last. */
 export function nextHearingSortKey(c: LegalCase) {
-  return getNextEntry(c)?.date || "9999-99-99";
+  const entry = getNextEntry(c);
+  return entry?.hearingDate ?? entry?.businessOnDate ?? "9999-99-99";
 }
 
 function getStatusStyle(colorKey: StatusMetaItem["color"]) {

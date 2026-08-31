@@ -31,11 +31,11 @@ export {
   COURTS_FLAT,
   fmtDate,
   todayISO,
-  getJourney,
+  getCourtHistory,
   getNextEntry,
   StatusBadge,
   type StatusMetaItem,
-  type DocketHearing,
+  type CourtHistoryRow,
 } from "@/components/app/caseDocketShared";
 
 const NATIVE_DATE_INPUT_CLS =
@@ -86,12 +86,14 @@ export function CaseDocketRegister({ role }: { role: "lawyer" | "citizen" }) {
       }
 
       if (searchTerm) {
-        const hay = `${c.title} ${c.caseNumber ?? ""} ${c.cnrNumber ?? ""}`.toLowerCase();
+        const hay =
+          `${c.title} ${c.caseDetails.caseNumber ?? ""} ${c.caseDetails.cnr ?? ""}`.toLowerCase();
         if (!hay.includes(searchTerm.toLowerCase())) return false;
       }
 
       if (hearingFrom || hearingTo) {
-        const nextDate = getNextEntry(c)?.date;
+        const entry = getNextEntry(c);
+        const nextDate = entry?.hearingDate ?? entry?.businessOnDate;
         if (!nextDate) return false;
         if (hearingFrom && nextDate < hearingFrom) return false;
         if (hearingTo && nextDate > hearingTo) return false;

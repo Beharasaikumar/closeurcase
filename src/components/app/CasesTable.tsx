@@ -24,7 +24,7 @@ import {
 } from "@/data/appStore";
 import { MAX_ATTACHMENT_BYTES, formatFileSize, readFileAsDataUrl } from "@/lib/files";
 import { searchCourtCases, type ImportableCourtCase } from "@/data/courtCasesFixture";
-import type { LegalCase, Hearing, CaseStatus, CaseDocument } from "@/types";
+import type { LegalCase, CaseStatus, CaseDocument } from "@/types";
 import { ChatButton } from "@/components/app/CaseChat";
 import {
   STATUS_LIST,
@@ -35,10 +35,10 @@ import {
   StatusBadge,
   fmtDate,
   todayISO,
-  getJourney,
+  getCourtHistory,
   getNextEntry,
   getStageHistory,
-  type DocketHearing,
+  type CourtHistoryRow,
 } from "@/components/app/caseDocketShared";
 
 function docLooksLikeImage(doc: CaseDocument): boolean {
@@ -56,7 +56,7 @@ function docDisplayTitle(doc: CaseDocument): string {
  * through the wizard's Existing Case path, or imported from eCourts) —
  * everything else was freshly filed through CloseUrCase itself. */
 export function caseTypeOf(c: LegalCase): "New" | "Existing" {
-  return c.cnrNumber ? "Existing" : "New";
+  return c.caseDetails.cnr ? "Existing" : "New";
 }
 
 function CaseTypeBadge({ caseItem }: { caseItem: LegalCase }) {
@@ -98,7 +98,7 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
   const [caseNo, setCaseNo] = useState("");
   const [cnr, setCnr] = useState("");
   const [caseStatus, setCaseStatus] = useState("Submitted");
-  const [journey, setJourney] = useState<DocketHearing[]>([]);
+  const [journey, setJourney] = useState<CourtHistoryRow[]>([]);
   const [cnrVerifyStatus, setCnrVerifyStatus] = useState<"idle" | "found" | "not-found">("idle");
   const [cnrVerifiedMatch, setCnrVerifiedMatch] = useState<ImportableCourtCase | null>(null);
 
@@ -113,10 +113,10 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
   function handleOpenModal(c: LegalCase) {
     setEditingCase(c);
     setPartyNames(c.title || "");
-    setCaseNo(c.caseNumber || "");
-    setCnr(c.cnrNumber || "");
+    setCaseNo(c.caseDetails.caseNumber || "");
+    setCnr(c.caseDetails.cnr || "");
     setCaseStatus(c.status || "Submitted");
-    setJourney(getJourney(c));
+    setJourney(getCourtHistory(c));
     setCnrVerifyStatus("idle");
     setCnrVerifiedMatch(null);
 
@@ -145,13 +145,9 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
     setPartyNames(cnrVerifiedMatch.title);
     setCaseNo(cnrVerifiedMatch.caseNumber);
     setJourney(
-      (cnrVerifiedMatch.hearings || []).map((h) => ({
-        id: h.id,
-        date: h.date,
-        place: h.courtOrVenue || "",
-        purpose: h.note || "",
-        natureOfSuit: h.hearingType || "",
-        adv: h.Lawyer || (h.judges ? h.judges.join(", ") : ""),
+      (cnrVerifiedMatch.historyOfCaseHearings || []).map((h, i) => ({
+        ...h,
+        id: `h_${i}`,
       })),
     );
   }
@@ -173,15 +169,7 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
     }
 
     const today = todayISO();
-    const hearingsList: Hearing[] = journey.map((j) => ({
-      id: j.id,
-      date: j.date,
-      courtOrVenue: j.place,
-      note: j.purpose,
-      hearingType: j.natureOfSuit,
-      Lawyer: j.adv,
-      createdAt: today,
-    }));
+    const historyOfCaseHearings = journey.map(({ id: _id, ...h }) => h);
 
     if (editingCase) {
       const statusChanged = editingCase.status !== caseStatus;
@@ -202,10 +190,14 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
         return {
           ...c,
           title: partyNames.trim(),
-          caseNumber: caseNo.trim(),
-          cnrNumber: cnr.trim(),
+          caseDetails: {
+            ...c.caseDetails,
+            caseNumber: caseNo.trim(),
+            cnr: cnr.trim(),
+            historyOfCaseHearings,
+            hearingCount: historyOfCaseHearings.length,
+          },
           status: caseStatus as CaseStatus,
-          hearings: hearingsList,
           timeline,
           updatedAt: today,
         };
@@ -268,8 +260,15 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
 
   const today = todayISO();
   const sortedModalJourney = [...journey].sort((a, b) =>
-    (a.date || "9999").localeCompare(b.date || "9999"),
+    (a.hearingDate ?? a.businessOnDate ?? "9999").localeCompare(
+      b.hearingDate ?? b.businessOnDate ?? "9999",
+    ),
   );
+  // Part 2 of the case journey (Lawyer to Court) shaped like eCourts' own
+  // "Case History" table — Judge / Business on Date / Hearing Date / Purpose
+  // of Listing — per case_structure.json's historyOfCaseHearings. Each entry
+  // already carries its own `businessOnDate`, stored or set on CNR import.
+  const courtHistoryRows = sortedModalJourney;
   const attachmentsCase = attachmentsCaseId
     ? allCases.find((c) => c.id === attachmentsCaseId)
     : null;
@@ -309,14 +308,14 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
                           {c.id}
                         </div>
                         <div className="font-mono text-xs text-muted-foreground mt-0.5">
-                         CASE NO - {c.caseNumber || "N/A"}
+                          CASE NO - {c.caseDetails.caseNumber || "N/A"}
                         </div>
                         <div
                           className={`font-mono text-[11.5px] mt-0.5 ${
-                            c.cnrNumber ? "text-muted-foreground" : "text-muted-foreground/50"
+                            c.caseDetails.cnr ? "text-muted-foreground" : "text-muted-foreground/50"
                           }`}
                         >
-                         CNR No - {c.cnrNumber || "N/A"}
+                          CNR No - {c.caseDetails.cnr || "N/A"}
                         </div>
                       </td>
 
@@ -326,17 +325,17 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
 
                       <td className="px-4 py-3.5 align-top">
                         <div className="font-medium text-foreground">
-                          {entry ? fmtDate(entry.date) : "—"}
+                          {entry ? fmtDate(entry.hearingDate ?? entry.businessOnDate) : "—"}
                         </div>
-                        {entry && entry.purpose && (
+                        {entry && entry.purposeOfListing && (
                           <div className="text-xs text-muted-foreground mt-0.5">
-                            {entry.purpose}
+                            {entry.purposeOfListing}
                           </div>
                         )}
                       </td>
 
                       <td className="px-4 py-3.5 align-top text-foreground">
-                        {entry && entry.place ? entry.place : "—"}
+                        {c.caseDetails.courtName || "—"}
                       </td>
 
                       <td className="px-4 py-3.5 align-top">
@@ -367,7 +366,7 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
                             </IconButton>
                           )}
                           <IconButton
-                            title={`Attachments${c.documents.length > 0 ? ` (${c.documents.length})` : ""}`}
+                            title={`Attachments${c.files.files.length > 0 ? ` (${c.files.files.length})` : ""}`}
                             onClick={() => setAttachmentsCaseId(c.id)}
                           >
                             <Paperclip className="h-4 w-4 text-muted-foreground" />
@@ -550,153 +549,165 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
               {editingCase &&
                 PRE_CNR_STAGES.includes(STORED_STATUS_TO_FILTER[caseStatus] ?? caseStatus) && (
                   <div>
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-primary mb-3">
-                    STAGE HISTORY
-                  </div>
-                  <div className="relative border-l-2 border-border ml-3 space-y-3.5 pl-6 py-1">
-                    {getStageHistory(editingCase).map((stage) => (
-                      <div key={stage.key} className="relative">
-                        <span
-                          className={`absolute -left-[29px] top-0.5 h-[14px] w-[14px] rounded-full border-2 ${
-                            stage.at
-                              ? "border-primary bg-primary"
-                              : "border-muted-foreground/50 bg-card"
-                          }`}
-                        />
-                        <div className="flex items-center justify-between gap-3">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-primary mb-3">
+                      STAGE HISTORY
+                    </div>
+                    <div className="relative border-l-2 border-border ml-3 space-y-3.5 pl-6 py-1">
+                      {getStageHistory(editingCase).map((stage) => (
+                        <div key={stage.key} className="relative">
                           <span
-                            className={`text-xs font-semibold ${
-                              stage.isCurrent
-                                ? "text-primary"
-                                : stage.at
-                                  ? "text-foreground"
-                                  : "text-muted-foreground"
+                            className={`absolute -left-[29px] top-0.5 h-[14px] w-[14px] rounded-full border-2 ${
+                              stage.at
+                                ? "border-primary bg-primary"
+                                : "border-muted-foreground/50 bg-card"
                             }`}
-                          >
-                            {stage.label}
-                            {stage.isCurrent && (
-                              <span className="ml-2 rounded-md bg-primary/10 px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-primary">
-                                Current
-                              </span>
-                            )}
-                          </span>
-                          <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
-                            {stage.at
-                              ? `${fmtDate(stage.at)}${stage.time ? ", " + stage.time : ""}`
-                              : "—"}
-                          </span>
+                          />
+                          <div className="flex items-center justify-between gap-3">
+                            <span
+                              className={`text-xs font-semibold ${
+                                stage.isCurrent
+                                  ? "text-primary"
+                                  : stage.at
+                                    ? "text-foreground"
+                                    : "text-muted-foreground"
+                              }`}
+                            >
+                              {stage.label}
+                              {stage.isCurrent && (
+                                <span className="ml-2 rounded-md bg-primary/10 px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-primary">
+                                  Current
+                                </span>
+                              )}
+                            </span>
+                            <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
+                              {stage.at
+                                ? `${fmtDate(stage.at)}${stage.time ? ", " + stage.time : ""}`
+                                : "—"}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+
+                    {(STORED_STATUS_TO_FILTER[caseStatus] ?? caseStatus) === "CNR Generated" && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(
+                            isLawyer
+                              ? { to: "/lawyer/cases/$id", params: { id: editingCase.id } }
+                              : { to: "/citizen/cases/$id", params: { id: editingCase.id } },
+                          )
+                        }
+                        className="mt-3.5 inline-flex cursor-pointer items-center gap-1 text-xs font-bold text-primary hover:underline"
+                      >
+                        View Details <ChevronRight className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                   </div>
+                )}
 
-                  {(STORED_STATUS_TO_FILTER[caseStatus] ?? caseStatus) === "CNR Generated" && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        navigate(
-                          isLawyer
-                            ? { to: "/lawyer/cases/$id", params: { id: editingCase.id } }
-                            : { to: "/citizen/cases/$id", params: { id: editingCase.id } },
-                        )
-                      }
-                      className="mt-3.5 inline-flex cursor-pointer items-center gap-1 text-xs font-bold text-primary hover:underline"
-                    >
-                      View Details <ChevronRight className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {/* Section: Case Roadmap (Citizen view only) */}
+              {/* Section: Case Roadmap — Part 2 of the case journey (Lawyer to
+                  Court), shaped like eCourts' own case-history table.
+                  Citizen view only. */}
               {!isLawyer && (
                 <div>
                   <div className="text-[11px] font-bold uppercase tracking-wider text-primary mb-3">
                     CASE ROADMAP
                   </div>
 
-                {sortedModalJourney.length === 0 ? (
-                  <div className="text-xs text-muted-foreground italic py-2">
-                    No hearings logged yet.
-                  </div>
-                ) : (
-                  <div className="relative border-l-2 border-border ml-3 space-y-4 pl-6 py-1">
-                    {[...sortedModalJourney].reverse().map((e) => {
-                      const idx = sortedModalJourney.findIndex((x) => x.id === e.id);
-                      const filterKey = STORED_STATUS_TO_FILTER[caseStatus] ?? caseStatus;
-                      const ACTIVE_STATUSES = [
-                        "Pending by Lawyer",
-                        "Accepted by Lawyer",
-                        "Registered",
-                        "Pending",
-                      ];
-                      const caseClosed = !ACTIVE_STATUSES.includes(filterKey);
-                      const isLast = idx === sortedModalJourney.length - 1;
-                      const isClosedEntry = caseClosed && isLast;
-                      const isPast = e.date && e.date < today && !isClosedEntry;
+                  {courtHistoryRows.length === 0 ? (
+                    <div className="text-xs text-muted-foreground italic py-2">
+                      No hearings logged yet.
+                    </div>
+                  ) : (
+                    <div className="relative border-l-2 border-border ml-3 space-y-4 pl-6 py-1">
+                      {[...courtHistoryRows].reverse().map((e) => {
+                        const idx = courtHistoryRows.findIndex((x) => x.id === e.id);
+                        const filterKey = STORED_STATUS_TO_FILTER[caseStatus] ?? caseStatus;
+                        const ACTIVE_STATUSES = [
+                          "Pending by Lawyer",
+                          "Accepted by Lawyer",
+                          "Registered",
+                          "Pending",
+                        ];
+                        const caseClosed = !ACTIVE_STATUSES.includes(filterKey);
+                        const isLast = idx === courtHistoryRows.length - 1;
+                        const isClosedEntry = caseClosed && isLast;
+                        const effectiveDate = e.hearingDate ?? e.businessOnDate;
+                        const isPast = effectiveDate < today && !isClosedEntry;
 
-                      const closedLabel =
-                        STATUS_META[filterKey]?.label ?? STATUS_META[caseStatus]?.label ?? "CLOSED";
+                        const closedLabel =
+                          STATUS_META[filterKey]?.label ??
+                          STATUS_META[caseStatus]?.label ??
+                          "CLOSED";
 
-                      const badgeLabel = isClosedEntry ? closedLabel : isPast ? "Past" : "Next";
+                        const badgeLabel = isClosedEntry ? closedLabel : isPast ? "Past" : "Next";
 
-                      let cardStyle = "border-border bg-card text-foreground";
-                      let dotStyle = "border-muted-foreground bg-card";
-                      let badgeStyle = "bg-[#e6e0e9] text-[#49454f]";
+                        let cardStyle = "border-border bg-card text-foreground";
+                        let dotStyle = "border-muted-foreground bg-card";
+                        let badgeStyle = "bg-[#e6e0e9] text-[#49454f]";
 
-                      if (isClosedEntry) {
-                        cardStyle = "border-[#2e6e3e] bg-[#D9F2DD] text-[#0B3818]";
-                        dotStyle = "border-[#2e6e3e] bg-[#D9F2DD]";
-                        badgeStyle = "bg-[#2e6e3e] text-white";
-                      } else if (!isPast) {
-                        cardStyle = "border-primary bg-[#EADDFF] text-[#21005D]";
-                        dotStyle = "border-primary bg-[#EADDFF]";
-                        badgeStyle = "bg-primary text-white";
-                      }
+                        if (isClosedEntry) {
+                          cardStyle = "border-[#2e6e3e] bg-[#D9F2DD] text-[#0B3818]";
+                          dotStyle = "border-[#2e6e3e] bg-[#D9F2DD]";
+                          badgeStyle = "bg-[#2e6e3e] text-white";
+                        } else if (!isPast) {
+                          cardStyle = "border-primary bg-[#EADDFF] text-[#21005D]";
+                          dotStyle = "border-primary bg-[#EADDFF]";
+                          badgeStyle = "bg-primary text-white";
+                        }
 
-                      return (
-                        <div key={e.id} className="relative">
-                          <span
-                            className={`absolute -left-[35px] top-3.5 h-[18px] w-[18px] rounded-full border-2 ${dotStyle}`}
-                          />
+                        return (
+                          <div key={e.id} className="relative">
+                            <span
+                              className={`absolute -left-[35px] top-3.5 h-[18px] w-[18px] rounded-full border-2 ${dotStyle}`}
+                            />
 
-                          <div
-                            className={`flex items-start justify-between gap-3 rounded-xl border p-3.5 ${cardStyle}`}
-                          >
-                            <div className="space-y-1 text-xs">
-                              <div className="font-mono font-semibold text-[12.5px] text-foreground">
-                                {fmtDate(e.date)}
-                              </div>
-                              {e.place && (
-                                <div className="font-semibold text-foreground leading-snug">
-                                  {e.place}
+                            <div
+                              className={`flex items-start justify-between gap-3 rounded-xl border p-3.5 ${cardStyle}`}
+                            >
+                              <div className="space-y-1 text-xs">
+                                <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[11.5px]">
+                                  <div>
+                                    <span className="opacity-70">Business on Date:</span>{" "}
+                                    <span className="font-mono font-semibold">
+                                      {fmtDate(e.businessOnDate)}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="opacity-70">Hearing Date:</span>{" "}
+                                    <span className="font-mono font-semibold">
+                                      {e.hearingDate ? fmtDate(e.hearingDate) : "—"}
+                                    </span>
+                                  </div>
                                 </div>
-                              )}
-                              <div className="text-muted-foreground leading-relaxed text-[12.5px]">
-                                {e.purpose}
-                                {e.purpose && e.natureOfSuit ? " · " : ""}
-                                {e.natureOfSuit}
+                                {e.judge && (
+                                  <div className="text-[12px]">
+                                    <span className="opacity-70">Judge:</span> {e.judge}
+                                  </div>
+                                )}
+                                {e.purposeOfListing && (
+                                  <div className="leading-relaxed text-[12.5px]">
+                                    <span className="opacity-70">Purpose of Listing:</span>{" "}
+                                    {e.purposeOfListing}
+                                  </div>
+                                )}
                               </div>
-                              {e.adv && (
-                                <div className="text-muted-foreground text-[12px]">
-                                  Adv: {e.adv}
-                                </div>
-                              )}
-                            </div>
 
-                            <div className="flex flex-col items-end gap-2 shrink-0">
-                              <span
-                                className={`rounded-md px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider ${badgeStyle}`}
-                              >
-                                {badgeLabel}
-                              </span>
+                              <div className="flex flex-col items-end gap-2 shrink-0">
+                                <span
+                                  className={`rounded-md px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider ${badgeStyle}`}
+                                >
+                                  {badgeLabel}
+                                </span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -762,15 +773,15 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
               {/* Documents / Images */}
               <div>
                 <div className="text-[11px] font-bold uppercase tracking-wider text-primary mb-2">
-                  Documents &amp; Images ({attachmentsCase.documents.length})
+                  Documents &amp; Images ({attachmentsCase.files.files.length})
                 </div>
-                {attachmentsCase.documents.length === 0 ? (
+                {attachmentsCase.files.files.length === 0 ? (
                   <p className="text-xs text-muted-foreground italic">
                     No attachments uploaded yet.
                   </p>
                 ) : (
                   <ul className="space-y-2">
-                    {attachmentsCase.documents.map((d) => {
+                    {attachmentsCase.files.files.map((d) => {
                       const isImage = d.fileMimeType?.startsWith("image/");
                       return (
                         <li

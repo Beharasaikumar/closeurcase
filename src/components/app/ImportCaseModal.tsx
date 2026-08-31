@@ -129,8 +129,10 @@ export function ImportCaseModal({
     const legalCase = toLegalCase(match, lawyerId, lawyerName);
     const plaintiff = plaintiffDraft.trim() || match.petitioners[0];
     const respondent = respondentDraft.trim() || match.respondents[0];
-    legalCase.petitioners = plaintiff ? [plaintiff] : legalCase.petitioners;
-    legalCase.respondents = respondent ? [respondent] : legalCase.respondents;
+    legalCase.caseDetails.petitioners = plaintiff ? [plaintiff] : legalCase.caseDetails.petitioners;
+    legalCase.caseDetails.respondents = respondent
+      ? [respondent]
+      : legalCase.caseDetails.respondents;
     legalCase.citizenName = plaintiff || legalCase.citizenName;
     addCase(legalCase);
     setImportedFixtureIds((prev) => new Set(prev).add(match.id));
