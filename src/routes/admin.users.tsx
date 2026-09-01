@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/app/PageHeader";
-import { DataTable, type Column } from "@/components/app/DataTable";
+import { DataTable } from "@/components/app/DataTable";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 import { UserAvatar } from "@/components/app/UserAvatar";
 import { FilterPanelButton, type FilterSection } from "@/components/app/FilterPanelButton";
@@ -93,98 +93,58 @@ function UsersPage() {
     }
   };
 
-  const cols: Column<Citizen>[] = [
-    {
-      key: "name",
-      header: "Citizen Name",
-      render: (r) => (
-        <div className="flex min-w-0 items-center gap-2">
-          <UserAvatar name={r.name} size="sm" />
-          <span className="font-bold text-foreground text-xs truncate">{r.name}</span>
-        </div>
-      ),
-    },
-    {
-      key: "email",
-      header: "Email Address",
-      render: (r) => (
-        <span className="text-xs text-muted-foreground truncate block">{r.email}</span>
-      ),
-    },
-    {
-      key: "phone",
-      header: "Phone Number",
-      render: (r) => (
-        <span className="text-xs text-muted-foreground whitespace-nowrap">{r.phone}</span>
-      ),
-    },
-    {
-      key: "city",
-      header: "Location",
-      render: (r) => <span className="text-xs text-muted-foreground truncate block">{r.city}</span>,
-    },
-    {
-      key: "joinedAt",
-      header: "Registered On",
-      render: (r) => <span className="text-xs text-muted-foreground">{r.joinedAt}</span>,
-    },
-    {
-      key: "lastLoginAt",
-      header: "Last Login",
-      render: (r) => (
-        <span className="text-xs text-muted-foreground whitespace-nowrap">
-          {formatLastLogin(r.lastLoginAt)}
-        </span>
-      ),
-    },
-    {
-      key: "status",
-      header: "Account Status",
-      render: (r) => {
-        const color =
-          r.status === "Active"
-            ? "var(--md-extended-color-success)"
-            : "var(--md-sys-color-on-surface-variant)";
-        return (
+  function renderCitizenCard(r: Citizen) {
+    const statusColor =
+      r.status === "Active"
+        ? "var(--md-extended-color-success)"
+        : "var(--md-sys-color-on-surface-variant)";
+    return (
+      <div className="flex h-full min-h-56 flex-col rounded-xl border border-border bg-surface p-3.5 shadow-2xs transition-all hover:border-primary/40 hover:shadow-sm sm:p-4">
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+          <div className="flex min-w-0 flex-1 items-start gap-3">
+            <UserAvatar name={r.name} size="sm" />
+            <div className="min-w-0 space-y-1">
+              <div className="line-clamp-2 text-sm font-bold text-foreground sm:text-[15px]">
+                {r.name}
+              </div>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+                <span>{r.email}</span>
+                <span aria-hidden>•</span>
+                <span>{r.phone}</span>
+                <span aria-hidden>•</span>
+                <span>{r.city}</span>
+              </div>
+              <div className="text-[11px] text-muted-foreground">
+                Registered {r.joinedAt} · Last login {formatLastLogin(r.lastLoginAt)}
+              </div>
+            </div>
+          </div>
+
           <span
-            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
-            style={{ color, backgroundColor: `color-mix(in srgb, ${color} 12%, transparent)` }}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
+            style={{
+              color: statusColor,
+              backgroundColor: `color-mix(in srgb, ${statusColor} 12%, transparent)`,
+            }}
           >
-            <span
-              className="h-1.5 w-1.5 shrink-0 rounded-full"
-              style={{ backgroundColor: color }}
-            />
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: statusColor }} />
             {r.status}
           </span>
-        );
-      },
-    },
-    {
-      key: "actions",
-      header: "Action",
-      width: "120px",
-      render: (r) => (
-        <div className="flex items-center gap-2.5">
+        </div>
+
+        <div className="mt-auto flex items-center justify-end gap-2.5 border-t border-border/60 pt-2">
+          <span className="text-xs font-medium" style={{ color: statusColor }}>
+            {r.status === "Active" ? "Active" : "Inactive"}
+          </span>
           <Toggle
             checked={r.status === "Active"}
             onChange={() => handleToggleStatus(r)}
             ariaLabel={`Toggle account status for ${r.name}`}
           />
-          <span
-            className="text-xs font-medium"
-            style={{
-              color:
-                r.status === "Active"
-                  ? "var(--md-extended-color-success)"
-                  : "var(--md-sys-color-on-surface-variant)",
-            }}
-          >
-            {r.status === "Active" ? "Active" : "Inactive"}
-          </span>
         </div>
-      ),
-    },
-  ];
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -204,7 +164,11 @@ function UsersPage() {
         <FilterPanelButton sections={filterSections} selected={filters} onChange={setFilters} />
       </div>
 
-      <DataTable columns={cols} rows={filtered} empty="No citizens matching your search." />
+      <DataTable
+        renderCard={renderCitizenCard}
+        rows={filtered}
+        empty="No citizens matching your search."
+      />
 
       {/* CONFIRM DEACTIVATE DIALOG */}
       <ConfirmDialog

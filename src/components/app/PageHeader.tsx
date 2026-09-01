@@ -22,21 +22,25 @@ export function PageHeader({
 }) {
   const titleBlock = (
     <div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {onBack && (
           <IconButton variant="outlined" onClick={onBack} ariaLabel={backLabel || "Go back"}>
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
           </IconButton>
         )}
-        <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
+        <h1 className="text-base sm:text-2xl font-bold tracking-tight text-foreground">{title}</h1>
       </div>
-      {description && <p className="mt-1.5 text-sm text-muted-foreground">{description}</p>}
+      {description && (
+        <p className="hidden sm:block mt-0.5 text-xs sm:text-sm text-muted-foreground leading-snug">
+          {description}
+        </p>
+      )}
     </div>
   );
 
   if (actionsPosition === "below") {
     return (
-      <div className="space-y-3 border-b border-border pb-4">
+      <div className="space-y-1.5 border-b border-border pb-2 sm:pb-3.5">
         {titleBlock}
         {actions && <div className="flex items-center justify-end gap-2">{actions}</div>}
       </div>
@@ -44,7 +48,7 @@ export function PageHeader({
   }
 
   return (
-    <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-6">
+    <div className="flex flex-wrap items-start justify-between gap-2 border-b border-border pb-2 sm:pb-3.5">
       {titleBlock}
       {actions && <div className="flex items-center gap-2">{actions}</div>}
     </div>

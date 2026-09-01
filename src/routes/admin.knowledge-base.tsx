@@ -10,13 +10,12 @@ import {
   Search,
   Eye,
   X,
-  Download,
-  FileText,
-  ExternalLink,
+  Maximize2,
 } from "lucide-react";
 import { PageHeader } from "@/components/app/PageHeader";
 import { DataTable, type Column } from "@/components/app/DataTable";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
+import { DocumentPreviewBody } from "@/components/app/DocumentPreview";
 import { categories } from "@/data/mock";
 import {
   getKnowledgeBase,
@@ -25,13 +24,19 @@ import {
   subscribeToStore,
 } from "@/data/appStore";
 import type { KnowledgeItem, LegalCategory } from "@/types";
-import { MAX_ATTACHMENT_BYTES, formatFileSize, readFileAsDataUrl } from "@/lib/files";
+import {
+  MAX_ATTACHMENT_BYTES,
+  formatFileSize,
+  readFileAsDataUrl,
+  titleFromFileName,
+  isPdfOrDocxFile,
+  openDocumentInNewTab,
+} from "@/lib/files";
 import {
   TextField,
   Select,
   Button,
   IconButton,
-  AssistChip,
   Dialog,
   DialogHeader,
   DialogTitle,
@@ -52,16 +57,12 @@ const types: KnowledgeItem["type"][] = [
   "Order",
 ];
 
-function isPreviewableInline(item: KnowledgeItem): boolean {
-  if (item.fileMimeType) {
-    return item.fileMimeType === "application/pdf" || item.fileMimeType.startsWith("image/");
-  }
-  return /\.pdf$/i.test(item.fileName ?? "");
-}
+type SortOrder = "newest" | "oldest";
 
 export function KnowledgeBasePage() {
   const [rows, setRows] = useState<KnowledgeItem[]>(getKnowledgeBase);
   const [search, setSearch] = useState("");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [activePdfModal, setActivePdfModal] = useState<KnowledgeItem | null>(null);
   // Confirm delete
@@ -69,7 +70,6 @@ export function KnowledgeBasePage() {
   const pendingDeleteItem = rows.find((r) => r.id === pendingDeleteId);
 
   // Upload modal form states
-  const [title, setTitle] = useState("");
   const [type, setType] = useState<KnowledgeItem["type"]>("Act");
   const [cat, setCat] = useState<LegalCategory>("Criminal");
   const [fileSelected, setFileSelected] = useState<File | null>(null);
@@ -83,35 +83,39 @@ export function KnowledgeBasePage() {
   }, []);
 
   const filtered = useMemo(() => {
-    return rows.filter(
+    const matches = rows.filter(
       (r) =>
         r.title.toLowerCase().includes(search.toLowerCase()) ||
         r.category.toLowerCase().includes(search.toLowerCase()) ||
         r.type.toLowerCase().includes(search.toLowerCase()),
     );
-  }, [rows, search]);
+    return matches.sort((a, b) =>
+      sortOrder === "newest"
+        ? b.uploadedAt.localeCompare(a.uploadedAt)
+        : a.uploadedAt.localeCompare(b.uploadedAt),
+    );
+  }, [rows, search, sortOrder]);
 
   const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!fileSelected) return;
 
     setIsUploading(true);
     setUploadError("");
     try {
-      const fileDataUrl = fileSelected ? await readFileAsDataUrl(fileSelected) : undefined;
-      const sizeStr = fileSelected ? formatFileSize(fileSelected.size) : "1.8 MB";
+      const title = titleFromFileName(fileSelected.name);
+      const fileDataUrl = await readFileAsDataUrl(fileSelected);
       addKnowledgeItem({
         title,
         type,
         category: cat,
-        size: sizeStr,
+        size: formatFileSize(fileSelected.size),
         fileDataUrl,
-        fileName: fileSelected?.name,
-        fileMimeType: fileSelected?.type,
+        fileName: fileSelected.name,
+        fileMimeType: fileSelected.type,
       });
 
       setSuccessMsg(`"${title}" successfully indexed into Knowledge Base!`);
-      setTitle("");
       setFileSelected(null);
       setShowUploadModal(false);
 
@@ -129,17 +133,32 @@ export function KnowledgeBasePage() {
       key: "title",
       header: "Document Title",
       render: (r) => (
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+        <div className="flex items-start gap-2.5 py-0.5 min-w-0">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary mt-0.5">
             <BookOpen className="h-4 w-4" />
           </div>
-          <span className="font-bold text-foreground text-xs">{r.title}</span>
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <span className="block w-full text-xs sm:text-sm font-bold text-foreground leading-snug break-words">
+              {r.title}
+            </span>
+            {/* Type + Domain + Date fold in here when the table's narrow — their own columns take over above that. */}
+            <div className="flex flex-wrap items-center gap-1.5 @5xl:hidden">
+              <span className="inline-block rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                {r.type}
+              </span>
+              <span className="inline-block rounded-md border border-border bg-background px-2 py-0.5 text-[10px] font-medium text-foreground">
+                {r.category} Law
+              </span>
+              <span className="text-[10px] text-muted-foreground">· {r.uploadedAt}</span>
+            </div>
+          </div>
         </div>
       ),
     },
     {
       key: "type",
       header: "Type",
+      hideCompact: true,
       render: (r) => (
         <span className="inline-block rounded bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
           {r.type}
@@ -149,28 +168,23 @@ export function KnowledgeBasePage() {
     {
       key: "category",
       header: "Category Domain",
+      hideCompact: true,
       render: (r) => <span className="text-xs text-muted-foreground">{r.category} Law</span>,
     },
     {
       key: "uploadedAt",
       header: "Indexed On",
+      hideCompact: true,
       render: (r) => <span className="text-xs text-muted-foreground">{r.uploadedAt}</span>,
-    },
-    {
-      key: "size",
-      header: "File Size",
-      render: (r) => <span className="text-xs font-mono text-muted-foreground">{r.size}</span>,
     },
     {
       key: "actions",
       header: "Actions",
       render: (r) => (
-        <div className="flex items-center gap-2">
-          <AssistChip
-            label="View"
-            icon={<Eye className="h-3.5 w-3.5" />}
-            onClick={() => setActivePdfModal(r)}
-          />
+        <div className="flex items-center gap-1">
+          <IconButton ariaLabel={`View ${r.title}`} onClick={() => setActivePdfModal(r)}>
+            <Eye className="h-4 w-4 text-primary" />
+          </IconButton>
           <IconButton
             ariaLabel="Remove document from index"
             onClick={() => setPendingDeleteId(r.id)}
@@ -183,7 +197,7 @@ export function KnowledgeBasePage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-4">
       <PageHeader
         title="Knowledge Base & Legal Indexing"
         description="Upload and index statutory acts, amendments, and landmark judgements referenced by Lawyer AI."
@@ -192,7 +206,7 @@ export function KnowledgeBasePage() {
       {/* Success alert */}
       {successMsg && (
         <div
-          className="flex items-center gap-2 rounded-lg p-4 text-xs font-bold"
+          className="flex items-center gap-2 rounded-lg p-3 sm:p-4 text-xs font-bold"
           style={{
             backgroundColor:
               "color-mix(in srgb, var(--md-extended-color-success) 10%, transparent)",
@@ -204,33 +218,64 @@ export function KnowledgeBasePage() {
         </div>
       )}
 
-      {/* SEARCH BAR & SIMPLE UPLOAD BUTTON */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border bg-surface p-4 shadow-2xs">
-        <TextField
-          value={search}
-          onChange={setSearch}
-          placeholder="Search acts, judgements, domains…"
-          leadingIcon={<Search className="h-4 w-4" />}
-          className="w-full max-w-sm"
-        />
-        <Button
-          icon={<Plus className="h-4 w-4" />}
-          onClick={() => {
-            setUploadError("");
-            setShowUploadModal(true);
-          }}
-        >
-          Upload Document
-        </Button>
+      {/* SEARCH BAR, SORT & UPLOAD BUTTON */}
+      <div className="rounded-2xl border border-border bg-surface p-3 sm:p-4 shadow-2xs space-y-2.5 sm:space-y-0">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+          {/* Mobile Row 1: Search input + Upload button side by side */}
+          <div className="flex items-center gap-2 w-full sm:w-auto sm:flex-1 sm:max-w-sm">
+            <TextField
+              value={search}
+              onChange={setSearch}
+              placeholder="Search acts, judgements, domains…"
+              leadingIcon={<Search className="h-4 w-4" />}
+              className="flex-1 min-w-0"
+            />
+            <IconButton
+              variant="filled"
+              onClick={() => {
+                setUploadError("");
+                setShowUploadModal(true);
+              }}
+              ariaLabel="Upload document"
+              className="shrink-0 sm:hidden"
+            >
+              <Plus className="h-4 w-4" />
+            </IconButton>
+          </div>
+
+          {/* Desktop & Mobile Sort + Desktop Upload */}
+          <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
+            <Select
+              label="Sort"
+              value={sortOrder}
+              onChange={(v) => setSortOrder(v as SortOrder)}
+              options={[
+                { value: "newest", label: "Newest First" },
+                { value: "oldest", label: "Oldest First" },
+              ]}
+              className="flex-1 sm:w-44"
+            />
+            <Button
+              icon={<Plus className="h-4 w-4" />}
+              onClick={() => {
+                setUploadError("");
+                setShowUploadModal(true);
+              }}
+              className="hidden sm:inline-flex shrink-0"
+            >
+              Upload Document
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* DATA TABLE */}
-      <div className="rounded-2xl border border-border bg-surface p-6 shadow-2xs space-y-3">
-        <div className="flex items-center justify-between border-b border-border pb-3">
+      <div className="rounded-2xl border border-border bg-surface p-3.5 sm:p-5 shadow-2xs space-y-3">
+        <div className="flex items-center justify-between border-b border-border pb-2.5">
           <span className="text-xs font-bold text-foreground">
             Indexed Reference Documents ({filtered.length})
           </span>
-          <span className="text-xs text-muted-foreground">Acts, Amendments & Judgements</span>
+          <span className="hidden sm:inline text-xs text-muted-foreground">Acts, Amendments & Judgements</span>
         </div>
         <DataTable
           columns={cols}
@@ -254,14 +299,6 @@ export function KnowledgeBasePage() {
         </DialogHeader>
         <DialogContent>
           <form id="kb-upload-form" onSubmit={handleUploadSubmit} className="space-y-4">
-            <TextField
-              label="Document Title"
-              value={title}
-              onChange={setTitle}
-              required
-              placeholder="e.g. Bharatiya Nyaya Sanhita, 2023"
-            />
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Select
                 label="Document Type"
@@ -281,7 +318,7 @@ export function KnowledgeBasePage() {
             <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-background px-6 py-6 text-xs text-muted-foreground hover:border-primary hover:bg-primary/5 transition-all">
               <Upload className="h-5 w-5 text-primary" />
               <span className="font-semibold text-foreground text-center">
-                {fileSelected ? fileSelected.name : "Select PDF Document File"}
+                {fileSelected ? fileSelected.name : "Select PDF or DOCX File"}
               </span>
               <span className="text-[10px] text-muted-foreground text-center">
                 Supported format: PDF, DOCX (Up to 4MB — stored in your browser)
@@ -292,11 +329,16 @@ export function KnowledgeBasePage() {
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
+                  e.target.value = "";
                   if (!f) return;
+                  if (!isPdfOrDocxFile(f)) {
+                    setUploadError("Only PDF and DOCX files are supported.");
+                    setFileSelected(null);
+                    return;
+                  }
                   if (f.size > MAX_ATTACHMENT_BYTES) {
                     setUploadError("File is too large — please select a file under 4MB.");
                     setFileSelected(null);
-                    e.target.value = "";
                     return;
                   }
                   setUploadError("");
@@ -323,7 +365,7 @@ export function KnowledgeBasePage() {
             onClick={() =>
               (document.getElementById("kb-upload-form") as HTMLFormElement | null)?.requestSubmit()
             }
-            disabled={!title.trim() || isUploading}
+            disabled={!fileSelected || isUploading}
           >
             {isUploading ? "Uploading & Indexing…" : "Upload & Index Document"}
           </Button>
@@ -340,11 +382,6 @@ export function KnowledgeBasePage() {
           <PdfModalBody
             item={activePdfModal}
             hasRealFile={Boolean(activePdfModal.fileDataUrl)}
-            fileHref={
-              activePdfModal.fileDataUrl ??
-              `data:text/plain;charset=utf-8,${encodeURIComponent(activePdfModal.title)}`
-            }
-            fileDownloadName={activePdfModal.fileName ?? `${activePdfModal.title}.txt`}
             onClose={() => setActivePdfModal(null)}
           />
         )}
@@ -371,20 +408,14 @@ export function KnowledgeBasePage() {
 interface PdfModalBodyProps {
   item: KnowledgeItem;
   hasRealFile: boolean;
-  fileHref: string;
-  fileDownloadName: string;
   onClose: () => void;
 }
 
 function PdfModalBody({
   item,
   hasRealFile,
-  fileHref,
-  fileDownloadName,
   onClose,
 }: PdfModalBodyProps) {
-  const previewableInline = hasRealFile && isPreviewableInline(item);
-
   return (
     <>
       <DialogHeader>
@@ -404,27 +435,17 @@ function PdfModalBody({
               element on open. This invisible zero-size button absorbs that
               initial focus so the X button doesn't appear highlighted. */}
           <span tabIndex={0} aria-hidden="true" className="sr-only" />
-          <div className="flex items-center gap-1 shrink-0">
-            {/* Download as anchor */}
-            <a
-              href={fileHref}
-              download={fileDownloadName}
-              className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors"
-              title="Download document"
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Full Screen (Open in new tab) */}
+            <button
+              type="button"
+              onClick={() => openDocumentInNewTab(item)}
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors cursor-pointer"
+              title="Full Screen (Open document in new tab)"
             >
-              <Download className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Download</span>
-            </a>
-            {/* Open in new tab (full screen) */}
-            <a
-              href={fileHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-              title="Open in new tab"
-            >
-              <ExternalLink className="h-4 w-4" />
-            </a>
+              <Maximize2 className="h-3.5 w-3.5" />
+              <span>Full Screen</span>
+            </button>
             <IconButton ariaLabel="Close preview" tabIndex={-1} onClick={onClose}>
               <X className="h-4 w-4 text-muted-foreground" />
             </IconButton>
@@ -433,72 +454,54 @@ function PdfModalBody({
       </DialogHeader>
       <DialogContent>
         <div className="space-y-4 py-2">
-          {previewableInline ? (
-            <div className="rounded-xl border border-border bg-background overflow-hidden">
-              <iframe src={fileHref} title={item.title} className="w-full h-[500px] bg-white" />
-            </div>
-          ) : hasRealFile ? (
-            <div className="mx-auto max-w-2xl rounded-xl border border-border bg-background p-8 shadow-sm min-h-[300px] flex flex-col items-center justify-center gap-3 text-center">
-              <FileText className="h-8 w-8 text-muted-foreground" />
-              <p className="text-xs font-semibold text-foreground">{item.fileName}</p>
-              <p className="text-[11px] text-muted-foreground max-w-sm">
-                Inline preview isn't available for this file type. Use Download or Open in new tab
-                to view the full document.
-              </p>
-            </div>
-          ) : (
-            <div className="mx-auto max-w-2xl rounded-xl border border-border bg-background p-4 sm:p-8 shadow-sm space-y-6 text-foreground min-h-[400px]">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-border pb-4 gap-2">
-                <span className="text-[10px] sm:text-xs font-bold tracking-wider uppercase text-muted-foreground">
-                  ADMIN KNOWLEDGE BASE INDEX
-                </span>
-                <span className="text-[10px] sm:text-xs font-mono text-muted-foreground">
-                  VERIFIED PUBLIC COPY
-                </span>
-              </div>
+          <DocumentPreviewBody
+            fileDataUrl={hasRealFile ? item.fileDataUrl : undefined}
+            fileMimeType={item.fileMimeType}
+            fileName={item.fileName ?? item.title}
+            fallback={
+              <div className="mx-auto max-w-2xl rounded-xl border border-border bg-background p-4 sm:p-6 shadow-sm space-y-4 text-foreground">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-border pb-3 gap-2">
+                  <span className="text-[10px] sm:text-xs font-bold tracking-wider uppercase text-muted-foreground">
+                    ADMIN KNOWLEDGE BASE INDEX
+                  </span>
+                  <span className="text-[10px] sm:text-xs font-mono text-muted-foreground">
+                    VERIFIED PUBLIC COPY
+                  </span>
+                </div>
 
-              <div className="text-center space-y-1 py-2">
-                <h4 className="text-xs sm:text-sm font-bold text-foreground uppercase tracking-wide">
-                  {item.title}
-                </h4>
-                <p className="text-[11px] text-muted-foreground font-mono">
-                  DOMAIN: {item.category.toUpperCase()} LAW
-                </p>
-              </div>
+                <div className="text-center space-y-1 py-2">
+                  <h4 className="text-xs sm:text-sm font-bold text-foreground uppercase tracking-wide">
+                    {item.title}
+                  </h4>
+                  <p className="text-[11px] text-muted-foreground font-mono">
+                    DOMAIN: {item.category.toUpperCase()} LAW
+                  </p>
+                </div>
 
-              <div className="space-y-4 text-xs leading-relaxed text-foreground/90">
-                <p className="font-semibold text-foreground">
-                  STATUTORY TEXT &amp; REFERENCE PROVISIONS:
-                </p>
-                <p className="bg-muted/40 p-4 rounded-xl border border-border/50 font-sans">
-                  This document represents an indexed statutory publication for{" "}
-                  <strong>{item.title}</strong> in the CloseUrCase admin legal index.
-                </p>
-                <p>
-                  1. Provisions contained herein are automatically referenced by Lawyer AI during
-                  counter-argument generation.
-                </p>
-                <p>2. Official gazette notification date: {item.uploadedAt}.</p>
+                <div className="space-y-4 text-xs leading-relaxed text-foreground/90">
+                  <p className="font-semibold text-foreground">
+                    STATUTORY TEXT &amp; REFERENCE PROVISIONS:
+                  </p>
+                  <p className="bg-muted/40 p-4 rounded-xl border border-border/50 font-sans">
+                    This document represents an indexed statutory publication for{" "}
+                    <strong>{item.title}</strong> in the CloseUrCase admin legal index.
+                  </p>
+                  <p>
+                    1. Provisions contained herein are automatically referenced by Lawyer AI during
+                    counter-argument generation.
+                  </p>
+                  <p>2. Official gazette notification date: {item.uploadedAt}.</p>
+                </div>
               </div>
-            </div>
-          )}
+            }
+          />
         </div>
       </DialogContent>
       <DialogFooter className="flex items-center justify-between w-full gap-2">
         <span className="text-xs text-muted-foreground">Viewing Document in Admin Viewer</span>
-        <div className="flex items-center gap-2">
-          <a
-            href={fileHref}
-            download={fileDownloadName}
-            className="inline-flex sm:hidden items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors"
-          >
-            <Download className="h-3.5 w-3.5" />
-            Download
-          </a>
-          <Button onClick={onClose} className="w-full sm:w-auto">
-            Close Preview
-          </Button>
-        </div>
+        <Button onClick={onClose} className="w-full sm:w-auto">
+          Close Preview
+        </Button>
       </DialogFooter>
     </>
   );

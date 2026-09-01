@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/app/PageHeader";
-import { DataTable, type Column } from "@/components/app/DataTable";
+import { DataTable } from "@/components/app/DataTable";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 import { UserAvatar } from "@/components/app/UserAvatar";
 import { LawyerProfileCard } from "@/components/app/LawyerProfileCard";
@@ -107,64 +107,44 @@ export function LawyersPage() {
     updateLawyerStatus(id, status);
   };
 
-  const cols: Column<Lawyer>[] = [
-    {
-      key: "name",
-      header: "Lawyer Name",
-      render: (r) => (
-        <button
-          onClick={() => {
-            setSelectedLawyer(r);
-            setDetailOpen(true);
-          }}
-          className="flex min-w-0 cursor-pointer items-center gap-2 text-left"
-        >
-          <UserAvatar name={r.name} size="sm" />
-          <span className="font-bold text-foreground hover:text-primary truncate text-xs">
-            {r.name}
-          </span>
-        </button>
-      ),
-    },
-    {
-      key: "cat",
-      header: "Category",
-      render: (r) => (
-        <span className="text-xs text-muted-foreground truncate block">{r.category} Law</span>
-      ),
-    },
-    {
-      key: "city",
-      header: "Location",
-      render: (r) => <span className="text-xs text-muted-foreground truncate block">{r.city}</span>,
-    },
-    {
-      key: "bar",
-      header: "Bar Reg. ID",
-      render: (r) => (
-        <code className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-bold text-primary font-mono">
-          {r.barId}
-        </code>
-      ),
-    },
-    {
-      key: "exp",
-      header: "Experience",
-      render: (r) => (
-        <span className="text-xs font-semibold text-foreground">{r.experienceYears} yrs</span>
-      ),
-    },
-    {
-      key: "status",
-      header: "Verification Status",
-      render: (r) => <StatusBadge v={r.status} />,
-    },
-    {
-      key: "actions",
-      header: "Action",
-      width: "220px",
-      render: (r) => (
-        <div className="flex gap-1.5">
+  function renderLawyerCard(r: Lawyer) {
+    return (
+      <div className="flex h-full min-h-56 flex-col rounded-xl border border-border bg-surface p-3.5 shadow-2xs transition-all hover:border-primary/40 hover:shadow-sm sm:p-4">
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+          <button
+            onClick={() => {
+              setSelectedLawyer(r);
+              setDetailOpen(true);
+            }}
+            className="flex min-w-0 flex-1 cursor-pointer items-start gap-3 text-left"
+          >
+            <UserAvatar name={r.name} size="sm" />
+            <div className="min-w-0 space-y-1">
+              <div className="line-clamp-2 text-sm font-bold text-foreground hover:text-primary sm:text-[15px]">
+                {r.name}
+              </div>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+                <span>{r.category} Law</span>
+                <span aria-hidden>•</span>
+                <span>{r.city}</span>
+                <span aria-hidden>•</span>
+                <span>{r.experienceYears} yrs exp.</span>
+              </div>
+              <div className="text-[11px] text-muted-foreground">
+                Bar Reg. ID:{" "}
+                <code className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-bold text-primary font-mono">
+                  {r.barId}
+                </code>
+              </div>
+            </div>
+          </button>
+
+          <div className="shrink-0">
+            <StatusBadge v={r.status} />
+          </div>
+        </div>
+
+        <div className="mt-auto flex items-center justify-end gap-1.5 border-t border-border/60 pt-2">
           {r.status === "Pending" && (
             <>
               <AssistChip
@@ -206,9 +186,9 @@ export function LawyersPage() {
             <AssistChip label="Reinstate" onClick={() => handleUpdateStatus(r.id, "Approved")} />
           )}
         </div>
-      ),
-    },
-  ];
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -238,7 +218,7 @@ export function LawyersPage() {
           <span className="text-xs text-muted-foreground">Showing verified legal counsel list</span>
         </div>
         <DataTable
-          columns={cols}
+          renderCard={renderLawyerCard}
           rows={filtered}
           empty="No Lawyers match your search query or filter."
         />

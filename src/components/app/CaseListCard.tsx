@@ -27,10 +27,10 @@ export function CaseListCard({ caseItem }: { caseItem: LegalCase }) {
   const isImported = caseItem.source === "ecourt";
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-4 shadow-2xs transition-all hover:border-primary/40 hover:shadow-sm sm:p-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-        <div className="min-w-0 space-y-1.5">
-          <h3 className="text-sm font-bold text-foreground leading-snug sm:text-[15px]">
+    <div className="flex h-full min-h-56 flex-col rounded-xl border border-border bg-surface p-3.5 shadow-2xs transition-all hover:border-primary/40 hover:shadow-sm sm:p-4">
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div className="min-w-0 space-y-1">
+          <h3 className="line-clamp-2 text-sm font-bold text-foreground leading-snug sm:text-[15px]">
             {caseItem.title}
           </h3>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
@@ -77,7 +77,7 @@ export function CaseListCard({ caseItem }: { caseItem: LegalCase }) {
       </div>
 
       {isImported ? (
-        <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-3 text-[11px] text-muted-foreground">
+        <div className="mt-auto flex items-center justify-between border-t border-border/60 pt-2 text-[11px] text-muted-foreground">
           <span className="inline-flex items-center gap-1">
             <Download className="h-3 w-3" />
             Imported from eCourts
@@ -93,7 +93,7 @@ export function CaseListCard({ caseItem }: { caseItem: LegalCase }) {
           </Link>
         </div>
       ) : (
-        <div className="mt-3 flex items-center justify-end border-t border-border/60 pt-3">
+        <div className="mt-auto flex items-center justify-end border-t border-border/60 pt-2">
           <ChatButton caseItem={caseItem} role="lawyer" />
         </div>
       )}

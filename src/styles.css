@@ -382,3 +382,43 @@ md-dialog {
 .toggle-root[data-checked="true"]:active .toggle-thumb {
   left: 16px;
 }
+
+/* ── Clean responsive overrides for docx-preview client rendering ───────── */
+.docx-wrapper {
+  background: transparent !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.docx-wrapper > section.docx {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: auto !important;
+  padding: 12px 14px !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  border-radius: 8px !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+  word-break: break-word !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+@media (min-width: 640px) {
+  .docx-wrapper > section.docx {
+    padding: 24px 32px !important;
+  }
+}
+
+.docx-wrapper > section.docx * {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  word-break: break-word !important;
+}

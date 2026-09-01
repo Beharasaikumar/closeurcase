@@ -23,6 +23,8 @@ import {
 } from "@/data/appStore";
 import { MAX_ATTACHMENT_BYTES, formatFileSize, readFileAsDataUrl } from "@/lib/files";
 import { searchCourtCases } from "@/data/courtCasesFixture";
+import { CardPagination } from "@/components/app/CardPagination";
+import { DocumentPreviewBody } from "@/components/app/DocumentPreview";
 import type { LegalCase, CaseStatus, CaseDocument } from "@/types";
 import { ChatButton } from "@/components/app/CaseChat";
 import {
@@ -105,6 +107,9 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
   const [journey, setJourney] = useState<CourtHistoryRow[]>([]);
   const [cnrImportResult, setCnrImportResult] = useState<CnrImportResult>(null);
 
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(8);
+
   const isLawyer = role === "lawyer";
 
   useEffect(() => {
@@ -112,6 +117,11 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
     sync();
     return subscribeToStore(sync);
   }, []);
+
+  // Reset to page 1 whenever the caller's filtered/sorted case list changes shape.
+  useEffect(() => {
+    setPage(1);
+  }, [cases.length]);
 
   function handleOpenModal(c: LegalCase) {
     setEditingCase(c);
@@ -310,115 +320,139 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
     ? allCases.find((c) => c.id === attachmentsCaseId)
     : null;
 
+  const totalPages = Math.max(1, Math.ceil(cases.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageCases = cases.slice((safePage - 1) * pageSize, safePage * pageSize);
+
   return (
     <>
-      {/* Table Card */}
-      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
-        {cases.length === 0 ? (
-          <div className="p-12 text-center text-muted-foreground">
-            <h3 className="text-lg font-medium text-foreground">No matching cases</h3>
-            <p className="mt-1 text-xs">Try a different search or filter.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[860px]">
-              <thead>
-                <tr className="border-b border-border bg-surface-container text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                  <th className="px-4 py-3">Party Names</th>
-                  <th className="px-4 py-3">Case Type</th>
-                  <th className="px-4 py-3">Next Hearing Date</th>
-                  <th className="px-4 py-3">Place</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border text-sm">
-                {cases.map((c) => {
-                  const entry = getNextEntry(c);
-                  return (
-                    <tr key={c.id} className="transition-colors hover:bg-muted/40">
-                      <td className="px-4 py-3.5 align-top">
-                        <div className="font-semibold text-foreground leading-snug">
-                          {c.title || "Untitled Matter"}
-                        </div>
-                        <div className="font-mono text-[11px] font-semibold text-primary mt-0.5">
-                          {c.id}
-                        </div>
-                        <div className="font-mono text-xs text-muted-foreground mt-0.5">
-                          CASE NO - {c.caseDetails.caseNumber || "N/A"}
-                        </div>
-                        <div
-                          className={`font-mono text-[11.5px] mt-0.5 ${
-                            c.caseDetails.cnr ? "text-muted-foreground" : "text-muted-foreground/50"
-                          }`}
-                        >
-                          CNR No - {c.caseDetails.cnr || "N/A"}
-                        </div>
-                      </td>
+      {/* Case Cards */}
+      {cases.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border bg-surface p-10 text-center text-xs text-muted-foreground">
+          <h3 className="text-sm font-semibold text-foreground">No matching cases</h3>
+          <p className="mt-1">Try a different search or filter.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          {pageCases.map((c) => {
+            const entry = getNextEntry(c);
+            const isPendingDecision = isLawyer && c.status === "Submitted";
+            return (
+              <div
+                key={c.id}
+                className={`flex h-full min-h-58 flex-col rounded-xl border p-3.5 shadow-2xs transition-all hover:shadow-sm sm:p-4 ${
+                  isPendingDecision ? "" : "border-border bg-surface hover:border-primary/40"
+                }`}
+                style={
+                  isPendingDecision
+                    ? {
+                        borderColor:
+                          "color-mix(in srgb, var(--md-extended-color-warning) 35%, transparent)",
+                        backgroundColor:
+                          "color-mix(in srgb, var(--md-extended-color-warning) 7%, transparent)",
+                      }
+                    : undefined
+                }
+              >
+                <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="line-clamp-2 text-sm font-bold text-foreground leading-snug sm:text-[15px]">
+                        {c.title || "Untitled Matter"}
+                      </h3>
+                      <CaseTypeBadge caseItem={c} />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+                      <span className="font-mono font-semibold text-primary">{c.id}</span>
+                      <span aria-hidden>•</span>
+                      <span className="font-mono font-semibold text-foreground/80">
+                        CASE NO - {c.caseDetails.caseNumber || "N/A"}
+                      </span>
+                      {c.caseDetails.courtName && (
+                        <>
+                          <span aria-hidden>•</span>
+                          <span>{c.caseDetails.courtName}</span>
+                        </>
+                      )}
+                    </div>
+                    <div
+                      className={`font-mono text-[11px] ${
+                        c.caseDetails.cnr ? "text-muted-foreground" : "text-muted-foreground/50"
+                      }`}
+                    >
+                      CNR No - {c.caseDetails.cnr || "N/A"}
+                    </div>
+                  </div>
 
-                      <td className="px-4 py-3.5 align-top">
-                        <CaseTypeBadge caseItem={c} />
-                      </td>
-
-                      <td className="px-4 py-3.5 align-top">
-                        <div className="font-medium text-foreground">
-                          {entry ? fmtDate(entry.hearingDate ?? entry.businessOnDate) : "—"}
+                  <div className="flex shrink-0 flex-row items-center justify-between gap-3 sm:flex-col sm:items-end sm:justify-start">
+                    <StatusBadge status={c.status} />
+                    {entry && (
+                      <div className="text-right">
+                        <div className="text-[11px] font-medium text-foreground">
+                          {fmtDate(entry.hearingDate ?? entry.businessOnDate)}
                         </div>
-                        {entry && entry.purposeOfListing && (
-                          <div className="text-xs text-muted-foreground mt-0.5">
+                        {entry.purposeOfListing && (
+                          <div className="text-[10px] text-muted-foreground">
                             {entry.purposeOfListing}
                           </div>
                         )}
-                      </td>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
-                      <td className="px-4 py-3.5 align-top text-foreground">
-                        {c.caseDetails.courtName || "—"}
-                      </td>
+                <div className="mt-auto flex items-center justify-end gap-1.5 border-t border-border/60 pt-2">
+                  {isLawyer && c.status === "Submitted" ? (
+                    <>
+                      <IconButton
+                        variant="tonal"
+                        title="Approve case"
+                        onClick={() => handleApprove(c)}
+                      >
+                        <Check className="h-4 w-4 text-[var(--md-extended-color-success)]" />
+                      </IconButton>
+                      <IconButton variant="tonal" title="Reject case" onClick={() => handleReject(c)}>
+                        <X className="h-4 w-4 text-[var(--md-sys-color-error)]" />
+                      </IconButton>
+                    </>
+                  ) : (
+                    <IconButton
+                      variant="tonal"
+                      title={isLawyer ? "Edit case" : "View case details"}
+                      onClick={() => handleOpenModal(c)}
+                    >
+                      {isLawyer ? <Pencil className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </IconButton>
+                  )}
+                  <IconButton
+                    variant="tonal"
+                    title={`Attachments${c.files.files.length > 0 ? ` (${c.files.files.length})` : ""}`}
+                    onClick={() => setAttachmentsCaseId(c.id)}
+                  >
+                    <Paperclip className="h-4 w-4" />
+                  </IconButton>
+                  {(isLawyer || c.lawyerName) && <ChatButton caseItem={c} role={role} />}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
-                      <td className="px-4 py-3.5 align-top">
-                        <StatusBadge status={c.status} />
-                      </td>
-
-                      <td className="px-4 py-3.5 text-right align-top">
-                        <div className="flex items-center justify-end gap-2">
-                          {isLawyer && c.status === "Submitted" ? (
-                            <>
-                              <IconButton title="Approve case" onClick={() => handleApprove(c)}>
-                                <Check className="h-4 w-4 text-[var(--md-extended-color-success)]" />
-                              </IconButton>
-                              <IconButton title="Reject case" onClick={() => handleReject(c)}>
-                                <X className="h-4 w-4 text-[var(--md-sys-color-error)]" />
-                              </IconButton>
-                            </>
-                          ) : (
-                            <IconButton
-                              title={isLawyer ? "Edit case" : "View case details"}
-                              onClick={() => handleOpenModal(c)}
-                            >
-                              {isLawyer ? (
-                                <Pencil className="h-4 w-4 text-muted-foreground" />
-                              ) : (
-                                <Eye className="h-4 w-4 text-muted-foreground" />
-                              )}
-                            </IconButton>
-                          )}
-                          <IconButton
-                            title={`Attachments${c.files.files.length > 0 ? ` (${c.files.files.length})` : ""}`}
-                            onClick={() => setAttachmentsCaseId(c.id)}
-                          >
-                            <Paperclip className="h-4 w-4 text-muted-foreground" />
-                          </IconButton>
-                          {(isLawyer || c.lawyerName) && <ChatButton caseItem={c} role={role} />}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {cases.length > 0 && (
+        <div className="mt-4">
+          <CardPagination
+            page={safePage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            pageSize={pageSize}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setPage(1);
+            }}
+          />
+        </div>
+      )}
 
       {/* Courts Datalist */}
       <datalist id="courtsList">
@@ -993,78 +1027,75 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
             </div>
 
             <div className="flex-1 overflow-y-auto bg-muted/30 p-4 sm:p-6">
-              {previewDoc.fileDataUrl &&
-              (previewDoc.fileMimeType === "application/pdf" ||
-                previewDoc.fileMimeType?.startsWith("image/")) ? (
-                <div className="mx-auto h-full max-w-2xl overflow-hidden rounded-xl border border-border bg-background">
-                  <iframe
-                    src={previewDoc.fileDataUrl}
-                    title={previewDoc.name}
-                    className="h-full min-h-[60vh] w-full bg-white"
-                  />
-                </div>
-              ) : docLooksLikeImage(previewDoc) ? (
-                <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-xl border border-border bg-background p-6 shadow-sm">
-                  <div className="flex h-56 w-full items-center justify-center rounded-lg border border-dashed border-border bg-linear-to-br from-muted to-muted/50">
-                    <ImageIcon className="h-12 w-12 text-muted-foreground/60" />
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs font-semibold text-foreground">{previewDoc.name}</p>
-                    <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      {previewDoc.size} · Uploaded {previewDoc.uploadedAt}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="mx-auto max-w-2xl space-y-6 rounded-xl border border-border bg-background p-8 text-foreground shadow-sm">
-                  <div className="flex items-center justify-between border-b border-border pb-4">
-                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      Case Attachment
-                    </span>
-                    <span className="font-mono text-xs text-muted-foreground">
-                      {previewDoc.size}
-                    </span>
-                  </div>
-
-                  <div className="space-y-1 py-2 text-center">
-                    <h4 className="text-sm font-bold uppercase tracking-wide text-foreground">
-                      {docDisplayTitle(previewDoc)}
-                    </h4>
-                    <p className="font-mono text-xs text-muted-foreground">
-                      Uploaded {previewDoc.uploadedAt}
-                      {previewDoc.uploadedBy ? ` · by ${previewDoc.uploadedBy}` : ""}
-                    </p>
-                  </div>
-
-                  <div className="space-y-4 text-xs leading-relaxed text-foreground/90">
-                    <p className="rounded-xl border border-border/50 bg-muted/40 p-4 font-sans">
-                      This document was submitted as part of the case record for{" "}
-                      <strong>{previewDoc.name}</strong>. It forms supporting evidence relevant to
-                      the matter and has been indexed for reference by both the citizen and the
-                      assigned Lawyer.
-                    </p>
-                    <p>
-                      1. All statements and enclosures contained herein are submitted in good faith
-                      and are subject to verification by the concerned authority.
-                    </p>
-                    <p>
-                      2. Parties are advised to review the complete original file — available via
-                      Download — before relying on this document at any hearing.
-                    </p>
-                  </div>
-
-                  <div className="flex items-end justify-between border-t border-border pt-6 text-[11px] text-muted-foreground">
-                    <div>
-                      <p className="font-bold text-foreground">ATTACHMENT RECORD</p>
-                      <p>{previewDoc.name}</p>
+              <DocumentPreviewBody
+                fileDataUrl={previewDoc.fileDataUrl}
+                fileMimeType={previewDoc.fileMimeType}
+                fileName={previewDoc.name}
+                fallback={
+                  docLooksLikeImage(previewDoc) ? (
+                    <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-xl border border-border bg-background p-6 shadow-sm">
+                      <div className="flex h-56 w-full items-center justify-center rounded-lg border border-dashed border-border bg-linear-to-br from-muted to-muted/50">
+                        <ImageIcon className="h-12 w-12 text-muted-foreground/60" />
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs font-semibold text-foreground">{previewDoc.name}</p>
+                        <p className="mt-0.5 text-[11px] text-muted-foreground">
+                          {previewDoc.size} · Uploaded {previewDoc.uploadedAt}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right font-mono">
-                      <p>CloseUrCase FILE</p>
-                      <p>ADDED {previewDoc.uploadedAt}</p>
+                  ) : (
+                    <div className="mx-auto max-w-2xl space-y-6 rounded-xl border border-border bg-background p-8 text-foreground shadow-sm">
+                      <div className="flex items-center justify-between border-b border-border pb-4">
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                          Case Attachment
+                        </span>
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {previewDoc.size}
+                        </span>
+                      </div>
+
+                      <div className="space-y-1 py-2 text-center">
+                        <h4 className="text-sm font-bold uppercase tracking-wide text-foreground">
+                          {docDisplayTitle(previewDoc)}
+                        </h4>
+                        <p className="font-mono text-xs text-muted-foreground">
+                          Uploaded {previewDoc.uploadedAt}
+                          {previewDoc.uploadedBy ? ` · by ${previewDoc.uploadedBy}` : ""}
+                        </p>
+                      </div>
+
+                      <div className="space-y-4 text-xs leading-relaxed text-foreground/90">
+                        <p className="rounded-xl border border-border/50 bg-muted/40 p-4 font-sans">
+                          This document was submitted as part of the case record for{" "}
+                          <strong>{previewDoc.name}</strong>. It forms supporting evidence relevant
+                          to the matter and has been indexed for reference by both the citizen and
+                          the assigned Lawyer.
+                        </p>
+                        <p>
+                          1. All statements and enclosures contained herein are submitted in good
+                          faith and are subject to verification by the concerned authority.
+                        </p>
+                        <p>
+                          2. Parties are advised to review the complete original file — available
+                          via Download — before relying on this document at any hearing.
+                        </p>
+                      </div>
+
+                      <div className="flex items-end justify-between border-t border-border pt-6 text-[11px] text-muted-foreground">
+                        <div>
+                          <p className="font-bold text-foreground">ATTACHMENT RECORD</p>
+                          <p>{previewDoc.name}</p>
+                        </div>
+                        <div className="text-right font-mono">
+                          <p>CloseUrCase FILE</p>
+                          <p>ADDED {previewDoc.uploadedAt}</p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              )}
+                  )
+                }
+              />
             </div>
           </div>
         </div>

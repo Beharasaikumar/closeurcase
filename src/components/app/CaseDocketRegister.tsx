@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
-import { Search } from "lucide-react";
-import { ChipSet, FilterChip, TextField } from "@/components/m3";
+import { Search, ChevronDown, ChevronUp, Check, X, Bell, User, Landmark, Calendar, FileText } from "lucide-react";
+import { ChipSet, FilterChip, TextField, Button, IconButton } from "@/components/m3";
 import { FilterPanelButton, type FilterSection } from "@/components/app/FilterPanelButton";
 import { ExpandableFilterChips } from "@/components/app/ExpandableFilterChips";
-import { getCases, subscribeToStore } from "@/data/appStore";
+import { getCases, subscribeToStore, updateCaseStatus } from "@/data/appStore";
 import type { LegalCase } from "@/types";
 import { CasesTable, caseTypeOf } from "@/components/app/CasesTable";
 import {
@@ -12,6 +12,7 @@ import {
   STORED_STATUS_TO_FILTER,
   getNextEntry,
   nextHearingSortKey,
+  fmtDate,
   todayISO,
 } from "@/components/app/caseDocketShared";
 
@@ -110,7 +111,16 @@ export function CaseDocketRegister({
       return true;
     });
 
-    return filtered.sort((a, b) => nextHearingSortKey(a).localeCompare(nextHearingSortKey(b)));
+    return filtered.sort((a, b) => {
+      // Lawyer view: cases still awaiting Approve/Reject float to the top,
+      // ahead of everything else — then hearing date breaks ties within each group.
+      if (isLawyer) {
+        const aPending = a.status === "Submitted" ? 0 : 1;
+        const bPending = b.status === "Submitted" ? 0 : 1;
+        if (aPending !== bPending) return aPending - bPending;
+      }
+      return nextHearingSortKey(a).localeCompare(nextHearingSortKey(b));
+    });
   }, [
     cases,
     activeFilter,
@@ -145,6 +155,20 @@ export function CaseDocketRegister({
       })),
     },
   ];
+
+  // Split into pending requests vs active cases
+  const pendingRequests = filteredCases.filter((c) => c.status === "Submitted");
+  const activeCases = filteredCases.filter((c) => c.status !== "Submitted");
+
+  function handleApprove(c: LegalCase) {
+    updateCaseStatus(c.id, "Assigned", "Lawyer approved and accepted the case");
+  }
+
+  function handleReject(c: LegalCase) {
+    if (confirm(`Reject case ${c.id} (${c.title})? The citizen will be notified.`)) {
+      updateCaseStatus(c.id, "Rejected", "Lawyer declined to take up the case");
+    }
+  }
 
   return (
     <div className="mx-auto max-w-[1180px] space-y-6 pb-20 pt-2">
@@ -235,7 +259,184 @@ export function CaseDocketRegister({
         )}
       </div>
 
-      <CasesTable cases={filteredCases} role={role} />
+      {/* ── Pending Requests Inbox ──────────────────────────────────────────── */}
+      {isLawyer && pendingRequests.length > 0 && (
+        <PendingRequestsInbox
+          cases={pendingRequests}
+          onApprove={handleApprove}
+          onReject={handleReject}
+        />
+      )}
+
+      <CasesTable cases={activeCases} role={role} />
+    </div>
+  );
+}
+
+// ── Pending Requests Inbox Component ───────────────────────────────────────
+
+function PendingRequestsInbox({
+  cases,
+  onApprove,
+  onReject,
+}: {
+  cases: LegalCase[];
+  onApprove: (c: LegalCase) => void;
+  onReject: (c: LegalCase) => void;
+}) {
+  const [collapsed, setCollapsed] = useState(false);
+
+  return (
+    <div
+      className="overflow-hidden rounded-2xl shadow-sm"
+      style={{
+        borderWidth: "1.5px",
+        borderStyle: "solid",
+        borderColor: "color-mix(in srgb, var(--md-extended-color-warning) 45%, transparent)",
+        backgroundColor: "color-mix(in srgb, var(--md-extended-color-warning) 5%, var(--md-sys-color-surface))",
+      }}
+    >
+      {/* Header */}
+      <button
+        type="button"
+        onClick={() => setCollapsed((p) => !p)}
+        className="flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-3.5 transition-colors hover:bg-black/5"
+      >
+        <div className="flex items-center gap-2.5">
+          <div
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+            style={{ backgroundColor: "color-mix(in srgb, var(--md-extended-color-warning) 18%, transparent)" }}
+          >
+            <Bell className="h-3.5 w-3.5" style={{ color: "var(--md-extended-color-warning)" }} />
+          </div>
+          <div className="text-left">
+            <span className="text-sm font-bold text-foreground">
+              Pending Requests
+            </span>
+            <span
+              className="ml-2 inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold text-white"
+              style={{ backgroundColor: "var(--md-extended-color-warning)" }}
+            >
+              {cases.length}
+            </span>
+          </div>
+          <span className="hidden sm:inline text-xs text-muted-foreground">
+            — Awaiting your Accept or Decline
+          </span>
+        </div>
+        {collapsed ? (
+          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+        ) : (
+          <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
+        )}
+      </button>
+
+      {/* Cards */}
+      {!collapsed && (
+        <div className="border-t border-dashed px-3 pt-3 pb-4 sm:px-5 sm:pb-5" style={{ borderColor: "color-mix(in srgb, var(--md-extended-color-warning) 35%, transparent)" }}>
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            {cases.map((c) => (
+              <PendingRequestCard key={c.id} c={c} onApprove={onApprove} onReject={onReject} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PendingRequestCard({
+  c,
+  onApprove,
+  onReject,
+}: {
+  c: LegalCase;
+  onApprove: (c: LegalCase) => void;
+  onReject: (c: LegalCase) => void;
+}) {
+  const entry = getNextEntry(c);
+
+  return (
+    <div
+      className="flex flex-col gap-3 rounded-xl border bg-white p-3.5 shadow-xs sm:p-4"
+      style={{
+        borderColor: "color-mix(in srgb, var(--md-extended-color-warning) 30%, transparent)",
+      }}
+    >
+      {/* Case Title + ID */}
+      <div className="min-w-0 space-y-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="line-clamp-2 text-sm font-bold text-foreground leading-snug">
+            {c.title || "Untitled Matter"}
+          </h3>
+          <span
+            className="shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold"
+            style={{
+              backgroundColor: "color-mix(in srgb, var(--md-extended-color-warning) 15%, transparent)",
+              color: "var(--md-extended-color-warning)",
+            }}
+          >
+            New Request
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+          <span className="font-mono font-semibold text-primary">{c.id}</span>
+          {c.caseDetails.caseNumber && (
+            <>
+              <span aria-hidden>•</span>
+              <span className="font-mono font-semibold text-foreground/80">
+                CASE NO - {c.caseDetails.caseNumber}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Meta info row */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] text-muted-foreground">
+        <span className="inline-flex items-center gap-1">
+          <User className="h-3 w-3 shrink-0" />
+          {c.citizenName}
+        </span>
+        {c.caseDetails.courtName && (
+          <span className="inline-flex items-center gap-1">
+            <Landmark className="h-3 w-3 shrink-0" />
+            <span className="line-clamp-1">{c.caseDetails.courtName}</span>
+          </span>
+        )}
+        {c.category && (
+          <span className="inline-flex items-center gap-1">
+            <FileText className="h-3 w-3 shrink-0" />
+            {c.category}
+          </span>
+        )}
+        {entry && (
+          <span className="inline-flex items-center gap-1">
+            <Calendar className="h-3 w-3 shrink-0" />
+            Next hearing: {fmtDate(entry.hearingDate ?? entry.businessOnDate)}
+          </span>
+        )}
+      </div>
+
+      {/* Accept / Decline buttons */}
+      <div className="mt-auto flex items-center justify-end gap-2 border-t pt-2.5" style={{ borderColor: "color-mix(in srgb, var(--md-extended-color-warning) 25%, transparent)" }}>
+        <span className="mr-auto text-[11px] text-muted-foreground">Action required</span>
+        <Button
+          variant="outlined"
+          icon={<X className="h-3.5 w-3.5" />}
+          onClick={() => onReject(c)}
+          className="!text-[var(--md-sys-color-error)] !border-[var(--md-sys-color-error)]/40 hover:!bg-[var(--md-sys-color-error)]/8 !h-8 !text-xs"
+        >
+          Decline
+        </Button>
+        <Button
+          icon={<Check className="h-3.5 w-3.5" />}
+          onClick={() => onApprove(c)}
+          className="!bg-[var(--md-extended-color-success)] !h-8 !text-xs"
+        >
+          Accept
+        </Button>
+      </div>
     </div>
   );
 }

@@ -131,130 +131,98 @@ function CasesPage() {
         <FilterPanelButton sections={filterSections} selected={filters} onChange={setFilters} />
       </div>
 
-      {/* Cases Table — horizontally compact so all columns fit within screen width */}
-      <div className="rounded-xl border border-border bg-surface overflow-hidden w-full">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-border text-[11px] uppercase tracking-wide text-muted-foreground">
-                <th className="px-3 py-2.5 font-semibold whitespace-nowrap w-[130px]">Case ID</th>
-                <th className="px-3 py-2.5 font-semibold">Case Title</th>
-                <th className="px-3 py-2.5 font-semibold whitespace-nowrap w-[150px]">Client</th>
-                <th className="px-3 py-2.5 font-semibold whitespace-nowrap w-[150px]">
-                  Assigned Lawyer
-                </th>
-                <th className="px-3 py-2.5 font-semibold whitespace-nowrap w-[100px]">Status</th>
-                <th className="px-3 py-2.5 font-semibold whitespace-nowrap w-[95px] text-right pr-3">
-                  Action
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {pageRows.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">
-                    No platform cases found matching your search.
-                  </td>
-                </tr>
-              ) : (
-                pageRows.map((r) => {
-                  const isOpen = selectedId === r.id;
-                  return (
-                    <tr
-                      key={r.id}
-                      className={`border-b border-border last:border-0 hover:bg-muted/60 transition-colors ${
-                        isOpen ? "bg-primary/5" : ""
-                      }`}
-                    >
-                      <td className="px-3 py-2.5 align-middle whitespace-nowrap">
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={() => setSelectedId(r.id)}
-                            className="font-bold text-primary hover:underline text-left text-xs font-mono"
-                          >
-                            {r.id}
-                          </button>
-                          {r.isEmergency && (
-                            <span className="inline-flex shrink-0 items-center rounded-full bg-red-600 px-1.5 py-0.5 text-[8.5px] font-extrabold text-white uppercase tracking-wider shadow-2xs">
-                              Emergency
-                            </span>
-                          )}
+      {/* Cases Cards */}
+      {pageRows.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border bg-surface p-10 text-center text-xs text-muted-foreground">
+          No platform cases found matching your search.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          {pageRows.map((r) => {
+            const isOpen = selectedId === r.id;
+            return (
+              <div
+                key={r.id}
+                className={`flex h-full min-h-56 flex-col rounded-xl border p-3.5 shadow-2xs transition-all hover:border-primary/40 hover:shadow-sm sm:p-4 ${
+                  isOpen ? "border-primary bg-primary/5" : "border-border bg-surface"
+                }`}
+              >
+                <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={() => setSelectedId(r.id)}
+                        className="font-mono text-xs font-bold text-primary hover:underline"
+                      >
+                        {r.id}
+                      </button>
+                      {r.isEmergency && (
+                        <span className="inline-flex shrink-0 items-center rounded-full bg-red-600 px-1.5 py-0.5 text-[8.5px] font-extrabold text-white uppercase tracking-wider shadow-2xs">
+                          Emergency
+                        </span>
+                      )}
+                    </div>
+
+                    <div>
+                      <div
+                        className="line-clamp-2 text-sm font-bold text-foreground leading-snug sm:text-[15px]"
+                        title={r.title}
+                      >
+                        {r.title}
+                      </div>
+                      {r.isEmergency && r.emergencyReason && (
+                        <div className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold text-red-700">
+                          <AlertTriangle className="h-3 w-3 shrink-0 text-red-600" />
+                          <span>{r.emergencyReason}</span>
                         </div>
-                      </td>
-                      <td className="px-3 py-2.5 align-middle">
-                        <div className="max-w-[220px] sm:max-w-xs md:max-w-sm">
-                          <span
-                            className="text-xs font-semibold text-foreground truncate block"
-                            title={r.title}
-                          >
-                            {r.title}
-                          </span>
-                          {r.isEmergency && r.emergencyReason && (
-                            <div className="mt-0.5 flex items-center gap-1 text-[10px] font-semibold text-red-700 min-w-0">
-                              <AlertTriangle className="h-3 w-3 shrink-0 text-red-600" />
-                              <span className="truncate" title={r.emergencyReason}>
-                                {r.emergencyReason}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-3 py-2.5 align-middle whitespace-nowrap">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <UserAvatar name={r.citizenName} size="sm" />
-                          <div className="min-w-0 flex-1">
-                            <div
-                              className="text-xs font-bold text-foreground truncate"
-                              title={r.citizenName}
-                            >
-                              {r.citizenName}
-                            </div>
-                            <div className="text-[10px] text-muted-foreground truncate">
-                              {r.city}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-3 py-2.5 align-middle whitespace-nowrap">
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        <UserAvatar name={r.citizenName} size="sm" />
+                        <span>
+                          <span className="font-semibold text-foreground">{r.citizenName}</span> ·{" "}
+                          {r.city}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
                         {r.lawyerName ? (
-                          <div className="flex items-center gap-2 min-w-0">
+                          <>
                             <UserAvatar name={r.lawyerName} size="sm" />
-                            <span
-                              className="text-xs font-semibold text-foreground truncate min-w-0"
-                              title={r.lawyerName}
-                            >
-                              {r.lawyerName}
-                            </span>
-                          </div>
+                            <span className="font-semibold text-foreground">{r.lawyerName}</span>
+                          </>
                         ) : (
                           <span
-                            className="text-xs font-semibold italic truncate block"
+                            className="font-semibold italic"
                             style={{ color: "var(--md-extended-color-warning)" }}
                           >
                             Unassigned
                           </span>
                         )}
-                      </td>
-                      <td className="px-3 py-2.5 align-middle whitespace-nowrap">
-                        <StatusDot status={r.status} />
-                      </td>
-                      <td className="px-3 py-2.5 align-middle whitespace-nowrap text-right pr-3">
-                        <button
-                          onClick={() => setSelectedId(r.id)}
-                          className="inline-flex items-center gap-0.5 rounded-full border border-border px-2.5 py-0.5 text-[11px] font-semibold text-primary hover:bg-primary/8 transition-colors cursor-pointer"
-                        >
-                          <ChevronRight className="h-3 w-3" />
-                          Manage
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="shrink-0">
+                    <StatusDot status={r.status} />
+                  </div>
+                </div>
+
+                <div className="mt-auto flex items-center justify-end border-t border-border/60 pt-2">
+                  <button
+                    onClick={() => setSelectedId(r.id)}
+                    className="inline-flex items-center gap-0.5 rounded-full border border-border px-2.5 py-0.5 text-[11px] font-semibold text-primary hover:bg-primary/8 transition-colors cursor-pointer"
+                  >
+                    <ChevronRight className="h-3 w-3" />
+                    Manage
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
-      </div>
+      )}
 
       {/* Manage Case Modal */}
       <Dialog

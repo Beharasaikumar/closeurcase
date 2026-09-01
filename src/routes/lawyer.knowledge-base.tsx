@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/app/PageHeader";
 import { DataTable, type Column } from "@/components/app/DataTable";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
+import { DocumentPreviewBody } from "@/components/app/DocumentPreview";
 import {
   getKnowledgeBase,
   getLawyers,
@@ -12,14 +13,20 @@ import {
   subscribeToStore,
 } from "@/data/appStore";
 import type { KnowledgeItem, LawyerDocument } from "@/types";
-import { MAX_ATTACHMENT_BYTES, formatFileSize, readFileAsDataUrl } from "@/lib/files";
+import {
+  MAX_ATTACHMENT_BYTES,
+  formatFileSize,
+  readFileAsDataUrl,
+  titleFromFileName,
+  isPdfOrDocxFile,
+  openDocumentInNewTab,
+} from "@/lib/files";
 import {
   Search,
   BookOpen,
   FileStack,
   Upload,
   Trash2,
-  Download,
   FileText,
   Tag,
   RotateCcw,
@@ -28,17 +35,17 @@ import {
   X,
   ChevronDown,
   ChevronUp,
-  ExternalLink,
   CheckCircle2,
   Sparkles,
+  Maximize2,
 } from "lucide-react";
 import {
   TextField,
+  Select,
   Button,
   IconButton,
   ChipSet,
   FilterChip,
-  AssistChip,
   Badge,
   Tabs,
   Dialog,
@@ -53,13 +60,7 @@ export const Route = createFileRoute("/lawyer/knowledge-base")({
 });
 
 type KbTab = "global" | "mine";
-
-function isPreviewableInline(item: { fileMimeType?: string; fileName?: string }): boolean {
-  if (item.fileMimeType) {
-    return item.fileMimeType === "application/pdf" || item.fileMimeType.startsWith("image/");
-  }
-  return /\.pdf$/i.test(item.fileName ?? "");
-}
+type SortOrder = "newest" | "oldest";
 
 export function LawyerKnowledgeBase() {
   const [tab, setTab] = useState<KbTab>("global");
@@ -68,7 +69,7 @@ export function LawyerKnowledgeBase() {
   const myDocs = useMyDocs(currentLawyer?.id ?? "l_001");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-4">
       <PageHeader
         title="Legal Knowledge Base & References"
         description="Browse indexed statutory acts and landmark judgements, or keep your own reference documents handy."
@@ -99,6 +100,7 @@ function GlobalDocsTab() {
   const [q, setQ] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
   const [domainFilter, setDomainFilter] = useState("All");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
   const [showFilters, setShowFilters] = useState(false);
   const [items, setItems] = useState<KnowledgeItem[]>(getKnowledgeBase);
   const [activePdf, setActivePdf] = useState<KnowledgeItem | null>(null);
@@ -120,35 +122,57 @@ function GlobalDocsTab() {
 
   const activeFilterCount = (typeFilter !== "All" ? 1 : 0) + (domainFilter !== "All" ? 1 : 0);
 
-  const rows = items.filter((k) => {
-    const matchesSearch =
-      k.title.toLowerCase().includes(q.toLowerCase()) ||
-      k.category.toLowerCase().includes(q.toLowerCase()) ||
-      k.type.toLowerCase().includes(q.toLowerCase());
+  const rows = items
+    .filter((k) => {
+      const matchesSearch =
+        k.title.toLowerCase().includes(q.toLowerCase()) ||
+        k.category.toLowerCase().includes(q.toLowerCase()) ||
+        k.type.toLowerCase().includes(q.toLowerCase());
 
-    const matchesType = typeFilter === "All" || k.type.toLowerCase() === typeFilter.toLowerCase();
-    const matchesDomain =
-      domainFilter === "All" || k.category.toLowerCase() === domainFilter.toLowerCase();
+      const matchesType =
+        typeFilter === "All" || k.type.toLowerCase() === typeFilter.toLowerCase();
+      const matchesDomain =
+        domainFilter === "All" || k.category.toLowerCase() === domainFilter.toLowerCase();
 
-    return matchesSearch && matchesType && matchesDomain;
-  });
+      return matchesSearch && matchesType && matchesDomain;
+    })
+    .sort((a, b) =>
+      sortOrder === "newest"
+        ? b.uploadedAt.localeCompare(a.uploadedAt)
+        : a.uploadedAt.localeCompare(b.uploadedAt),
+    );
 
   const cols: Column<KnowledgeItem>[] = [
     {
       key: "title",
       header: "Document Title",
       render: (r) => (
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+        <div className="flex items-start gap-2.5 py-0.5 min-w-0">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary mt-0.5">
             <BookOpen className="h-4 w-4" />
           </div>
-          <span className="font-bold text-foreground text-xs">{r.title}</span>
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <span className="block w-full text-xs sm:text-sm font-bold text-foreground leading-snug break-words">
+              {r.title}
+            </span>
+            {/* Type + Domain + Date fold in here when the table's narrow — their own columns take over above that. */}
+            <div className="flex flex-wrap items-center gap-1.5 @5xl:hidden">
+              <span className="inline-block rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                {r.type}
+              </span>
+              <span className="inline-block rounded-md border border-border bg-background px-2 py-0.5 text-[10px] font-medium text-foreground">
+                {r.category} Law
+              </span>
+              <span className="text-[10px] text-muted-foreground">· {r.uploadedAt}</span>
+            </div>
+          </div>
         </div>
       ),
     },
     {
       key: "type",
       header: "Document Type",
+      hideCompact: true,
       render: (r) => (
         <span className="inline-block rounded-md bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold text-primary">
           {r.type}
@@ -158,6 +182,7 @@ function GlobalDocsTab() {
     {
       key: "category",
       header: "Domain",
+      hideCompact: true,
       render: (r) => (
         <span className="inline-block rounded-md border border-border bg-background px-2 py-0.5 text-[11px] font-medium text-foreground">
           {r.category}
@@ -167,48 +192,63 @@ function GlobalDocsTab() {
     {
       key: "date",
       header: "Uploaded Date",
+      hideCompact: true,
       render: (r) => <span className="text-xs text-muted-foreground">{r.uploadedAt}</span>,
-    },
-    {
-      key: "size",
-      header: "File Size",
-      render: (r) => <span className="text-xs font-mono text-muted-foreground">{r.size}</span>,
     },
     {
       key: "action",
       header: "Actions",
       render: (r) => (
-        <div className="flex items-center gap-2">
-          <AssistChip
-            label="View"
-            icon={<Eye className="h-3.5 w-3.5" />}
-            onClick={() => setActivePdf(r)}
-          />
-          <AssistChip
-            label="Download"
-            icon={<Download className="h-3.5 w-3.5" />}
-            onClick={() => alert(`Downloading reference document: ${r.title}`)}
-          />
-        </div>
+        <IconButton ariaLabel={`View ${r.title}`} onClick={() => setActivePdf(r)}>
+          <Eye className="h-4 w-4 text-primary" />
+        </IconButton>
       ),
     },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-4">
       {/* TOP SEARCH & FILTER TOGGLE BAR */}
-      <div className="rounded-2xl border border-border bg-surface p-5 shadow-2xs space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <TextField
-            value={q}
-            onChange={setQ}
-            placeholder="Search acts, judgements, keywords…"
-            leadingIcon={<Search className="h-4 w-4" />}
-            className="w-full max-w-sm"
-          />
+      <div className="rounded-2xl border border-border bg-surface p-3 sm:p-4 shadow-2xs space-y-2.5 sm:space-y-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+          {/* Mobile Row 1: Search input + Filter icon button side-by-side */}
+          <div className="flex items-center gap-2 w-full sm:w-auto sm:flex-1 sm:max-w-sm">
+            <TextField
+              value={q}
+              onChange={setQ}
+              placeholder="Search acts, judgements, keywords…"
+              leadingIcon={<Search className="h-4 w-4" />}
+              className="flex-1 min-w-0"
+            />
 
-          <div className="flex items-center gap-2">
-            <div className="relative">
+            {/* Mobile Filter Toggle Button (side-by-side with Search input!) */}
+            <div className="relative shrink-0 sm:hidden">
+              <IconButton
+                variant={showFilters || activeFilterCount > 0 ? "filled" : "outlined"}
+                onClick={() => setShowFilters(!showFilters)}
+                ariaLabel="Toggle filters"
+              >
+                <Filter className="h-4 w-4" />
+              </IconButton>
+              {activeFilterCount > 0 && <Badge count={activeFilterCount} />}
+            </div>
+          </div>
+
+          {/* Desktop & Mobile Sort + Desktop Filter */}
+          <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
+            <Select
+              label="Sort"
+              value={sortOrder}
+              onChange={(v) => setSortOrder(v as SortOrder)}
+              options={[
+                { value: "newest", label: "Newest First" },
+                { value: "oldest", label: "Oldest First" },
+              ]}
+              className="flex-1 sm:w-44"
+            />
+
+            {/* Desktop Filter Button */}
+            <div className="relative hidden sm:block shrink-0">
               <Button
                 variant={showFilters || activeFilterCount > 0 ? "filled" : "outlined"}
                 icon={<Filter className="h-4 w-4" />}
@@ -235,6 +275,7 @@ function GlobalDocsTab() {
                   setDomainFilter("All");
                   setQ("");
                 }}
+                className="shrink-0 text-xs px-2"
               >
                 Reset
               </Button>
@@ -244,7 +285,7 @@ function GlobalDocsTab() {
 
         {/* COLLAPSIBLE FILTERS PANEL — LIVES UNDER FILTER BUTTON */}
         {showFilters && (
-          <div className="border-t border-border pt-4 space-y-4 animate-in fade-in duration-150">
+          <div className="border-t border-border pt-3 space-y-3 animate-in fade-in duration-150">
             {/* Document Type Filter Buttons */}
             <div className="space-y-1.5">
               <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
@@ -285,12 +326,12 @@ function GlobalDocsTab() {
       </div>
 
       {/* DATA TABLE */}
-      <div className="rounded-2xl border border-border bg-surface p-6 shadow-2xs space-y-3">
-        <div className="flex flex-col gap-1 border-b border-border pb-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+      <div className="rounded-2xl border border-border bg-surface p-3.5 sm:p-5 shadow-2xs space-y-3">
+        <div className="flex flex-col gap-1 border-b border-border pb-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
           <span className="text-xs font-bold text-foreground">
             Reference Documents ({rows.length})
           </span>
-          <span className="text-xs text-muted-foreground">Showing verified legal publications</span>
+          <span className="hidden sm:inline text-xs text-muted-foreground">Showing verified legal publications</span>
         </div>
         <DataTable
           columns={cols}
@@ -317,42 +358,16 @@ function GlobalDocsTab() {
                 </div>
               </div>
 
-              <div className="flex shrink-0 items-center gap-1">
-                <a
-                  href={
-                    activePdf.fileDataUrl ??
-                    `data:text/plain;charset=utf-8,${encodeURIComponent(activePdf.title)}`
-                  }
-                  download={activePdf.fileName ?? `${activePdf.title}.txt`}
-                  className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors"
-                  title="Download document"
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => openDocumentInNewTab(activePdf)}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors cursor-pointer"
+                  title="Full Screen (Open document in new tab)"
                 >
-                  <Download className="h-3.5 w-3.5" />
-                  Download
-                </a>
-                <a
-                  href={
-                    activePdf.fileDataUrl ??
-                    `data:text/plain;charset=utf-8,${encodeURIComponent(activePdf.title)}`
-                  }
-                  download={activePdf.fileName ?? `${activePdf.title}.txt`}
-                  className="flex h-9 w-9 sm:hidden items-center justify-center rounded-full text-muted-foreground hover:bg-muted transition-colors"
-                  title="Download"
-                >
-                  <Download className="h-5 w-5" />
-                </a>
-                <a
-                  href={
-                    activePdf.fileDataUrl ??
-                    `data:text/plain;charset=utf-8,${encodeURIComponent(activePdf.title)}`
-                  }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted transition-colors"
-                  title="Open in new tab (full screen)"
-                >
-                  <ExternalLink className="h-5 w-5" />
-                </a>
+                  <Maximize2 className="h-3.5 w-3.5" />
+                  <span>Full Screen</span>
+                </button>
                 <IconButton ariaLabel="Close preview" onClick={() => setActivePdf(null)}>
                   <X className="h-5 w-5" />
                 </IconButton>
@@ -360,74 +375,65 @@ function GlobalDocsTab() {
             </div>
 
             {/* Modal Body — Document Content Preview */}
-            <div className="flex-1 overflow-y-auto p-6 bg-muted/30 space-y-4">
-              {activePdf.fileDataUrl && isPreviewableInline(activePdf) ? (
-                <div className="mx-auto h-full max-w-3xl overflow-hidden rounded-xl border border-border bg-background shadow-sm">
-                  <iframe
-                    src={activePdf.fileDataUrl}
-                    title={activePdf.title}
-                    className="h-[70vh] w-full bg-white"
-                  />
-                </div>
-              ) : activePdf.fileDataUrl ? (
-                <div className="mx-auto flex max-w-2xl min-h-[300px] flex-col items-center justify-center gap-3 rounded-xl border border-border bg-background p-8 text-center shadow-sm">
-                  <FileText className="h-8 w-8 text-muted-foreground" />
-                  <p className="text-xs font-semibold text-foreground">{activePdf.fileName}</p>
-                  <p className="max-w-sm text-[11px] text-muted-foreground">
-                    Inline preview isn't available for this file type. Use Download or Open in new
-                    tab to view the full document.
-                  </p>
-                </div>
-              ) : (
-                <div className="mx-auto max-w-2xl rounded-xl border border-border bg-background p-8 shadow-sm space-y-6 text-foreground min-h-[500px]">
-                  <div className="flex items-center justify-between border-b border-border pb-4">
-                    <span className="text-xs font-bold tracking-wider uppercase text-muted-foreground">
-                      OFFICIAL GAZETTE / LEGAL REFERENCE
-                    </span>
-                    <span className="text-xs font-mono text-muted-foreground">STATUTORY COPY</span>
-                  </div>
-
-                  <div className="text-center space-y-1 py-2">
-                    <h4 className="text-sm font-bold text-foreground uppercase tracking-wide">
-                      {activePdf.title}
-                    </h4>
-                    <p className="text-xs text-muted-foreground font-mono">
-                      DOMAIN: {activePdf.category.toUpperCase()} LAW
-                    </p>
-                  </div>
-
-                  <div className="space-y-4 text-xs leading-relaxed text-foreground/90">
-                    <p className="font-semibold text-foreground">
-                      STATUTORY PROVISIONS &amp; STATUTORY REFERENCES:
-                    </p>
-                    <p className="bg-muted/40 p-4 rounded-xl border border-border/50 font-sans">
-                      This document represents an indexed statutory text reference for{" "}
-                      <strong>{activePdf.title}</strong>, maintained in the CloseUrCase legal
-                      knowledge base. Lawyers can cite these sections directly in AI counter
-                      generation.
-                    </p>
-                    <p>
-                      1. Under the applicable provisions, all registered petitions and legal notices
-                      must conform to statutory timelines and jurisdictional prerequisites.
-                    </p>
-                    <p>
-                      2. Certified copies of orders and evidentiary exhibits shall be produced
-                      before the presiding tribunal during preliminary hearing proceedings.
-                    </p>
-                  </div>
-
-                  <div className="pt-8 border-t border-border flex justify-between items-end text-[11px] text-muted-foreground">
-                    <div>
-                      <p className="font-bold text-foreground">INDEXED REFERENCE:</p>
-                      <p>{activePdf.type}</p>
+            <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 bg-muted/30 space-y-3">
+              <DocumentPreviewBody
+                fileDataUrl={activePdf.fileDataUrl}
+                fileMimeType={activePdf.fileMimeType}
+                fileName={activePdf.fileName ?? activePdf.title}
+                fallback={
+                  <div className="mx-auto max-w-2xl rounded-xl border border-border bg-background p-4 sm:p-6 shadow-sm space-y-4 text-foreground">
+                    <div className="flex items-center justify-between border-b border-border pb-3">
+                      <span className="text-xs font-bold tracking-wider uppercase text-muted-foreground">
+                        OFFICIAL GAZETTE / LEGAL REFERENCE
+                      </span>
+                      <span className="text-xs font-mono text-muted-foreground">
+                        STATUTORY COPY
+                      </span>
                     </div>
-                    <div className="text-right font-mono">
-                      <p>VERIFIED DOCUMENT</p>
-                      <p>UPLOADED: {activePdf.uploadedAt}</p>
+
+                    <div className="text-center space-y-1 py-1">
+                      <h4 className="text-sm font-bold text-foreground uppercase tracking-wide">
+                        {activePdf.title}
+                      </h4>
+                      <p className="text-xs text-muted-foreground font-mono">
+                        DOMAIN: {activePdf.category.toUpperCase()} LAW
+                      </p>
+                    </div>
+
+                    <div className="space-y-3 text-xs leading-relaxed text-foreground/90">
+                      <p className="font-semibold text-foreground">
+                        STATUTORY PROVISIONS &amp; STATUTORY REFERENCES:
+                      </p>
+                      <p className="bg-muted/40 p-3 sm:p-4 rounded-xl border border-border/50 font-sans">
+                        This document represents an indexed statutory text reference for{" "}
+                        <strong>{activePdf.title}</strong>, maintained in the CloseUrCase legal
+                        knowledge base. Lawyers can cite these sections directly in AI counter
+                        generation.
+                      </p>
+                      <p>
+                        1. Under the applicable provisions, all registered petitions and legal
+                        notices must conform to statutory timelines and jurisdictional
+                        prerequisites.
+                      </p>
+                      <p>
+                        2. Certified copies of orders and evidentiary exhibits shall be produced
+                        before the presiding tribunal during preliminary hearing proceedings.
+                      </p>
+                    </div>
+
+                    <div className="pt-4 border-t border-border flex justify-between items-end text-[11px] text-muted-foreground">
+                      <div>
+                        <p className="font-bold text-foreground">INDEXED REFERENCE:</p>
+                        <p>{activePdf.type}</p>
+                      </div>
+                      <div className="text-right font-mono">
+                        <p>VERIFIED DOCUMENT</p>
+                        <p>UPLOADED: {activePdf.uploadedAt}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                }
+              />
             </div>
 
             {/* Modal Footer */}
@@ -464,42 +470,48 @@ function useMyDocs(lawyerId: string) {
 function MyDocsTab({ state }: { state: { lawyerId: string; docs: LawyerDocument[] } }) {
   const { lawyerId, docs } = state;
   const [search, setSearch] = useState("");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [activeDoc, setActiveDoc] = useState<LawyerDocument | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const pendingDeleteDoc = docs.find((d) => d.id === pendingDeleteId);
 
-  const [title, setTitle] = useState("");
   const [fileSelected, setFileSelected] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [uploadError, setUploadError] = useState("");
 
   const filtered = useMemo(
-    () => docs.filter((d) => d.title.toLowerCase().includes(search.toLowerCase())),
-    [docs, search],
+    () =>
+      docs
+        .filter((d) => d.title.toLowerCase().includes(search.toLowerCase()))
+        .sort((a, b) =>
+          sortOrder === "newest"
+            ? b.uploadedAt.localeCompare(a.uploadedAt)
+            : a.uploadedAt.localeCompare(b.uploadedAt),
+        ),
+    [docs, search, sortOrder],
   );
 
   const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!fileSelected) return;
 
     setIsUploading(true);
     setUploadError("");
     try {
-      const fileDataUrl = fileSelected ? await readFileAsDataUrl(fileSelected) : undefined;
-      const sizeStr = fileSelected ? formatFileSize(fileSelected.size) : "—";
+      const title = titleFromFileName(fileSelected.name);
+      const fileDataUrl = await readFileAsDataUrl(fileSelected);
       addLawyerDocument({
         lawyerId,
         title,
-        size: sizeStr,
+        size: formatFileSize(fileSelected.size),
         fileDataUrl,
-        fileName: fileSelected?.name,
-        fileMimeType: fileSelected?.type,
+        fileName: fileSelected.name,
+        fileMimeType: fileSelected.type,
       });
 
       setSuccessMsg(`"${title}" added to your documents.`);
-      setTitle("");
       setFileSelected(null);
       setShowUploadModal(false);
 
@@ -517,34 +529,36 @@ function MyDocsTab({ state }: { state: { lawyerId: string; docs: LawyerDocument[
       key: "title",
       header: "Document Title",
       render: (r) => (
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+        <div className="flex items-start gap-2.5 py-0.5 min-w-0">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary mt-0.5">
             <FileText className="h-4 w-4" />
           </div>
-          <span className="font-bold text-foreground text-xs">{r.title}</span>
+          <div className="min-w-0 flex-1 space-y-1">
+            <span className="block w-full text-xs sm:text-sm font-bold text-foreground leading-snug break-words">
+              {r.title}
+            </span>
+            {/* Uploaded date folds in here when the table's narrow — its own column takes over above that. */}
+            <span className="block text-[10px] text-muted-foreground @5xl:hidden">
+              Uploaded {r.uploadedAt}
+            </span>
+          </div>
         </div>
       ),
     },
     {
       key: "date",
       header: "Uploaded Date",
+      hideCompact: true,
       render: (r) => <span className="text-xs text-muted-foreground">{r.uploadedAt}</span>,
-    },
-    {
-      key: "size",
-      header: "File Size",
-      render: (r) => <span className="text-xs font-mono text-muted-foreground">{r.size}</span>,
     },
     {
       key: "action",
       header: "Actions",
       render: (r) => (
-        <div className="flex items-center gap-2">
-          <AssistChip
-            label="View"
-            icon={<Eye className="h-3.5 w-3.5" />}
-            onClick={() => setActiveDoc(r)}
-          />
+        <div className="flex items-center gap-1">
+          <IconButton ariaLabel={`View ${r.title}`} onClick={() => setActiveDoc(r)}>
+            <Eye className="h-4 w-4 text-primary" />
+          </IconButton>
           <IconButton ariaLabel={`Delete ${r.title}`} onClick={() => setPendingDeleteId(r.id)}>
             <Trash2 className="h-4 w-4" />
           </IconButton>
@@ -554,10 +568,10 @@ function MyDocsTab({ state }: { state: { lawyerId: string; docs: LawyerDocument[
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-4">
       {successMsg && (
         <div
-          className="flex items-center gap-2 rounded-lg p-4 text-xs font-bold"
+          className="flex items-center gap-2 rounded-lg p-3 sm:p-4 text-xs font-bold"
           style={{
             backgroundColor:
               "color-mix(in srgb, var(--md-extended-color-success) 10%, transparent)",
@@ -569,33 +583,64 @@ function MyDocsTab({ state }: { state: { lawyerId: string; docs: LawyerDocument[
         </div>
       )}
 
-      {/* SEARCH BAR & UPLOAD BUTTON */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border bg-surface p-4 shadow-2xs">
-        <TextField
-          value={search}
-          onChange={setSearch}
-          placeholder="Search your documents…"
-          leadingIcon={<Search className="h-4 w-4" />}
-          className="w-full max-w-sm"
-        />
-        <Button
-          icon={<Upload className="h-4 w-4" />}
-          onClick={() => {
-            setUploadError("");
-            setShowUploadModal(true);
-          }}
-        >
-          Upload Document
-        </Button>
+      {/* SEARCH BAR, SORT & UPLOAD BUTTON */}
+      <div className="rounded-2xl border border-border bg-surface p-3 sm:p-4 shadow-2xs space-y-2.5 sm:space-y-0">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+          {/* Mobile Row 1: Search input + Upload button side by side */}
+          <div className="flex items-center gap-2 w-full sm:w-auto sm:flex-1 sm:max-w-sm">
+            <TextField
+              value={search}
+              onChange={setSearch}
+              placeholder="Search your documents…"
+              leadingIcon={<Search className="h-4 w-4" />}
+              className="flex-1 min-w-0"
+            />
+            <IconButton
+              variant="filled"
+              onClick={() => {
+                setUploadError("");
+                setShowUploadModal(true);
+              }}
+              ariaLabel="Upload document"
+              className="shrink-0 sm:hidden"
+            >
+              <Upload className="h-4 w-4" />
+            </IconButton>
+          </div>
+
+          {/* Desktop & Mobile Sort + Desktop Upload */}
+          <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
+            <Select
+              label="Sort"
+              value={sortOrder}
+              onChange={(v) => setSortOrder(v as SortOrder)}
+              options={[
+                { value: "newest", label: "Newest First" },
+                { value: "oldest", label: "Oldest First" },
+              ]}
+              className="flex-1 sm:w-44"
+            />
+            <Button
+              icon={<Upload className="h-4 w-4" />}
+              onClick={() => {
+                setUploadError("");
+                setShowUploadModal(true);
+              }}
+              className="hidden sm:inline-flex shrink-0"
+            >
+              Upload Document
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* DATA TABLE */}
-      <div className="rounded-2xl border border-border bg-surface p-6 shadow-2xs space-y-3">
-        <div className="flex items-center justify-between border-b border-border pb-3">
+      <div className="rounded-2xl border border-border bg-surface p-3.5 sm:p-5 shadow-2xs space-y-3">
+        <div className="flex items-center justify-between border-b border-border pb-2.5">
           <span className="text-xs font-bold text-foreground">
             Your Documents ({filtered.length})
           </span>
-          <span className="text-xs text-muted-foreground">Only visible to you</span>
+          <span className="hidden sm:inline text-xs text-muted-foreground">Only visible to you</span>
         </div>
         <DataTable
           columns={cols}
@@ -619,33 +664,31 @@ function MyDocsTab({ state }: { state: { lawyerId: string; docs: LawyerDocument[
         </DialogHeader>
         <DialogContent>
           <form id="my-docs-upload-form" onSubmit={handleUploadSubmit} className="space-y-4">
-            <TextField
-              label="Document Title"
-              value={title}
-              onChange={setTitle}
-              required
-              placeholder="e.g. Draft Reply — Property Boundary Notice"
-            />
-
             {/* File dropzone */}
             <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-background px-6 py-6 text-xs text-muted-foreground hover:border-primary hover:bg-primary/5 transition-all">
               <Upload className="h-5 w-5 text-primary" />
               <span className="font-semibold text-foreground text-center">
-                {fileSelected ? fileSelected.name : "Select a File"}
+                {fileSelected ? fileSelected.name : "Select PDF or DOCX File"}
               </span>
               <span className="text-[10px] text-muted-foreground text-center">
-                Any document type, up to 4MB — stored in your browser
+                Supported format: PDF, DOCX (Up to 4MB — stored in your browser)
               </span>
               <input
                 type="file"
+                accept=".pdf,.docx"
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
+                  e.target.value = "";
                   if (!f) return;
+                  if (!isPdfOrDocxFile(f)) {
+                    setUploadError("Only PDF and DOCX files are supported.");
+                    setFileSelected(null);
+                    return;
+                  }
                   if (f.size > MAX_ATTACHMENT_BYTES) {
                     setUploadError("File is too large — please select a file under 4MB.");
                     setFileSelected(null);
-                    e.target.value = "";
                     return;
                   }
                   setUploadError("");
@@ -674,7 +717,7 @@ function MyDocsTab({ state }: { state: { lawyerId: string; docs: LawyerDocument[
                 document.getElementById("my-docs-upload-form") as HTMLFormElement | null
               )?.requestSubmit()
             }
-            disabled={!title.trim() || isUploading}
+            disabled={!fileSelected || isUploading}
           >
             {isUploading ? "Uploading…" : "Upload Document"}
           </Button>
@@ -698,45 +741,40 @@ function MyDocsTab({ state }: { state: { lawyerId: string; docs: LawyerDocument[
                 </div>
               </div>
 
-              <div className="flex shrink-0 items-center gap-1">
-                {activeDoc.fileDataUrl && (
-                  <a
-                    href={activeDoc.fileDataUrl}
-                    download={activeDoc.fileName}
-                    className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors"
-                    title="Download document"
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                    Download
-                  </a>
-                )}
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => openDocumentInNewTab(activeDoc)}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors cursor-pointer"
+                  title="Full Screen (Open document in new tab)"
+                >
+                  <Maximize2 className="h-3.5 w-3.5" />
+                  <span>Full Screen</span>
+                </button>
                 <IconButton ariaLabel="Close preview" onClick={() => setActiveDoc(null)}>
                   <X className="h-5 w-5" />
                 </IconButton>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 bg-muted/30 space-y-4">
-              {activeDoc.fileDataUrl && isPreviewableInline(activeDoc) ? (
-                <div className="mx-auto h-full max-w-3xl overflow-hidden rounded-xl border border-border bg-background shadow-sm">
-                  <iframe
-                    src={activeDoc.fileDataUrl}
-                    title={activeDoc.title}
-                    className="h-[70vh] w-full bg-white"
-                  />
-                </div>
-              ) : (
-                <div className="mx-auto flex max-w-2xl min-h-[300px] flex-col items-center justify-center gap-3 rounded-xl border border-border bg-background p-8 text-center shadow-sm">
-                  <FileText className="h-8 w-8 text-muted-foreground" />
-                  <p className="text-xs font-semibold text-foreground">
-                    {activeDoc.fileName ?? activeDoc.title}
-                  </p>
-                  <p className="max-w-sm text-[11px] text-muted-foreground">
-                    Inline preview isn't available for this file type. Use Download to view the full
-                    document.
-                  </p>
-                </div>
-              )}
+            <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 bg-muted/30 space-y-3">
+              <DocumentPreviewBody
+                fileDataUrl={activeDoc.fileDataUrl}
+                fileMimeType={activeDoc.fileMimeType}
+                fileName={activeDoc.fileName ?? activeDoc.title}
+                fallback={
+                  <div className="mx-auto flex max-w-2xl min-h-[220px] flex-col items-center justify-center gap-2.5 rounded-xl border border-border bg-background p-4 sm:p-6 text-center shadow-sm">
+                    <FileText className="h-7 w-7 text-muted-foreground" />
+                    <p className="text-xs font-semibold text-foreground">
+                      {activeDoc.fileName ?? activeDoc.title}
+                    </p>
+                    <p className="max-w-sm text-[11px] text-muted-foreground">
+                      Inline preview isn't available for this file type. Use Full Screen to view the
+                      full document.
+                    </p>
+                  </div>
+                }
+              />
             </div>
 
             <div className="flex flex-col gap-2 border-t border-border px-4 sm:px-6 py-3 bg-surface sm:flex-row sm:items-center sm:justify-between">

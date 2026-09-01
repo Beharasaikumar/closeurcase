@@ -7,18 +7,30 @@ export interface Column<T> {
   header: string;
   render: (row: T) => ReactNode;
   width?: string;
+  /** Hide this column when the table's own rendered width is narrow — for
+   * secondary info that the primary column (e.g. title) already folds in, so
+   * the table never needs its own horizontal scrollbar. Driven by a CSS
+   * container query on the table's wrapper (not a viewport breakpoint) since
+   * a fixed sidebar means "enough room for 5 columns" doesn't line up with
+   * any single viewport width — a narrow browser window and a wide one with
+   * a sidebar can leave the table the same actual pixel width. */
+  hideCompact?: boolean;
 }
 
 export function DataTable<T extends { id: string }>({
-  columns,
+  columns = [],
   rows,
   empty = "No records found.",
   pageSize = 8,
+  renderCard,
 }: {
-  columns: Column<T>[];
+  /** Required in table mode (the default); unused once `renderCard` is given. */
+  columns?: Column<T>[];
   rows: T[];
   empty?: string;
   pageSize?: number;
+  /** When given, rows render as cards (same pagination/empty-state) instead of a table. */
+  renderCard?: (row: T) => ReactNode;
 }) {
   const [page, setPage] = useState(1);
 
@@ -34,50 +46,71 @@ export function DataTable<T extends { id: string }>({
 
   return (
     <div className="space-y-3">
-      <div className="rounded-xl border border-border bg-surface overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
-                {columns.map((c) => (
-                  <th
-                    key={c.key}
-                    className="px-3 py-3 font-medium whitespace-nowrap"
-                    style={{ width: c.width }}
-                  >
-                    {c.header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {pageRows.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={columns.length}
-                    className="px-4 py-10 text-center text-sm text-muted-foreground"
-                  >
-                    {empty}
-                  </td>
+      {renderCard ? (
+        pageRows.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border bg-surface p-10 text-center text-xs text-muted-foreground">
+            {empty}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            {pageRows.map((row) => (
+              <div key={row.id}>{renderCard(row)}</div>
+            ))}
+          </div>
+        )
+      ) : (
+        <div className="@container rounded-xl border border-border bg-surface overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
+                  {columns.map((c) => (
+                    <th
+                      key={c.key}
+                      className={`px-2 py-3 font-medium whitespace-nowrap @sm:px-3 ${
+                        c.hideCompact ? "hidden @5xl:table-cell" : ""
+                      }`}
+                      style={{ width: c.width }}
+                    >
+                      {c.header}
+                    </th>
+                  ))}
                 </tr>
-              ) : (
-                pageRows.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="border-b border-border last:border-0 hover:bg-muted/60 transition-colors"
-                  >
-                    {columns.map((c) => (
-                      <td key={c.key} className="px-3 py-2.5 align-middle">
-                        {c.render(row)}
-                      </td>
-                    ))}
+              </thead>
+              <tbody>
+                {pageRows.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={columns.length}
+                      className="px-4 py-10 text-center text-sm text-muted-foreground"
+                    >
+                      {empty}
+                    </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  pageRows.map((row) => (
+                    <tr
+                      key={row.id}
+                      className="border-b border-border last:border-0 hover:bg-muted/60 transition-colors"
+                    >
+                      {columns.map((c) => (
+                        <td
+                          key={c.key}
+                          className={`px-2 py-2.5 align-middle @sm:px-3 ${
+                            c.hideCompact ? "hidden @5xl:table-cell" : ""
+                          }`}
+                        >
+                          {c.render(row)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Pagination — always visible */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-1">

@@ -453,8 +453,8 @@ export function DashboardLayout({
           className={
             fullBleed
               ? "flex-1 min-h-0 overflow-hidden"
-              : `flex-1 min-h-0 overflow-y-auto px-4 py-6 sm:px-6 sm:py-8 md:px-10 ${
-                  role === "citizen" ? "md:py-6" : "md:py-10"
+              : `flex-1 min-h-0 overflow-y-auto px-3 py-3 sm:px-6 sm:py-6 md:px-10 ${
+                  role === "citizen" ? "md:py-5" : "md:py-8"
                 } pb-24 md:pb-10`
           }
         >
@@ -462,7 +462,7 @@ export function DashboardLayout({
             children
           ) : (
             <div
-              className={`mx-auto w-full space-y-8 ${role === "lawyer" ? "max-w-none" : "max-w-6xl"}`}
+              className={`mx-auto w-full space-y-4 sm:space-y-6 ${role === "citizen" ? "max-w-6xl" : "max-w-none"}`}
             >
               {children}
             </div>

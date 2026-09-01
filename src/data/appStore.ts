@@ -28,7 +28,7 @@ const NOTIFICATIONS_KEY = "cuc_notifications_v2";
 const KB_KEY = "cuc_kb_v3";
 const LAWYER_DOCS_KEY = "cuc_lawyer_docs_v1";
 const PROFILE_PHOTOS_KEY = "cuc_profile_photos_v1";
-const CASES_KEY = "cuc_cases_v10";
+const CASES_KEY = "cuc_cases_v12";
 const NOTES_KEY = "cuc_case_notes_v1";
 const SUBSCRIPTIONS_KEY = "cuc_subscriptions_v1";
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/app/PageHeader";
 import { CaseListCard } from "@/components/app/CaseListCard";
+import { CardPagination } from "@/components/app/CardPagination";
 import { ImportCaseModal } from "@/components/app/ImportCaseModal";
 import { CaseDocketRegister } from "@/components/app/CaseDocketRegister";
 import { ExpandableFilterChips } from "@/components/app/ExpandableFilterChips";
@@ -22,6 +23,8 @@ export function CasesListView() {
   // multi-select-with-counts filter pattern. Client Name stays untouched.
   const [respondentFilters, setRespondentFilters] = useState<string[]>([]);
   const [importOpen, setImportOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(8);
 
   useEffect(() => {
     const sync = () => {
@@ -35,6 +38,7 @@ export function CasesListView() {
     setTab(next);
     setClientFilter("All");
     setRespondentFilters([]);
+    setPage(1);
   }
 
   const currentLawyer = lawyersList.find((l) => l.id === "l_001") || lawyersList[0];
@@ -80,6 +84,15 @@ export function CasesListView() {
       r.caseDetails.respondents.some((resp) => respondentFilters.includes(resp));
     return matchesSearch && matchesClient && matchesRespondent;
   });
+
+  // Reset to page 1 whenever the filtered set changes shape (search/filter/tab).
+  useEffect(() => {
+    setPage(1);
+  }, [filtered.length, tab]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageCases = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   return (
     <div className="space-y-6">
@@ -153,11 +166,24 @@ export function CasesListView() {
               No imported cases yet — use Import/Search Case to pull one in from eCourts.
             </div>
           ) : (
-            <div className="space-y-3">
-              {filtered.map((c) => (
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+              {pageCases.map((c) => (
                 <CaseListCard key={c.id} caseItem={c} />
               ))}
             </div>
+          )}
+
+          {filtered.length > 0 && (
+            <CardPagination
+              page={safePage}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              pageSize={pageSize}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPage(1);
+              }}
+            />
           )}
         </div>
       )}
