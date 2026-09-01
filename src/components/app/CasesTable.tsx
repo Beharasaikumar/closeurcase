@@ -11,7 +11,6 @@ import {
   Image as ImageIcon,
   Maximize2,
   Minimize2,
-  ShieldCheck,
   ChevronRight,
 } from "lucide-react";
 import { Button, IconButton } from "@/components/m3";
@@ -23,7 +22,7 @@ import {
   subscribeToStore,
 } from "@/data/appStore";
 import { MAX_ATTACHMENT_BYTES, formatFileSize, readFileAsDataUrl } from "@/lib/files";
-import { searchCourtCases, type ImportableCourtCase } from "@/data/courtCasesFixture";
+import { searchCourtCases } from "@/data/courtCasesFixture";
 import type { LegalCase, CaseStatus, CaseDocument } from "@/types";
 import { ChatButton } from "@/components/app/CaseChat";
 import {
@@ -40,6 +39,11 @@ import {
   getStageHistory,
   type CourtHistoryRow,
 } from "@/components/app/caseDocketShared";
+
+type CnrImportResult =
+  | { status: "found"; source: "database" | "ecourts"; title: string }
+  | { status: "not-found" }
+  | null;
 
 function docLooksLikeImage(doc: CaseDocument): boolean {
   if (doc.fileMimeType) return doc.fileMimeType.startsWith("image/");
@@ -99,8 +103,7 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
   const [cnr, setCnr] = useState("");
   const [caseStatus, setCaseStatus] = useState("Submitted");
   const [journey, setJourney] = useState<CourtHistoryRow[]>([]);
-  const [cnrVerifyStatus, setCnrVerifyStatus] = useState<"idle" | "found" | "not-found">("idle");
-  const [cnrVerifiedMatch, setCnrVerifiedMatch] = useState<ImportableCourtCase | null>(null);
+  const [cnrImportResult, setCnrImportResult] = useState<CnrImportResult>(null);
 
   const isLawyer = role === "lawyer";
 
@@ -117,39 +120,73 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
     setCnr(c.caseDetails.cnr || "");
     setCaseStatus(c.status || "Submitted");
     setJourney(getCourtHistory(c));
-    setCnrVerifyStatus("idle");
-    setCnrVerifiedMatch(null);
+    setCnrImportResult(null);
 
     setDialogOpen(true);
   }
 
   function handleCnrChange(value: string) {
     setCnr(value);
-    setCnrVerifyStatus("idle");
-    setCnrVerifiedMatch(null);
+    setCnrImportResult(null);
   }
 
-  function handleVerifyCnr() {
+  // Checks our own database first (a case already on file), then falls back to eCourts —
+  // and on an eCourts hit, saves it into our database immediately so the next lookup for
+  // this CNR is served from our own records instead of hitting eCourts again.
+  function handleImportCnr() {
     const query = cnr.trim();
     if (!query) return;
-    const match =
+
+    const dbMatch = allCases.find((c) => {
+      if (c.id === editingCase?.id) return false;
+      return (c.caseDetails.cnr || "").toLowerCase() === query.toLowerCase();
+    });
+    if (dbMatch) {
+      setPartyNames(dbMatch.title);
+      setCaseNo(dbMatch.caseDetails.caseNumber || "");
+      setJourney(getCourtHistory(dbMatch));
+      setCnrImportResult({ status: "found", source: "database", title: dbMatch.title });
+      return;
+    }
+
+    const ecourtMatch =
       searchCourtCases({ method: "CNR Number", query }).find(
         (m) => m.cnrNumber.toLowerCase() === query.toLowerCase(),
       ) ?? null;
-    setCnrVerifiedMatch(match);
-    setCnrVerifyStatus(match ? "found" : "not-found");
-  }
 
-  function handleImportCnr() {
-    if (!cnrVerifiedMatch) return;
-    setPartyNames(cnrVerifiedMatch.title);
-    setCaseNo(cnrVerifiedMatch.caseNumber);
-    setJourney(
-      (cnrVerifiedMatch.historyOfCaseHearings || []).map((h, i) => ({
-        ...h,
-        id: `h_${i}`,
-      })),
-    );
+    if (!ecourtMatch) {
+      setCnrImportResult({ status: "not-found" });
+      return;
+    }
+
+    const hearings = ecourtMatch.historyOfCaseHearings || [];
+    setPartyNames(ecourtMatch.title);
+    setCaseNo(ecourtMatch.caseNumber);
+    setJourney(hearings.map((h, i) => ({ ...h, id: `h_${i}` })));
+
+    if (editingCase) {
+      const today = todayISO();
+      const updatedCases = allCases.map((c) =>
+        c.id === editingCase.id
+          ? {
+              ...c,
+              title: ecourtMatch.title,
+              source: "ecourt" as const,
+              caseDetails: {
+                ...c.caseDetails,
+                caseNumber: ecourtMatch.caseNumber,
+                cnr: query,
+                historyOfCaseHearings: hearings,
+                hearingCount: hearings.length,
+              },
+              updatedAt: today,
+            }
+          : c,
+      );
+      saveCases(updatedCases);
+    }
+
+    setCnrImportResult({ status: "found", source: "ecourts", title: ecourtMatch.title });
   }
 
   function handleApprove(c: LegalCase) {
@@ -475,33 +512,15 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
                           />
                           <div className="flex shrink-0 gap-2">
                             <Button
-                              variant="outlined"
-                              icon={<ShieldCheck className="h-4 w-4" />}
-                              onClick={handleVerifyCnr}
-                              disabled={!cnr.trim()}
-                            >
-                              Verify
-                            </Button>
-                            <Button
                               variant="tonal"
                               icon={<Download className="h-4 w-4" />}
                               onClick={handleImportCnr}
-                              disabled={cnrVerifyStatus !== "found"}
+                              disabled={!cnr.trim()}
                             >
                               Import
                             </Button>
                           </div>
                         </div>
-                        {cnrVerifyStatus === "found" && (
-                          <p className="text-xs font-semibold text-[var(--md-extended-color-success)]">
-                            Verified — matches "{cnrVerifiedMatch?.title}"
-                          </p>
-                        )}
-                        {cnrVerifyStatus === "not-found" && (
-                          <p className="text-xs font-semibold text-destructive">
-                            No matching case found in eCourts records for this CNR.
-                          </p>
-                        )}
                       </div>
                     )}
                   </div>
@@ -728,6 +747,56 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
                 </Button>
                 {isLawyer && <Button onClick={handleSaveCase}>Save Case</Button>}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CNR Import Result Popup — nested above the edit dialog */}
+      {cnrImportResult && (
+        <div
+          className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setCnrImportResult(null);
+          }}
+        >
+          <div className="w-full max-w-sm rounded-2xl bg-[var(--md-sys-color-surface-container-low,#f5f3f7)] shadow-2xl border border-border/80 p-6 text-foreground">
+            <div className="flex items-center gap-3 mb-3">
+              <span
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                  cnrImportResult.status === "found"
+                    ? "bg-[var(--md-extended-color-success)]/10 text-[var(--md-extended-color-success)]"
+                    : "bg-destructive/10 text-destructive"
+                }`}
+              >
+                {cnrImportResult.status === "found" ? (
+                  <Check className="h-5 w-5" />
+                ) : (
+                  <X className="h-5 w-5" />
+                )}
+              </span>
+              <h3 className="text-base font-bold text-foreground">
+                {cnrImportResult.status === "found" ? "Case Imported" : "No Match Found"}
+              </h3>
+            </div>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              {cnrImportResult.status === "found" && cnrImportResult.source === "database" ? (
+                <>
+                  Already in our database — matched <strong>"{cnrImportResult.title}"</strong>. No
+                  need to fetch from eCourts.
+                </>
+              ) : cnrImportResult.status === "found" ? (
+                <>
+                  Fetched from eCourts and saved to our database — matched{" "}
+                  <strong>"{cnrImportResult.title}"</strong>. The next import for this CNR will be
+                  served from our records instead of eCourts.
+                </>
+              ) : (
+                "No matching case found in our database or eCourts for this CNR."
+              )}
+            </p>
+            <div className="mt-5 flex justify-end">
+              <Button onClick={() => setCnrImportResult(null)}>OK</Button>
             </div>
           </div>
         </div>

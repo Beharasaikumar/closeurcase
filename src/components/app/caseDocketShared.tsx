@@ -305,6 +305,12 @@ export function nextHearingSortKey(c: LegalCase) {
   return entry?.hearingDate ?? entry?.businessOnDate ?? "9999-99-99";
 }
 
+/** Whether a case has at least one hearing still to come — the actual signal for
+ * a dashboard "Upcoming Hearings" widget, independent of the case's status label. */
+export function hasUpcomingHearing(c: LegalCase, today: string): boolean {
+  return c.caseDetails.historyOfCaseHearings.some((h) => h.hearingDate && h.hearingDate >= today);
+}
+
 function getStatusStyle(colorKey: StatusMetaItem["color"]) {
   switch (colorKey) {
     case "upcoming":

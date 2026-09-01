@@ -7,7 +7,7 @@ import { getCases, getLawyers, subscribeToStore } from "@/data/appStore";
 import type { LegalCase } from "@/types";
 import { Briefcase, Clock, CalendarClock, CheckCircle2, ArrowRight } from "lucide-react";
 import { Card } from "@/components/m3";
-import { nextHearingSortKey } from "@/components/app/caseDocketShared";
+import { hasUpcomingHearing, nextHearingSortKey } from "@/components/app/caseDocketShared";
 
 export const Route = createFileRoute("/lawyer/")({
   component: LawyerDashboard,
@@ -35,9 +35,10 @@ export function LawyerDashboard() {
   const activeCases = myCases.filter((c) => c.status !== "Resolved" && c.status !== "Closed");
   const resolvedCases = myCases.filter((c) => c.status === "Resolved" || c.status === "Closed");
 
-  const pendingCases = [...myCases.filter((c) => c.status === "Pending")].sort((a, b) =>
-    nextHearingSortKey(a).localeCompare(nextHearingSortKey(b)),
-  );
+  const today = new Date().toISOString().slice(0, 10);
+  const upcomingHearingCases = [...activeCases]
+    .filter((c) => hasUpcomingHearing(c, today))
+    .sort((a, b) => nextHearingSortKey(a).localeCompare(nextHearingSortKey(b)));
 
   return (
     <div className="space-y-6">
@@ -125,7 +126,7 @@ export function LawyerDashboard() {
           </div>
           <div className="min-w-0">
             <div className="text-xl font-extrabold text-foreground leading-none">
-              {pendingCases.length}
+              {upcomingHearingCases.length}
             </div>
             <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               Upcoming Hearings
@@ -160,7 +161,7 @@ export function LawyerDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-bold text-foreground">Upcoming Hearings</h3>
-            <p className="text-xs text-muted-foreground">Pending matters, soonest hearing first.</p>
+            <p className="text-xs text-muted-foreground">Active matters, soonest hearing first.</p>
           </div>
           <Link
             to="/lawyer/cases"
@@ -169,12 +170,12 @@ export function LawyerDashboard() {
             View all <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
-        {pendingCases.length === 0 ? (
+        {upcomingHearingCases.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-surface p-8 text-center text-xs text-muted-foreground">
-            No pending cases with upcoming hearings.
+            No cases with upcoming hearings.
           </div>
         ) : (
-          <CasesTable cases={pendingCases} role="lawyer" />
+          <CasesTable cases={upcomingHearingCases} role="lawyer" />
         )}
       </div>
     </div>

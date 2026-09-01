@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Briefcase, Clock, CheckCircle2, CalendarClock } from "lucide-react";
+import { Briefcase, Clock, CheckCircle2, CalendarClock, ArrowRight } from "lucide-react";
 import { PageHeader } from "@/components/app/PageHeader";
 import { CasesTable } from "@/components/app/CasesTable";
 import { LocationIndicator } from "@/components/app/LocationIndicator";
@@ -8,7 +8,7 @@ import { getCases, subscribeToStore } from "@/data/appStore";
 import type { LegalCase } from "@/types";
 import { useCitizenLanguage } from "@/features/citizen/i18n/CitizenLanguageContext";
 import { Card } from "@/components/m3";
-import { nextHearingSortKey } from "@/components/app/caseDocketShared";
+import { hasUpcomingHearing, nextHearingSortKey } from "@/components/app/caseDocketShared";
 
 export const Route = createFileRoute("/citizen/")({
   component: CitizenDashboard,
@@ -35,9 +35,9 @@ function CitizenDashboard() {
     0,
   );
 
-  const pendingCases = [...allCases.filter((c) => c.status === "Pending")].sort((a, b) =>
-    nextHearingSortKey(a).localeCompare(nextHearingSortKey(b)),
-  );
+  const upcomingHearingCases = [...activeCases]
+    .filter((c) => hasUpcomingHearing(c, today))
+    .sort((a, b) => nextHearingSortKey(a).localeCompare(nextHearingSortKey(b)));
 
   return (
     <div className="space-y-5 sm:space-y-6">
@@ -125,19 +125,28 @@ function CitizenDashboard() {
         </Card>
       </div>
 
-      {/* Upcoming hearings — pending cases only, soonest hearing first */}
+      {/* Upcoming hearings — active cases with a hearing still to come, soonest first */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <CalendarClock className="h-5 w-5 text-primary" />
-          <h2 className="text-sm font-bold text-foreground">Upcoming Hearings</h2>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <CalendarClock className="h-5 w-5 text-primary" />
+            <h2 className="text-sm font-bold text-foreground">Upcoming Hearings</h2>
+          </div>
+          <Link
+            to="/citizen/my-cases"
+            search={{ upcoming: true }}
+            className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+          >
+            All Upcoming <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
         </div>
 
-        {pendingCases.length === 0 ? (
+        {upcomingHearingCases.length === 0 ? (
           <p className="rounded-lg border border-dashed border-border bg-background p-4 text-center text-xs text-muted-foreground">
-            No pending cases with upcoming hearings.
+            No cases with upcoming hearings.
           </p>
         ) : (
-          <CasesTable cases={pendingCases} role="citizen" />
+          <CasesTable cases={upcomingHearingCases} role="citizen" />
         )}
       </div>
     </div>

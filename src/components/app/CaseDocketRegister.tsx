@@ -12,6 +12,7 @@ import {
   STORED_STATUS_TO_FILTER,
   getNextEntry,
   nextHearingSortKey,
+  todayISO,
 } from "@/components/app/caseDocketShared";
 
 function countBy<T extends string>(rows: LegalCase[], pick: (c: LegalCase) => T) {
@@ -41,11 +42,18 @@ export {
 const NATIVE_DATE_INPUT_CLS =
   "h-9 rounded-lg border border-border bg-card px-2.5 text-xs text-foreground outline-hidden focus:border-primary focus:ring-1 focus:ring-primary";
 
-export function CaseDocketRegister({ role }: { role: "lawyer" | "citizen" }) {
+export function CaseDocketRegister({
+  role,
+  upcomingOnly,
+}: {
+  role: "lawyer" | "citizen";
+  /** Pre-filters to hearings from today onward — used by the dashboard's "All Upcoming" link. */
+  upcomingOnly?: boolean;
+}) {
   const [cases, setCases] = useState<LegalCase[]>([]);
   const [activeFilter, setActiveFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [hearingFrom, setHearingFrom] = useState("");
+  const [hearingFrom, setHearingFrom] = useState(upcomingOnly ? todayISO() : "");
   const [hearingTo, setHearingTo] = useState("");
   const [clientFilter, setClientFilter] = useState("All");
   // Universal filter panel (lawyer only) — Case Type + Case Status, matching
