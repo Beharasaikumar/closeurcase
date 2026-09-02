@@ -24,6 +24,9 @@ function CitizenLayout() {
   const userName = "Sai Teja Reddy";
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isChatRoute = /^\/citizen\/chat\//.test(pathname);
+  // The Find a Lawyer wizard manages its own fixed header/footer + internal
+  // scroll region (no page-level scrolling), same reasoning as chat.
+  const isCreateCaseRoute = pathname === "/citizen/create-case";
 
   const nav = useMemo(
     () => [
@@ -47,7 +50,7 @@ function CitizenLayout() {
       roleLabel="Citizen"
       userName={userName}
       nav={nav}
-      fullBleed={isChatRoute}
+      fullBleed={isChatRoute || isCreateCaseRoute}
     >
       <Outlet />
     </DashboardLayout>

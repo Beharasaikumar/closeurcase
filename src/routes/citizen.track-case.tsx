@@ -93,15 +93,10 @@ export function TrackCase() {
 
   return (
     <div className="max-w-5xl space-y-4">
-      {/* Top Header & Selector Row */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/80 bg-surface px-4 py-3 shadow-2xs">
-        <div>
-          <h1 className="text-base font-bold text-foreground tracking-tight">Track Case</h1>
-          <p className="text-[11px] text-muted-foreground">
-            Real-time horizontal progress tracker.
-          </p>
-        </div>
+      <PageHeader title="Track Case" description="Monitor the real-time progress of your case." />
 
+      {/* Case Selector Row */}
+      <div className="flex flex-wrap items-center justify-end gap-3 rounded-xl border border-border/80 bg-surface px-4 py-3 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto min-w-0">
           <div className="relative w-full sm:w-auto min-w-0">
             <select

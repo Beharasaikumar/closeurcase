@@ -8,6 +8,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { AuthLayout } from "@/layouts/AuthLayout";
+import { Button } from "@/components/m3";
 import {
   DEVICE_PERMISSIONS,
   getPermissionHint,
@@ -75,20 +76,18 @@ export function PermissionsGate({ onContinue }: { onContinue: () => void }) {
                   {permission.reason}
                 </p>
                 {hint && (
-                  <p className="mt-1.5 text-xs leading-relaxed font-medium text-amber-600">
-                    {hint}
-                  </p>
+                  <p className="mt-1.5 text-xs leading-relaxed font-medium text-warning">{hint}</p>
                 )}
                 {canRetry && (
-                  <button
-                    type="button"
+                  <Button
+                    variant="text"
+                    icon={<RefreshCw className={`h-3 w-3 ${isRetrying ? "animate-spin" : ""}`} />}
                     onClick={() => retryPermission(permission.id)}
                     disabled={requesting || isRetrying}
-                    className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-primary hover:underline disabled:opacity-60"
+                    className="mt-1.5 h-auto! min-h-0! px-0! text-xs"
                   >
-                    <RefreshCw className={`h-3 w-3 ${isRetrying ? "animate-spin" : ""}`} />
                     {isRetrying ? "Checking…" : "Try again"}
-                  </button>
+                  </Button>
                 )}
               </div>
             </PermissionRow>
@@ -103,24 +102,26 @@ export function PermissionsGate({ onContinue }: { onContinue: () => void }) {
           </span>
         </div>
 
-        <button
+        <Button
           type="button"
+          variant="filled"
           onClick={settled ? onContinue : allowAll}
           disabled={requesting}
-          className="w-full rounded-xl bg-emerald-600 py-4 text-base font-bold text-white transition-all hover:bg-emerald-700 disabled:opacity-60 active:scale-[0.98]"
+          className="w-full"
         >
           {requesting ? "Requesting…" : settled ? "Continue" : "Allow permissions & continue"}
-        </button>
+        </Button>
 
         {!settled && (
-          <button
+          <Button
             type="button"
+            variant="text"
             onClick={onContinue}
             disabled={requesting}
-            className="w-full text-center text-sm font-semibold text-muted-foreground hover:text-foreground disabled:opacity-60"
+            className="w-full"
           >
             Skip for now
-          </button>
+          </Button>
         )}
       </div>
     </AuthLayout>
@@ -149,11 +150,11 @@ function StatusBadge({ state }: { state: DevicePermissionState }) {
     case "pending":
       return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
     case "granted":
-      return <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-label="Allowed" />;
+      return <CheckCircle2 className="h-4 w-4 text-success" aria-label="Allowed" />;
     case "denied":
       return <XCircle className="h-4 w-4 text-destructive" aria-label="Denied" />;
     case "unavailable":
-      return <AlertTriangle className="h-4 w-4 text-amber-600" aria-label="Turned off" />;
+      return <AlertTriangle className="h-4 w-4 text-warning" aria-label="Turned off" />;
     case "unsupported":
       return <span className="text-[10px] font-semibold uppercase text-muted-foreground">N/A</span>;
     default:

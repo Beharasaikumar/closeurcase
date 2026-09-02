@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { MdOutlinedSelectEl, MdSelectOptionEl } from "./elements";
 
 export interface SelectOption {
@@ -17,6 +18,7 @@ export function Select({
   errorText,
   supportingText,
   className,
+  style,
 }: {
   label?: string;
   value: string;
@@ -28,6 +30,8 @@ export function Select({
   errorText?: string;
   supportingText?: string;
   className?: string;
+  /** Escape hatch for one-off shape/size overrides, same pattern as Button/TextField. */
+  style?: CSSProperties;
 }) {
   return (
     <MdOutlinedSelectEl
@@ -39,6 +43,7 @@ export function Select({
       errorText={errorText}
       supportingText={supportingText}
       className={className}
+      style={style}
       onChange={(e) => onChange((e.target as unknown as { value: string }).value)}
     >
       {options.map((opt) => (

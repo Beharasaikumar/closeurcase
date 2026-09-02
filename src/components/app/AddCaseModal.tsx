@@ -178,7 +178,7 @@ export function AddCaseModal({
       <DialogContent>
         <form id="add-case-form" onSubmit={handleSubmit} className="space-y-4">
           <TextField
-            label="Case Title / Parties *"
+            label="Case Title / Parties"
             value={title}
             onChange={setTitle}
             placeholder="e.g. Ramesh Kumar vs State Bank of Hyderabad"

@@ -39,8 +39,11 @@ function UsersPage() {
   const [q, setQ] = useState("");
   const [filters, setFilters] = useState<Record<string, string[]>>({});
   const [rows, setRows] = useState<Citizen[]>(getCitizens);
-  // Confirm state for deactivation
-  const [pendingDeactivate, setPendingDeactivate] = useState<Citizen | null>(null);
+  // Confirm state for activate/deactivate — both directions require confirmation
+  const [pendingToggle, setPendingToggle] = useState<{
+    c: Citizen;
+    next: Citizen["status"];
+  } | null>(null);
 
   useEffect(() => {
     const sync = () => setRows(getCitizens());
@@ -84,13 +87,7 @@ function UsersPage() {
     );
 
   const handleToggleStatus = (c: Citizen) => {
-    if (c.status === "Active") {
-      // Deactivation requires confirmation
-      setPendingDeactivate(c);
-    } else {
-      // Reactivation is safe — no confirmation needed
-      updateCitizenStatus(c.id, "Active");
-    }
+    setPendingToggle({ c, next: c.status === "Active" ? "Inactive" : "Active" });
   };
 
   function renderCitizenCard(r: Citizen) {
@@ -99,7 +96,7 @@ function UsersPage() {
         ? "var(--md-extended-color-success)"
         : "var(--md-sys-color-on-surface-variant)";
     return (
-      <div className="flex h-full min-h-56 flex-col rounded-xl border border-border bg-surface p-3.5 shadow-2xs transition-all hover:border-primary/40 hover:shadow-sm sm:p-4">
+      <div className="flex h-full flex-col rounded-xl border border-border bg-surface p-3.5 shadow-2xs transition-all hover:border-primary/40 hover:shadow-sm sm:p-4">
         <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
           <div className="flex min-w-0 flex-1 items-start gap-3">
             <UserAvatar name={r.name} size="sm" />
@@ -127,12 +124,15 @@ function UsersPage() {
               backgroundColor: `color-mix(in srgb, ${statusColor} 12%, transparent)`,
             }}
           >
-            <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: statusColor }} />
+            <span
+              className="h-1.5 w-1.5 shrink-0 rounded-full"
+              style={{ backgroundColor: statusColor }}
+            />
             {r.status}
           </span>
         </div>
 
-        <div className="mt-auto flex items-center justify-end gap-2.5 border-t border-border/60 pt-2">
+        <div className="mt-auto flex items-center justify-end gap-1.5 border-t border-border/60 pt-2">
           <span className="text-xs font-medium" style={{ color: statusColor }}>
             {r.status === "Active" ? "Active" : "Inactive"}
           </span>
@@ -170,19 +170,29 @@ function UsersPage() {
         empty="No citizens matching your search."
       />
 
-      {/* CONFIRM DEACTIVATE DIALOG */}
+      {/* CONFIRM ACTIVATE / DEACTIVATE DIALOG */}
       <ConfirmDialog
-        open={pendingDeactivate !== null}
-        title="Deactivate Citizen Account"
-        message={`Are you sure you want to deactivate ${pendingDeactivate?.name ?? "this citizen"}'s account? They will immediately lose access to the platform, but their case history will be preserved.`}
-        confirmLabel="Yes, Deactivate Account"
+        open={pendingToggle !== null}
+        title={
+          pendingToggle?.next === "Active"
+            ? "Activate Citizen Account"
+            : "Deactivate Citizen Account"
+        }
+        message={
+          pendingToggle?.next === "Active"
+            ? `Are you sure you want to activate ${pendingToggle?.c.name ?? "this citizen"}'s account? They will regain full access to the platform.`
+            : `Are you sure you want to deactivate ${pendingToggle?.c.name ?? "this citizen"}'s account? They will immediately lose access to the platform, but their case history will be preserved.`
+        }
+        confirmLabel={
+          pendingToggle?.next === "Active" ? "Yes, Activate Account" : "Yes, Deactivate Account"
+        }
         cancelLabel="Cancel"
         variant="warning"
         onConfirm={() => {
-          if (pendingDeactivate) updateCitizenStatus(pendingDeactivate.id, "Inactive");
-          setPendingDeactivate(null);
+          if (pendingToggle) updateCitizenStatus(pendingToggle.c.id, pendingToggle.next);
+          setPendingToggle(null);
         }}
-        onCancel={() => setPendingDeactivate(null)}
+        onCancel={() => setPendingToggle(null)}
       />
     </div>
   );

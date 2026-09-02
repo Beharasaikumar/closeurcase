@@ -74,8 +74,6 @@ export function PublicNav() {
         />
       </Link>
 
-  
-
       <button
         type="button"
         onMouseEnter={() => openNow("gov")}
@@ -91,7 +89,7 @@ export function PublicNav() {
         />
       </button>
 
-          <Link
+      <Link
         to="/"
         hash="about"
         className="rounded-lg px-3 py-2 text-xs font-semibold text-foreground transition-colors duration-150 hover:bg-muted hover:text-primary"
@@ -109,7 +107,7 @@ export function PublicNav() {
             : "pointer-events-none -translate-y-1 opacity-0"
         }`}
       >
-        <div className="overflow-hidden rounded-xl border border-border bg-white shadow-lg">
+        <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-lg">
           <div className="flex">
             <div className="w-52 shrink-0 border-r border-border py-2">
               {LAWYER_PRACTICE_AREAS.map((area, i) => (
@@ -162,7 +160,7 @@ export function PublicNav() {
             <Link
               to="/citizen-login"
               onClick={closeNow}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-white transition-colors duration-150 hover:bg-primary/90"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition-colors duration-150 hover:bg-primary/90"
             >
               File a Case
               <ArrowRight className="h-3.5 w-3.5" />
@@ -181,7 +179,7 @@ export function PublicNav() {
             : "pointer-events-none -translate-y-1 opacity-0"
         }`}
       >
-        <div className="overflow-hidden rounded-xl border border-border bg-white shadow-lg">
+        <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-lg">
           <div className="max-h-[70vh] overflow-y-auto p-5">
             <div className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3 xl:grid-cols-4">
               {GOVERNMENT_SERVICES.map((category) => (

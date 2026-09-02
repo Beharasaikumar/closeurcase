@@ -13,7 +13,7 @@ import {
 } from "@/data/appStore";
 import { categories } from "@/data/mock";
 import type { CaseStatus, LegalCase, LegalCategory } from "@/types";
-import { Search, UserCheck, ChevronRight, X, Siren, AlertTriangle } from "lucide-react";
+import { Search, UserCheck, X, Siren, AlertTriangle, Eye } from "lucide-react";
 import {
   TextField,
   Select,
@@ -209,14 +209,15 @@ function CasesPage() {
                   </div>
                 </div>
 
-                <div className="mt-auto flex items-center justify-end border-t border-border/60 pt-2">
-                  <button
+                <div className="mt-auto flex items-center justify-end gap-1.5 border-t border-border/60 pt-2">
+                  <IconButton
+                    variant="tonal"
+                    title="Manage case"
+                    ariaLabel={`Manage case ${r.id}`}
                     onClick={() => setSelectedId(r.id)}
-                    className="inline-flex items-center gap-0.5 rounded-full border border-border px-2.5 py-0.5 text-[11px] font-semibold text-primary hover:bg-primary/8 transition-colors cursor-pointer"
                   >
-                    <ChevronRight className="h-3 w-3" />
-                    Manage
-                  </button>
+                    <Eye className="h-4 w-4" />
+                  </IconButton>
                 </div>
               </div>
             );

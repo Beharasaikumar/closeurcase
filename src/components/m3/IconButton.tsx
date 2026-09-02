@@ -1,4 +1,4 @@
-import type { ReactNode, MouseEventHandler } from "react";
+import type { ReactNode, MouseEventHandler, CSSProperties } from "react";
 import {
   MdFilledIconButtonEl,
   MdFilledTonalIconButtonEl,
@@ -27,6 +27,8 @@ export function IconButton({
   title,
   id,
   tabIndex,
+  style,
+  type = "button",
 }: {
   variant?: IconButtonVariant;
   children: ReactNode;
@@ -40,10 +42,18 @@ export function IconButton({
   title?: string;
   id?: string;
   tabIndex?: number;
+  /** Escape hatch for one-off size/color overrides, e.g.
+   * `{ "--md-icon-button-icon-size": "20px", "--md-icon-button-state-layer-color": "var(--md-sys-color-error)" }`. */
+  style?: CSSProperties;
+  /** Defaults to "button" — without this, the underlying native <button>
+   * defaults to type="submit" and silently submits any enclosing <form>
+   * (e.g. a password-visibility toggle next to a login field). */
+  type?: "button" | "submit" | "reset";
 }) {
   const Comp = VARIANT_EL[variant];
   return (
     <Comp
+      type={type}
       disabled={disabled}
       onClick={onClick}
       toggle={toggle}
@@ -53,6 +63,7 @@ export function IconButton({
       aria-label={ariaLabel || title}
       title={title}
       tabIndex={tabIndex}
+      style={style}
     >
       {children}
     </Comp>

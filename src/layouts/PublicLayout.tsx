@@ -8,6 +8,7 @@ import { PublicNav } from "@/components/app/PublicNav";
 import { LAWYER_PRACTICE_AREAS } from "@/components/app/lawyerPracticeAreas";
 import { GOVERNMENT_SERVICES } from "@/data/governmentServices";
 import { useCitizenLanguage } from "@/features/citizen/i18n/CitizenLanguageContext";
+import { IconButton } from "@/components/m3";
 
 export function PublicLayout({ children }: { children: ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -44,7 +45,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="border-b border-border bg-white/85 backdrop-blur-md sticky top-0 z-40">
+      <header className="border-b border-border bg-surface/85 backdrop-blur-md sticky top-0 z-40">
         <div className="mx-auto grid h-16 w-full max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-3 px-4 sm:px-6 lg:px-8">
           <Link to="/" className="flex items-center gap-2.5 shrink-0 hover:opacity-90">
             <img src="/logo.png" alt="CloseUrCase Logo" className="h-9 w-9 object-contain" />
@@ -72,14 +73,13 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               </Link>
             </div>
 
-            <button
-              type="button"
+            <IconButton
               onClick={() => setIsMobileMenuOpen((v) => !v)}
-              className="md:hidden p-2 text-foreground hover:bg-muted rounded-md"
-              aria-label="Toggle menu"
+              className="md:hidden"
+              ariaLabel="Toggle menu"
             >
               {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
+            </IconButton>
           </div>
         </div>
       </header>
@@ -106,14 +106,9 @@ export function PublicLayout({ children }: { children: ReactNode }) {
       >
         <div className="flex items-center justify-between border-b border-border px-4 py-4">
           <span className="text-sm font-bold text-foreground">Menu</span>
-          <button
-            type="button"
-            onClick={closeMobileMenu}
-            className="p-2 text-foreground hover:bg-muted rounded-md"
-            aria-label="Close menu"
-          >
+          <IconButton onClick={closeMobileMenu} ariaLabel="Close menu">
             <X className="h-5 w-5" />
-          </button>
+          </IconButton>
         </div>
 
         <div className="space-y-3 px-4 py-4">
@@ -207,7 +202,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                 })}
               </div>
             </div>
-          </div>  
+          </div>
 
           <div className="overflow-hidden rounded-xl border border-border bg-background">
             <button
@@ -268,7 +263,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-               <Link
+          <Link
             to="/"
             hash="about"
             onClick={closeMobileMenu}
@@ -288,11 +283,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
           >
             {translate("lawyerAdminLogin")}
           </Link>
-
-      
         </div>
-
-        
       </div>
 
       <main className="flex-1">{children}</main>
@@ -308,7 +299,11 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               <span>CloseUrCase</span>
             </Link>
             <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
-              <Link to="/citizen-login" className="font-semibold text-emerald-700 hover:underline">
+              <Link
+                to="/citizen-login"
+                className="font-semibold hover:underline"
+                style={{ color: "var(--md-extended-color-citizen)" }}
+              >
                 {translate("citizenLoginLabel")}
               </Link>
               <Link to="/lawyer-register" className="hover:text-foreground">

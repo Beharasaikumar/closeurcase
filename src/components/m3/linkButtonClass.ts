@@ -12,3 +12,8 @@ export const OUTLINED_LINK_BUTTON_CLASS =
 
 export const TEXT_LINK_BUTTON_CLASS =
   "inline-flex h-10 items-center justify-center gap-2 rounded-full px-3 text-sm font-medium text-[var(--md-sys-color-primary)] transition-colors hover:bg-[var(--md-sys-color-primary)]/8";
+
+/** Same shape as FILLED_LINK_BUTTON_CLASS, colored with the citizen-flow
+ * brand accent instead of primary navy — e.g. "Citizen Login" CTAs. */
+export const FILLED_LINK_BUTTON_CITIZEN_CLASS =
+  "inline-flex h-10 w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-[var(--md-extended-color-citizen)] px-6 text-sm font-medium text-[var(--md-extended-color-on-citizen)] transition-opacity hover:opacity-90 active:opacity-80";

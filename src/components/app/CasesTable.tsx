@@ -411,7 +411,11 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
                       >
                         <Check className="h-4 w-4 text-[var(--md-extended-color-success)]" />
                       </IconButton>
-                      <IconButton variant="tonal" title="Reject case" onClick={() => handleReject(c)}>
+                      <IconButton
+                        variant="tonal"
+                        title="Reject case"
+                        onClick={() => handleReject(c)}
+                      >
                         <X className="h-4 w-4 text-[var(--md-sys-color-error)]" />
                       </IconButton>
                     </>

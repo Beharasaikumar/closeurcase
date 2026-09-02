@@ -1,7 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
-  ArrowLeft,
   ChevronRight,
   Landmark,
   User,
@@ -15,7 +14,8 @@ import {
   Link2,
 } from "lucide-react";
 import { getCases, subscribeToStore } from "@/data/appStore";
-import { IconButton, Button } from "@/components/m3";
+import { Button } from "@/components/m3";
+import { PageHeader } from "@/components/app/PageHeader";
 import type { LegalCase } from "@/types";
 import {
   STORED_STATUS_TO_FILTER,
@@ -102,6 +102,7 @@ function CitizenCaseDetailPage() {
 }
 
 function CitizenCaseDetailBody({ caseItem: c }: { caseItem: LegalCase }) {
+  const navigate = useNavigate();
   const [showLawyers, setShowLawyers] = useState(false);
   const cd = c.caseDetails;
 
@@ -118,28 +119,11 @@ function CitizenCaseDetailBody({ caseItem: c }: { caseItem: LegalCase }) {
 
   return (
     <div className="space-y-5">
-      {/* Back + breadcrumb */}
-      <div className="flex items-center gap-2.5">
-        <Link to="/citizen/my-cases">
-          <IconButton variant="outlined" ariaLabel="Back to My Cases">
-            <ArrowLeft className="h-5 w-5" />
-          </IconButton>
-        </Link>
-        <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-          <Link
-            to="/citizen/my-cases"
-            className="shrink-0 font-semibold hover:text-foreground hover:underline"
-          >
-            My Cases
-          </Link>
-          <ChevronRight className="h-3 w-3 shrink-0" />
-          <span className="truncate max-w-[240px] sm:max-w-md">{c.title}</span>
-        </div>
-      </div>
-
-      {/* Header card */}
-      <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6 shadow-2xs space-y-4">
-        <div className="flex items-center justify-end">
+      <PageHeader
+        title={c.title}
+        onBack={() => navigate({ to: "/citizen/my-cases" })}
+        backLabel="Back to My Cases"
+        actions={
           <Button
             variant="outlined"
             icon={<Printer className="h-4 w-4" />}
@@ -147,15 +131,25 @@ function CitizenCaseDetailBody({ caseItem: c }: { caseItem: LegalCase }) {
           >
             Print
           </Button>
-        </div>
+        }
+      />
 
-        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
-          <h1 className="text-lg sm:text-xl font-bold text-foreground leading-snug max-w-2xl">
-            {c.title}
-          </h1>
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
-            <StatusBadge status={c.status} />
-          </div>
+      {/* Breadcrumb */}
+      <div className="flex min-w-0 items-center gap-1.5 -mt-3 text-xs text-muted-foreground">
+        <Link
+          to="/citizen/my-cases"
+          className="shrink-0 font-semibold hover:text-foreground hover:underline"
+        >
+          My Cases
+        </Link>
+        <ChevronRight className="h-3 w-3 shrink-0" />
+        <span className="truncate max-w-[240px] sm:max-w-md">{c.title}</span>
+      </div>
+
+      {/* Header card */}
+      <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6 shadow-2xs space-y-4">
+        <div className="flex flex-wrap items-center gap-2 border-b border-border pb-4">
+          <StatusBadge status={c.status} />
         </div>
 
         {/* Case facts */}

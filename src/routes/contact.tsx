@@ -17,6 +17,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { PublicLayout } from "@/layouts/PublicLayout";
+import { TextField, Select, Button } from "@/components/m3";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -99,7 +100,7 @@ function ContactPage() {
 
               {/* Card 2: Helpline */}
               <div className="flex items-start gap-4 rounded-xl border border-border bg-surface p-4 shadow-xs hover:border-primary/40 transition-all">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-success/10 text-success">
                   <Phone className="h-5 w-5" />
                 </div>
                 <div>
@@ -117,7 +118,14 @@ function ContactPage() {
 
               {/* Card 3: Office Headquarters */}
               <div className="flex items-start gap-4 rounded-xl border border-border bg-surface p-4 shadow-xs hover:border-primary/40 transition-all">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600">
+                <div
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                  style={{
+                    backgroundColor:
+                      "color-mix(in srgb, var(--md-extended-color-lawyer) 10%, transparent)",
+                    color: "var(--md-extended-color-lawyer)",
+                  }}
+                >
                   <Building2 className="h-5 w-5" />
                 </div>
                 <div>
@@ -132,17 +140,17 @@ function ContactPage() {
               </div>
 
               {/* Card 4: Response Guarantee */}
-              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 flex items-center justify-between">
+              <div className="rounded-xl border border-success/20 bg-success/5 p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Clock className="h-5 w-5 text-emerald-600 shrink-0" />
+                  <Clock className="h-5 w-5 text-success shrink-0" />
                   <div>
-                    <div className="text-xs font-bold text-emerald-800">Quick Response Time</div>
-                    <div className="text-[11px] text-emerald-700">
+                    <div className="text-xs font-bold text-success">Quick Response Time</div>
+                    <div className="text-[11px] text-success/80">
                       Average response within 2–4 business hours
                     </div>
                   </div>
                 </div>
-                <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                <span className="rounded-full bg-success/20 px-2 py-0.5 text-[10px] font-bold text-success">
                   Fast
                 </span>
               </div>
@@ -196,8 +204,8 @@ function ContactPage() {
               </p>
 
               {submitted ? (
-                <div className="mt-8 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-8 text-center space-y-4">
-                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md">
+                <div className="mt-8 rounded-xl border border-success/30 bg-success/10 p-8 text-center space-y-4">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-success text-white shadow-md">
                     <CheckCircle2 className="h-8 w-8" />
                   </div>
                   <h3 className="text-xl font-bold text-foreground">Thank You for Reaching Out!</h3>
@@ -209,7 +217,8 @@ function ContactPage() {
                     </span>
                     .
                   </p>
-                  <button
+                  <Button
+                    variant="filled"
                     onClick={() => {
                       setSubmitted(false);
                       setFormData({
@@ -220,101 +229,83 @@ function ContactPage() {
                         message: "",
                       });
                     }}
-                    className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-all shadow-xs"
                   >
-                    <span>Send Another Message</span>
-                  </button>
+                    Send Another Message
+                  </Button>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="mt-6 space-y-5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-foreground mb-1.5">
-                        Your Full Name <span className="text-destructive">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="John Doe"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all"
-                      />
-                    </div>
+                    <TextField
+                      label="Your Full Name"
+                      type="text"
+                      required
+                      placeholder="John Doe"
+                      value={formData.name}
+                      onChange={(v) => setFormData({ ...formData, name: v })}
+                      className="w-full"
+                    />
 
-                    <div>
-                      <label className="block text-xs font-semibold text-foreground mb-1.5">
-                        Email Address <span className="text-destructive">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        required
-                        placeholder="john@example.com"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all"
-                      />
-                    </div>
+                    <TextField
+                      label="Email Address"
+                      type="email"
+                      required
+                      placeholder="john@example.com"
+                      value={formData.email}
+                      onChange={(v) => setFormData({ ...formData, email: v })}
+                      className="w-full"
+                    />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-foreground mb-1.5">
-                        Inquiry Category
-                      </label>
-                      <select
-                        value={formData.category}
-                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                        className="w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all"
-                      >
-                        <option value="general">General Platform Inquiry</option>
-                        <option value="citizen">Citizen Case Filing Support</option>
-                        <option value="lawyer">Lawyer Verification & Onboarding</option>
-                        <option value="technical">Technical Bug / Issue</option>
-                        <option value="partnership">Legal Partnership / Enterprise</option>
-                      </select>
-                    </div>
+                    <Select
+                      label="Inquiry Category"
+                      value={formData.category}
+                      onChange={(v) => setFormData({ ...formData, category: v })}
+                      className="w-full"
+                      options={[
+                        { value: "general", label: "General Platform Inquiry" },
+                        { value: "citizen", label: "Citizen Case Filing Support" },
+                        { value: "lawyer", label: "Lawyer Verification & Onboarding" },
+                        { value: "technical", label: "Technical Bug / Issue" },
+                        { value: "partnership", label: "Legal Partnership / Enterprise" },
+                      ]}
+                    />
 
-                    <div>
-                      <label className="block text-xs font-semibold text-foreground mb-1.5">
-                        Subject <span className="text-destructive">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="Brief summary of your inquiry"
-                        value={formData.subject}
-                        onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                        className="w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-foreground mb-1.5">
-                      Message <span className="text-destructive">*</span>
-                    </label>
-                    <textarea
+                    <TextField
+                      label="Subject"
+                      type="text"
                       required
-                      rows={5}
-                      placeholder="Please provide details about your request or inquiry..."
-                      value={formData.message}
-                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                      className="w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all resize-none"
+                      placeholder="Brief summary of your inquiry"
+                      value={formData.subject}
+                      onChange={(v) => setFormData({ ...formData, subject: v })}
+                      className="w-full"
                     />
                   </div>
+
+                  <TextField
+                    label="Message"
+                    type="textarea"
+                    rows={5}
+                    required
+                    placeholder="Please provide details about your request or inquiry..."
+                    value={formData.message}
+                    onChange={(v) => setFormData({ ...formData, message: v })}
+                    className="w-full"
+                  />
 
                   <div className="pt-2 flex items-center justify-between">
                     <p className="text-[11px] text-muted-foreground">
                       We respect your privacy. Information is confidential.
                     </p>
-                    <button
+                    <Button
                       type="submit"
-                      className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-all"
+                      variant="filled"
+                      icon={<Send className="h-3.5 w-3.5" />}
+                      trailingIcon
                     >
-                      <span>Send Message</span>
-                      <Send className="h-3.5 w-3.5" />
-                    </button>
+                      Send Message
+                    </Button>
                   </div>
                 </form>
               )}

@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { getCases, updateCaseFields, subscribeToStore } from "@/data/appStore";
 import type { LegalCase } from "@/types";
 import { StatusDot } from "@/components/app/StatusDot";
-import { TextField, Button, IconButton } from "@/components/m3";
+import { PageHeader } from "@/components/app/PageHeader";
+import { TextField, Button } from "@/components/m3";
 import {
   STORED_STATUS_TO_FILTER,
   PRE_CNR_STAGES,
@@ -19,7 +20,6 @@ import {
   User,
   Download,
   CalendarClock,
-  ArrowLeft,
   Gavel,
   Users,
   ShieldAlert,
@@ -110,30 +110,36 @@ function CaseDetailBody({ caseItem: c }: { caseItem: LegalCase }) {
 
   return (
     <div className="space-y-5">
-      {/* Back + breadcrumb */}
-      <div className="flex items-center gap-2.5">
-        <IconButton
-          variant="outlined"
-          ariaLabel="Back to My Cases"
-          onClick={() => navigate({ to: "/lawyer/cases" })}
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </IconButton>
-        <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-          <Link
-            to="/lawyer/cases"
-            className="shrink-0 font-semibold hover:text-foreground hover:underline"
+      <PageHeader
+        title={c.title}
+        onBack={() => navigate({ to: "/lawyer/cases" })}
+        backLabel="Back to My Cases"
+        actions={
+          <Button
+            variant="outlined"
+            icon={<Printer className="h-4 w-4" />}
+            onClick={() => window.print()}
           >
-            My Cases
-          </Link>
-          <ChevronRight className="h-3 w-3 shrink-0" />
-          <span className="truncate max-w-[240px] sm:max-w-md">{c.title}</span>
-        </div>
+            Print
+          </Button>
+        }
+      />
+
+      {/* Breadcrumb */}
+      <div className="flex min-w-0 items-center gap-1.5 -mt-3 text-xs text-muted-foreground">
+        <Link
+          to="/lawyer/cases"
+          className="shrink-0 font-semibold hover:text-foreground hover:underline"
+        >
+          My Cases
+        </Link>
+        <ChevronRight className="h-3 w-3 shrink-0" />
+        <span className="truncate max-w-[240px] sm:max-w-md">{c.title}</span>
       </div>
 
       {/* Header card */}
       <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6 shadow-2xs space-y-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
           {!readOnly && editingFileNo ? (
             <div className="flex items-center gap-2">
               <TextField
@@ -166,24 +172,7 @@ function CaseDetailBody({ caseItem: c }: { caseItem: LegalCase }) {
             <div />
           )}
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="outlined"
-              icon={<Printer className="h-4 w-4" />}
-              onClick={() => window.print()}
-            >
-              Print
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
-          <h1 className="text-lg sm:text-xl font-bold text-foreground leading-snug max-w-2xl">
-            {c.title}
-          </h1>
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
-            <StatusDot status={c.status} />
-          </div>
+          <StatusDot status={c.status} />
         </div>
 
         {/* Case facts */}

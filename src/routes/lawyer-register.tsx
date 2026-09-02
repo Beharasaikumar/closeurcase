@@ -23,6 +23,7 @@ import { INDIAN_COURTS, INDIAN_CITIES, INDIAN_LANGUAGES } from "@/data/courts";
 import { addLawyer } from "@/data/appStore";
 import { readFileAsDataUrl } from "@/lib/files";
 import type { LegalCategory, LawyerAward, LawyerPracticeArea } from "@/types";
+import { Button, IconButton, TextField, Select, Checkbox, InputChip } from "@/components/m3";
 
 const MAX_ID_PROOF_BYTES = 5 * 1024 * 1024;
 
@@ -329,16 +330,21 @@ function LawyerRegister() {
             <code className="rounded bg-muted px-1.5 py-0.5 font-bold text-primary">{barId}</code>{" "}
             has been submitted to the Super Admin for verification.
           </p>
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+          <div
+            className="rounded-lg border p-3 text-xs"
+            style={{
+              borderColor: "var(--md-extended-color-warning-container)",
+              backgroundColor:
+                "color-mix(in srgb, var(--md-extended-color-warning) 8%, transparent)",
+              color: "var(--md-extended-color-on-warning-container)",
+            }}
+          >
             <strong>Note:</strong> You can log in and explore the Lawyer Workspace while
             verification is underway.
           </div>
-          <button
-            onClick={() => navigate({ to: "/login" })}
-            className="w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-xs font-bold text-foreground hover:bg-muted transition-all"
-          >
+          <Button variant="outlined" onClick={() => navigate({ to: "/login" })} className="w-full">
             Back to Sign in
-          </button>
+          </Button>
         </div>
       </AuthLayout>
     );
@@ -362,32 +368,26 @@ function LawyerRegister() {
         {/* ── Registration Type Toggle ── */}
         <div className="flex items-center justify-center">
           <div className="inline-flex rounded-xl border border-border bg-muted p-1 gap-1">
-            <button
+            <Button
               type="button"
               id="toggle-lawyer"
+              variant={!isFirm ? "filled" : "text"}
+              icon={<User className="h-3.5 w-3.5" />}
               onClick={() => setRegistrationType("lawyer")}
-              className={`flex items-center gap-2 rounded-lg px-5 py-2 text-xs font-semibold transition-all duration-200 ${
-                !isFirm
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              className={!isFirm ? "shadow-sm" : "text-muted-foreground"}
             >
-              <User className="h-3.5 w-3.5" />
               Individual Lawyer
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               id="toggle-firm"
+              variant={isFirm ? "filled" : "text"}
+              icon={<Building2 className="h-3.5 w-3.5" />}
               onClick={() => setRegistrationType("firm")}
-              className={`flex items-center gap-2 rounded-lg px-5 py-2 text-xs font-semibold transition-all duration-200 ${
-                isFirm
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              className={isFirm ? "shadow-sm" : "text-muted-foreground"}
             >
-              <Building2 className="h-3.5 w-3.5" />
               Law Firm / Organisation
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -411,7 +411,12 @@ function LawyerRegister() {
               </div>
             )}
             {/* hover overlay */}
-            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div
+              className="absolute inset-0 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+              style={{
+                backgroundColor: "color-mix(in srgb, var(--md-sys-color-scrim) 30%, transparent)",
+              }}
+            >
               <Camera className="h-5 w-5 text-white" />
             </div>
           </button>
@@ -426,29 +431,36 @@ function LawyerRegister() {
             onChange={handlePhotoChange}
           />
           {photoFile && (
-            <button
+            <Button
               type="button"
+              variant="text"
+              icon={<X className="h-3 w-3" />}
               onClick={() => {
                 setPhotoFile(null);
                 setPhotoPreview(null);
               }}
-              className="flex items-center gap-1 text-[11px] text-destructive hover:underline"
+              className="h-auto! min-h-0! px-0! text-[11px]"
+              style={
+                {
+                  "--md-text-button-label-text-color": "var(--md-sys-color-error)",
+                  "--md-text-button-with-icon-icon-color": "var(--md-sys-color-error)",
+                } as React.CSSProperties
+              }
             >
-              <X className="h-3 w-3" /> Remove photo
-            </button>
+              Remove photo
+            </Button>
           )}
         </div>
 
         {/* Full Name / Organisation Name */}
-        <Field label={isFirm ? "Organisation Name *" : "Full name *"}>
-          <input
-            className={inputCls}
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={isFirm ? "M/s. Reddy & Associates" : "Adv. Swathi Reddy"}
-          />
-        </Field>
+        <TextField
+          label={isFirm ? "Organisation Name" : "Full name"}
+          required
+          value={name}
+          onChange={setName}
+          placeholder={isFirm ? "M/s. Reddy & Associates" : "Adv. Swathi Reddy"}
+          className="w-full"
+        />
 
         {/* Service Cities – full width so many city tags don't crowd */}
         <TagDropdownField
@@ -488,70 +500,44 @@ function LawyerRegister() {
             )}
           </div>
 
-          {/* 3 Cascading Dropdowns */}
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          {/* 3 Cascading Dropdowns — stacked full-width rather than a 3-col
+              grid: md-outlined-select has a real minimum width (~210px) that
+              a 3-up grid inside this card can't satisfy without overlap. */}
+          <div className="grid grid-cols-1 gap-3">
             {/* Dropdown 1: Practice Area / Category */}
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-foreground flex items-center gap-1">
-                <span>1. Practice Area *</span>
-              </label>
-              <select
-                className={selectCls}
-                value={selectedPracticeArea}
-                onChange={(e) => handlePracticeAreaChange(e.target.value)}
-              >
-                <option value="">-- Select Practice Area --</option>
-                {LAWYER_PRACTICE_AREAS.map((pa) => (
-                  <option key={pa.name} value={pa.name}>
-                    {pa.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label="1. Practice Area *"
+              value={selectedPracticeArea}
+              onChange={handlePracticeAreaChange}
+              options={LAWYER_PRACTICE_AREAS.map((pa) => ({ value: pa.name, label: pa.name }))}
+              className="w-full"
+            />
 
             {/* Dropdown 2: Specialization */}
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-foreground flex items-center gap-1">
-                <span>2. Specialization *</span>
-              </label>
-              <select
-                className={selectCls}
-                value={selectedSpecialization}
-                onChange={(e) => handleSpecializationChange(e.target.value)}
-                disabled={!selectedPracticeArea || availableSpecializations.length === 0}
-              >
-                <option value="">
-                  {!selectedPracticeArea
-                    ? "-- Select Practice Area First --"
-                    : availableSpecializations.length === 0
-                      ? "No specializations available"
-                      : "-- Select Specialization --"}
-                </option>
-                {availableSpecializations.map((spec) => (
-                  <option key={spec.name} value={spec.name}>
-                    {spec.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label="2. Specialization *"
+              value={selectedSpecialization}
+              onChange={handleSpecializationChange}
+              disabled={!selectedPracticeArea || availableSpecializations.length === 0}
+              options={availableSpecializations.map((spec) => ({
+                value: spec.name,
+                label: spec.name,
+              }))}
+              supportingText={
+                !selectedPracticeArea
+                  ? "Select Practice Area first"
+                  : availableSpecializations.length === 0
+                    ? "No specializations available"
+                    : undefined
+              }
+              className="w-full"
+            />
 
-            {/* Dropdown 3: Multi-Select Legal Services */}
+            {/* Dropdown 3: Multi-Select Legal Services — hand-built (no M3
+                primitive covers a checkbox multi-select), styled to match
+                md-outlined-select's notched floating-label look so it doesn't
+                stand out next to the two real Selects above it. */}
             <div className="relative">
-              <label className="mb-1 block text-xs font-semibold text-foreground flex items-center justify-between">
-                <span>3. Legal Service(s)</span>
-                {selectedSpecialization && availableLegalServices.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={selectAllServicesInSpec}
-                    className="text-[10px] text-primary hover:underline font-medium"
-                  >
-                    {selectedServicesMulti.length === availableLegalServices.length
-                      ? "Deselect all"
-                      : "Select all"}
-                  </button>
-                )}
-              </label>
-
               {/* Custom Multi-Select Dropdown Trigger */}
               <div
                 onClick={() => {
@@ -559,12 +545,15 @@ function LawyerRegister() {
                     setIsMultiServiceDropdownOpen((prev) => !prev);
                   }
                 }}
-                className={`flex min-h-[34px] w-full items-center justify-between rounded-lg border border-border bg-surface px-3 py-1.5 text-xs transition-colors ${
+                className={`relative flex min-h-14 w-full items-center justify-between rounded-[4px] border px-3 text-xs transition-colors ${
                   !selectedSpecialization
-                    ? "cursor-not-allowed opacity-60 text-muted-foreground"
-                    : "cursor-pointer text-foreground focus-within:border-primary hover:border-primary/60"
+                    ? "cursor-not-allowed opacity-60 text-muted-foreground border-border"
+                    : "cursor-pointer text-foreground border-border focus-within:border-primary hover:border-primary/60"
                 }`}
               >
+                <span className="pointer-events-none absolute -top-2 left-2.5 bg-surface px-1 text-[11px] font-medium text-muted-foreground">
+                  3. Legal Service(s)
+                </span>
                 <span className="truncate">
                   {!selectedSpecialization
                     ? "-- Select Specialization First --"
@@ -573,11 +562,26 @@ function LawyerRegister() {
                       : `${selectedServicesMulti.length} service(s) checked`}
                 </span>
                 <ChevronDown
-                  className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${
+                  className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${
                     isMultiServiceDropdownOpen ? "rotate-180" : ""
                   }`}
                 />
               </div>
+
+              {selectedSpecialization && availableLegalServices.length > 0 && (
+                <div className="mt-1 flex justify-end">
+                  <Button
+                    type="button"
+                    variant="text"
+                    onClick={selectAllServicesInSpec}
+                    className="h-auto! min-h-0! px-0! text-[10px] hover:underline"
+                  >
+                    {selectedServicesMulti.length === availableLegalServices.length
+                      ? "Deselect all"
+                      : "Select all"}
+                  </Button>
+                </div>
+              )}
 
               {/* Multi-Select Dropdown Popover */}
               {isMultiServiceDropdownOpen && selectedSpecialization && (
@@ -594,11 +598,9 @@ function LawyerRegister() {
                           key={service}
                           className="flex items-center gap-2 rounded-md p-1.5 text-xs text-foreground hover:bg-muted/70 cursor-pointer select-none"
                         >
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             checked={isChecked}
                             onChange={() => toggleServiceInMulti(service)}
-                            className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary/30"
                           />
                           <span className="flex-1 leading-snug">{service}</span>
                         </label>
@@ -606,13 +608,14 @@ function LawyerRegister() {
                     })
                   )}
                   <div className="pt-2 border-t border-border flex justify-end">
-                    <button
+                    <Button
                       type="button"
+                      variant="filled"
                       onClick={() => setIsMultiServiceDropdownOpen(false)}
-                      className="rounded bg-primary px-2.5 py-1 text-[10px] font-bold text-primary-foreground hover:bg-primary/90"
+                      className="h-auto! min-h-0! px-2.5! py-1! text-[10px]"
                     >
                       Done
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -621,24 +624,33 @@ function LawyerRegister() {
 
           {/* Action Row */}
           <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-            <button
+            <Button
               type="button"
+              variant="filled"
+              icon={<Plus className="h-3.5 w-3.5" />}
               onClick={handleAddPracticeEntries}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-all shadow-xs"
+              className="shadow-xs"
             >
-              <Plus className="h-3.5 w-3.5" />
               Add to Practice Areas
-            </button>
+            </Button>
 
             {selectedPracticeEntries.length > 0 && (
-              <button
+              <Button
                 type="button"
+                variant="text"
+                icon={<Trash2 className="h-3 w-3" />}
                 onClick={clearAllPracticeEntries}
-                className="text-[11px] text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1"
+                className="h-auto! min-h-0! px-0! text-[11px]"
+                style={
+                  {
+                    "--md-text-button-label-text-color": "var(--md-sys-color-on-surface-variant)",
+                    "--md-text-button-with-icon-icon-color":
+                      "var(--md-sys-color-on-surface-variant)",
+                  } as React.CSSProperties
+                }
               >
-                <Trash2 className="h-3 w-3" />
                 Clear All
-              </button>
+              </Button>
             )}
           </div>
 
@@ -652,28 +664,15 @@ function LawyerRegister() {
               </span>
               <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-1">
                 {selectedPracticeEntries.map((entry) => (
-                  <span
+                  <InputChip
                     key={entry.id}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-background px-2.5 py-1.5 text-xs text-foreground shadow-2xs group"
-                  >
-                    <span className="font-bold text-primary">{entry.practiceArea}</span>
-                    <span className="text-muted-foreground">›</span>
-                    <span className="font-semibold text-foreground/90">{entry.specialization}</span>
-                    {entry.legalService && (
-                      <>
-                        <span className="text-muted-foreground">›</span>
-                        <span className="text-xs text-muted-foreground">{entry.legalService}</span>
-                      </>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => removePracticeEntry(entry.id)}
-                      className="ml-1 text-muted-foreground hover:text-destructive group-hover:text-foreground"
-                      aria-label="Remove item"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </span>
+                    label={
+                      entry.legalService
+                        ? `${entry.practiceArea} › ${entry.specialization} › ${entry.legalService}`
+                        : `${entry.practiceArea} › ${entry.specialization}`
+                    }
+                    onRemove={() => removePracticeEntry(entry.id)}
+                  />
                 ))}
               </div>
             </div>
@@ -687,74 +686,68 @@ function LawyerRegister() {
 
         {/* Email & Phone */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Field label="Email *">
-            <input
-              type="email"
-              className={inputCls}
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="swathi@law.com"
-            />
-          </Field>
+          <TextField
+            label="Email"
+            type="email"
+            required
+            value={email}
+            onChange={setEmail}
+            placeholder="swathi@law.com"
+            className="w-full"
+          />
 
-          <Field label="Phone *">
-            <input
-              className={inputCls}
-              required
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+91 98100 12345"
-            />
-          </Field>
+          <TextField
+            label="Phone"
+            required
+            value={phone}
+            onChange={setPhone}
+            placeholder="+91 98100 12345"
+            className="w-full"
+          />
         </div>
 
         {/* Bar ID & Years of Experience */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Field label="Bar Registration ID *">
-            <input
-              className={inputCls}
-              required
-              value={barId}
-              onChange={(e) => setBarId(e.target.value)}
-              placeholder="TS/2014/1023"
-            />
-          </Field>
+          <TextField
+            label="Bar Registration ID"
+            required
+            value={barId}
+            onChange={setBarId}
+            placeholder="TS/2014/1023"
+            className="w-full"
+          />
 
-          <Field label="Years of Experience *">
-            <input
-              type="number"
-              min={1}
-              max={50}
-              className={inputCls}
-              required
-              value={experienceYears}
-              onChange={(e) => setExperienceYears(Number(e.target.value))}
-            />
-          </Field>
+          <TextField
+            label="Years of Experience"
+            type="number"
+            required
+            value={String(experienceYears)}
+            onChange={(v) => setExperienceYears(Math.min(50, Math.max(1, Number(v) || 1)))}
+            className="w-full"
+          />
         </div>
 
         {/* Office Address */}
-        <Field label="Address">
-          <textarea
-            className={inputCls}
-            rows={2}
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            placeholder="Chamber No. 402, High Court Complex, Nampally, Hyderabad"
-          />
-        </Field>
+        <TextField
+          label="Address"
+          type="textarea"
+          rows={2}
+          value={address}
+          onChange={setAddress}
+          placeholder="Chamber No. 402, High Court Complex, Nampally, Hyderabad"
+          className="w-full"
+        />
 
         {/* Bio / About */}
-        <Field label="Bio / About">
-          <textarea
-            className={inputCls}
-            rows={3}
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            placeholder="Tell clients about your practice, experience, and approach…"
-          />
-        </Field>
+        <TextField
+          label="Bio / About"
+          type="textarea"
+          rows={3}
+          value={bio}
+          onChange={setBio}
+          placeholder="Tell clients about your practice, experience, and approach…"
+          className="w-full"
+        />
 
         {/* Languages Spoken */}
         <TagDropdownField
@@ -785,23 +778,22 @@ function LawyerRegister() {
         {/* Awards & Recognition */}
         <Field label="Awards & Recognition">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <input
-              className={`${inputCls} sm:flex-1`}
+            <TextField
               value={awardTitle}
-              onChange={(e) => setAwardTitle(e.target.value)}
+              onChange={setAwardTitle}
               placeholder="e.g. Client's Choice Lawyer"
+              className="sm:flex-1"
             />
             <div className="flex gap-2">
-              <input
-                className={`${inputCls} w-24`}
+              <TextField
                 value={awardYear}
-                onChange={(e) => setAwardYear(e.target.value)}
+                onChange={setAwardYear}
                 placeholder="2025"
-                aria-label="Award year"
+                className="w-24"
               />
-              <button type="button" onClick={addAward} className={addBtnCls}>
+              <Button type="button" variant="outlined" onClick={addAward}>
                 Add
-              </button>
+              </Button>
             </div>
           </div>
           {awards.length > 0 && (
@@ -814,14 +806,12 @@ function LawyerRegister() {
                   <span className="font-semibold text-foreground">
                     {a.title} <span className="font-normal text-muted-foreground">({a.year})</span>
                   </span>
-                  <button
-                    type="button"
+                  <IconButton
                     onClick={() => setAwards((prev) => prev.filter((_, x) => x !== i))}
-                    className="text-muted-foreground hover:text-destructive"
-                    aria-label={`Remove ${a.title}`}
+                    ariaLabel={`Remove ${a.title}`}
                   >
-                    ×
-                  </button>
+                    <X className="h-3.5 w-3.5" />
+                  </IconButton>
                 </li>
               ))}
             </ul>
@@ -831,25 +821,20 @@ function LawyerRegister() {
         {/* ID Proof */}
         <Field label="ID Proof Document">
           <div className="flex items-center gap-2">
-            <button
+            <Button
               type="button"
+              variant="outlined"
+              icon={<Upload className="h-3.5 w-3.5" />}
               onClick={() => idProofInputRef.current?.click()}
-              className={`${addBtnCls} inline-flex items-center gap-1.5`}
             >
-              <Upload className="h-3.5 w-3.5" />
               Choose File
-            </button>
+            </Button>
             {idProofFile ? (
               <span className="flex min-w-0 items-center gap-1.5 text-xs text-foreground">
                 <span className="truncate font-medium">{idProofFile.name}</span>
-                <button
-                  type="button"
-                  onClick={() => setIdProofFile(null)}
-                  className="shrink-0 text-muted-foreground hover:text-destructive"
-                  aria-label="Remove ID proof"
-                >
+                <IconButton onClick={() => setIdProofFile(null)} ariaLabel="Remove ID proof">
                   <X className="h-3.5 w-3.5" />
-                </button>
+                </IconButton>
               </span>
             ) : (
               <span className="text-xs text-muted-foreground">No file chosen</span>
@@ -872,23 +857,13 @@ function LawyerRegister() {
         </Field>
 
         {/* Submit */}
-        <button
-          type="submit"
-          className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
-        >
+        <Button type="submit" variant="filled" className="w-full shadow-md">
           Submit for Verification
-        </button>
+        </Button>
       </form>
     </AuthLayout>
   );
 }
-
-const inputCls =
-  "w-full rounded-lg border border-border bg-surface px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none";
-const selectCls =
-  "w-full min-w-0 truncate rounded-lg border border-border bg-surface px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none";
-const addBtnCls =
-  "shrink-0 rounded-lg border border-border bg-surface px-3 py-2 text-xs font-bold text-foreground hover:bg-muted transition-all";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -926,42 +901,23 @@ function TagDropdownField({
   };
 
   return (
-    <Field label={label}>
-      <div className="flex gap-2">
-        <select
-          className={selectCls}
-          value={selectedVal}
-          onChange={(e) => handleSelect(e.target.value)}
-        >
-          <option value="">{placeholder}</option>
-          {availableOptions.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
-        </select>
-      </div>
+    <div>
+      <Select
+        label={label}
+        value={selectedVal}
+        onChange={handleSelect}
+        options={availableOptions.map((opt) => ({ value: opt, label: opt }))}
+        supportingText={placeholder}
+        className="w-full"
+      />
       {values.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {values.map((v, i) => (
-            <span
-              key={`${v}-${i}`}
-              className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary"
-            >
-              {v}
-              <button
-                type="button"
-                onClick={() => onRemove(i)}
-                className="text-muted-foreground hover:text-destructive p-0.5 leading-none transition-colors"
-                aria-label={`Remove ${v}`}
-              >
-                ×
-              </button>
-            </span>
+            <InputChip key={`${v}-${i}`} label={v} onRemove={() => onRemove(i)} />
           ))}
         </div>
       )}
-    </Field>
+    </div>
   );
 }
 
@@ -993,72 +949,53 @@ function CourtsDropdownField({
   };
 
   return (
-    <Field label={label}>
+    <div>
+      <span className="mb-1 block text-xs font-semibold text-foreground">{label}</span>
       <div className="space-y-2">
         {/* Quick filter input for 500+ courts list */}
-        <div className="flex gap-2">
-          <input
-            type="text"
-            className={`${inputCls} text-xs`}
-            placeholder="Type to filter court list (e.g. Telangana, Bombay, Consumer, NCLT)..."
+        <div className="flex gap-2 items-start">
+          <TextField
             value={searchFilter}
-            onChange={(e) => setSearchFilter(e.target.value)}
+            onChange={setSearchFilter}
+            placeholder="Type to filter court list (e.g. Telangana, Bombay, Consumer, NCLT)..."
+            className="flex-1"
           />
           {searchFilter && (
-            <button
-              type="button"
-              onClick={() => setSearchFilter("")}
-              className="rounded-lg border border-border bg-surface px-2.5 text-xs text-muted-foreground hover:bg-muted"
-            >
+            <Button type="button" variant="outlined" onClick={() => setSearchFilter("")}>
               Clear
-            </button>
+            </Button>
           )}
         </div>
 
         {/* Dropdown Select */}
-        <select
-          className={selectCls}
+        <Select
           value={selectedCourt}
-          onChange={(e) => {
-            const val = e.target.value;
+          onChange={(val) => {
             setSelectedCourt(val);
             if (val) handleAddCourt(val);
           }}
-        >
-          <option value="">
-            {filteredCourts.length === 0
+          options={filteredCourts.map((c) => ({ value: c, label: c }))}
+          supportingText={
+            filteredCourts.length === 0
               ? "No matching courts found"
-              : `-- Select Court to Add (${filteredCourts.length} courts) --`}
-          </option>
-          {filteredCourts.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
+              : `Select Court to Add (${filteredCourts.length} courts)`
+          }
+          className="w-full"
+        />
       </div>
 
       {values.length > 0 && (
         <div className="mt-2.5 flex flex-wrap gap-1.5">
           {values.map((v, i) => (
-            <span
+            <InputChip
               key={`${v}-${i}`}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary"
-            >
-              <Scale className="h-3 w-3 text-primary shrink-0" />
-              <span>{v}</span>
-              <button
-                type="button"
-                onClick={() => onRemove(i)}
-                className="text-muted-foreground hover:text-destructive ml-1 p-0.5 leading-none transition-colors"
-                aria-label={`Remove ${v}`}
-              >
-                ×
-              </button>
-            </span>
+              label={v}
+              icon={<Scale className="h-3 w-3" />}
+              onRemove={() => onRemove(i)}
+            />
           ))}
         </div>
       )}
-    </Field>
+    </div>
   );
 }

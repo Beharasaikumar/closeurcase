@@ -4,6 +4,7 @@ import { CitizenLoginButton } from "@/components/app/CitizenLoginButton";
 import { PermissionsGate } from "@/components/app/PermissionsGate";
 import { usePermissionsGate } from "@/features/permissions/usePermissionsGate";
 import { Scale } from "lucide-react";
+import { Card } from "@/components/m3";
 
 export const Route = createFileRoute("/register")({
   head: () => ({ meta: [{ title: "Join CloseUrCase" }] }),
@@ -34,12 +35,19 @@ function Register() {
     >
       <div className="space-y-3">
         <CitizenLoginButton label="Citizen Login" />
-        <button
-          type="button"
+        <Card
+          variant="outlined"
           onClick={() => navigate({ to: "/lawyer-register" })}
-          className="flex w-full items-center gap-3 rounded-xl border border-border bg-surface p-4 text-left hover:border-primary hover:bg-muted/50 transition-colors"
+          className="flex w-full items-center gap-3 p-4 text-left hover:border-[var(--md-sys-color-primary)]"
         >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-500/15 text-indigo-600">
+          <span
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+            style={{
+              backgroundColor:
+                "color-mix(in srgb, var(--md-extended-color-lawyer) 15%, transparent)",
+              color: "var(--md-extended-color-lawyer)",
+            }}
+          >
             <Scale className="h-5 w-5" />
           </span>
           <span>
@@ -48,7 +56,7 @@ function Register() {
               Bar ID verification required
             </span>
           </span>
-        </button>
+        </Card>
       </div>
     </AuthLayout>
   );

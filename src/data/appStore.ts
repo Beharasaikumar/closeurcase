@@ -22,7 +22,7 @@ import {
   knowledgeBase as seedKnowledgeBase,
 } from "./mock";
 
-const LAWYERS_KEY = "cuc_lawyers_v7";
+const LAWYERS_KEY = "cuc_lawyers_v8";
 const CITIZENS_KEY = "cuc_citizens_v3";
 const NOTIFICATIONS_KEY = "cuc_notifications_v2";
 const KB_KEY = "cuc_kb_v3";
@@ -351,6 +351,15 @@ export function updateLawyerStatus(id: string, status: Lawyer["status"]) {
   saveLawyers(updated);
 }
 
+export function updateLawyerProfile(
+  id: string,
+  fields: Partial<Pick<Lawyer, "name" | "email" | "phone" | "city" | "practiceAreas">>,
+) {
+  const current = getLawyers();
+  const updated = current.map((l) => (l.id === id ? { ...l, ...fields } : l));
+  saveLawyers(updated);
+}
+
 /* ── CITIZENS STORE ──────────────────────────────────────────────────────── */
 export function getCitizens(): Citizen[] {
   return load<Citizen[]>(CITIZENS_KEY, seedCitizens);
@@ -364,6 +373,40 @@ export function updateCitizenStatus(id: string, status: Citizen["status"]) {
   const current = getCitizens();
   const updated = current.map((c) => (c.id === id ? { ...c, status } : c));
   saveCitizens(updated);
+}
+
+export function updateCitizenProfile(
+  id: string,
+  fields: Partial<Pick<Citizen, "name" | "email" | "phone" | "city">>,
+) {
+  const current = getCitizens();
+  const updated = current.map((c) => (c.id === id ? { ...c, ...fields } : c));
+  saveCitizens(updated);
+}
+
+/* ── ADMIN PROFILE STORE ─────────────────────────────────────────────────── */
+export interface AdminProfile {
+  name: string;
+  email: string;
+  phone: string;
+  city: string;
+}
+
+const ADMIN_PROFILE_KEY = "cuc_admin_profile_v1";
+
+const DEFAULT_ADMIN_PROFILE: AdminProfile = {
+  name: "Platform Ops",
+  email: "ops@closeur.legal",
+  phone: "+91 90000 11122",
+  city: "Hyderabad",
+};
+
+export function getAdminProfile(): AdminProfile {
+  return load<AdminProfile>(ADMIN_PROFILE_KEY, DEFAULT_ADMIN_PROFILE);
+}
+
+export function updateAdminProfile(fields: Partial<AdminProfile>) {
+  save(ADMIN_PROFILE_KEY, { ...getAdminProfile(), ...fields });
 }
 
 /* ── NOTIFICATIONS STORE ─────────────────────────────────────────────────── */

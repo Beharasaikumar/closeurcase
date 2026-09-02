@@ -20,6 +20,7 @@ import { WhatsAppInlineIcon, whatsappUrl } from "@/components/app/WhatsAppButton
 import { getCitizenSession } from "@/features/citizen/session";
 import { isMobileStandalonePwa } from "@/lib/pwaInstall";
 import { usePwaInstall } from "@/lib/usePwaInstall";
+import { Button } from "@/components/m3";
 
 export const Route = createFileRoute("/")({
   beforeLoad: () => {
@@ -93,14 +94,15 @@ function LandingPage() {
   return (
     <PublicLayout>
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="relative flex items-center overflow-hidden bg-slate-950 lg:min-h-[calc(100vh-4rem)]">
+      <section className="relative flex items-center overflow-hidden bg-[var(--md-sys-color-inverse-surface)] lg:min-h-[calc(100vh-4rem)]">
         {/* Courtroom Background Image */}
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: "url('/bghero.png')" }}
         />
-        {/* Gradient Overlay for Readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/75 to-slate-950/55 backdrop-blur-[1px]" />
+        {/* Gradient Overlay for Readability — neutral dark (M3 inverse-surface),
+            not the brand navy, so it doesn't color-cast the courtroom photo. */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[var(--md-sys-color-inverse-surface)]/90 via-[var(--md-sys-color-inverse-surface)]/75 to-[var(--md-sys-color-inverse-surface)]/55 backdrop-blur-[1px]" />
 
         <div className="relative z-10 mx-auto flex w-full max-w-7xl justify-center px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
           <div className="flex max-w-3xl flex-col items-center space-y-4 text-center sm:space-y-6 lg:space-y-7">
@@ -109,7 +111,7 @@ function LandingPage() {
             </div>
 
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-bold text-white backdrop-blur-md border border-white/10">
-              <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+              <Sparkles className="h-3.5 w-3.5 text-[var(--md-extended-color-warning-container)]" />
               AI-Powered Legal Platform
             </span>
 
@@ -133,7 +135,7 @@ function LandingPage() {
                   key={point}
                   className="inline-flex items-center gap-1.5 text-xs font-medium text-white/70"
                 >
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                  <CheckCircle2 className="h-3.5 w-3.5 text-[var(--md-extended-color-success-container)] shrink-0" />
                   {point}
                 </span>
               ))}
@@ -196,7 +198,7 @@ function LandingPage() {
             <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
               {STEPS.map((step, i) => (
                 <div key={step.title} className="relative">
-                  <div className="relative z-10 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white ring-8 ring-background">
+                  <div className="relative z-10 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground ring-8 ring-background">
                     <step.icon className="h-5 w-5" />
                   </div>
                   <span className="mt-4 block text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -241,7 +243,7 @@ function LandingPage() {
             <ul className="space-y-3">
               {TRUST_DETAILS.map((point) => (
                 <li key={point} className="flex items-start gap-3 text-sm text-foreground">
-                  <CheckCircle2 className="h-4 w-4 mt-0.5 text-emerald-600 shrink-0" />
+                  <CheckCircle2 className="h-4 w-4 mt-0.5 text-success shrink-0" />
                   {point}
                 </li>
               ))}
@@ -284,8 +286,9 @@ function LandingPage() {
       {/* ── WhatsApp banner ──────────────────────────────────────────────── */}
       <section className="border-t border-border py-10 sm:py-14">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-5 rounded-2xl bg-emerald-50/70 px-6 py-6 sm:px-9 sm:py-7">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-5 rounded-2xl bg-success/10 px-6 py-6 sm:px-9 sm:py-7">
             <div className="flex items-center gap-4 text-center sm:text-left">
+              {/* #25D366 is WhatsApp's own brand green, not a semantic status color — kept literal. */}
               <div className="hidden sm:flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white">
                 <WhatsAppInlineIcon className="h-5 w-5" />
               </div>
@@ -327,7 +330,7 @@ function InstallAppBanner() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-5 rounded-2xl bg-primary/5 px-6 py-6 sm:px-9 sm:py-7">
           <div className="flex items-center gap-4 text-center sm:text-left">
-            <div className="hidden sm:flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-white">
+            <div className="hidden sm:flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
               <Download className="h-5 w-5" />
             </div>
             <div>
@@ -339,14 +342,14 @@ function InstallAppBanner() {
               </p>
             </div>
           </div>
-          <button
-            type="button"
+          <Button
+            variant="filled"
             onClick={promptInstall}
-            className="inline-flex w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white hover:bg-primary/90 transition-colors"
+            icon={<Download className="h-4 w-4" />}
+            className="w-full sm:w-auto"
           >
-            <Download className="h-4 w-4" />
             Download now
-          </button>
+          </Button>
         </div>
       </div>
     </section>

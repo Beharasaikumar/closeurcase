@@ -55,9 +55,9 @@ function StarRating({ rating }: { rating: number }) {
           key={star}
           className={`h-3 w-3 ${
             star <= Math.floor(rating)
-              ? "fill-amber-400 text-amber-400"
+              ? "fill-warning text-warning"
               : star === Math.ceil(rating) && !Number.isInteger(rating)
-                ? "fill-amber-200 text-amber-400"
+                ? "fill-warning/40 text-warning"
                 : "fill-transparent text-border"
           }`}
         />
@@ -82,7 +82,7 @@ function LawyerCard({ lawyer }: { lawyer: (typeof LAWYERS)[number] }) {
         <p className="mt-1 text-xs text-muted-foreground">{lawyer.city}</p>
         <div className="mt-1.5 flex items-center justify-center gap-1.5">
           <StarRating rating={lawyer.rating} />
-          <span className="text-[11px] font-bold text-amber-600">{lawyer.rating}</span>
+          <span className="text-[11px] font-bold text-warning">{lawyer.rating}</span>
           <span className="text-[10px] text-muted-foreground">({lawyer.reviews})</span>
         </div>
       </div>
@@ -111,8 +111,8 @@ export function TrustedLawyers() {
         <div className="relative overflow-hidden mask-[linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
           <div className="flex w-max animate-marquee divide-x divide-border">
             {track.map((lawyer, i) => (
-              <Link to="/citizen-login">
-                <LawyerCard key={`${lawyer.name}-${i}`} lawyer={lawyer} />
+              <Link key={`${lawyer.name}-${i}`} to="/citizen-login">
+                <LawyerCard lawyer={lawyer} />
               </Link>
             ))}
           </div>

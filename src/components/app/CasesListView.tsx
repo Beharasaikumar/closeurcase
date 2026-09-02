@@ -96,6 +96,11 @@ export function CasesListView() {
 
   return (
     <div className="space-y-6">
+      <PageHeader
+        title="My Cases"
+        description="Track cases assigned to you and cases imported from eCourts."
+      />
+
       {/* Assigned / Imported toggle */}
       <Tabs
         value={tab}
@@ -110,11 +115,6 @@ export function CasesListView() {
         <CaseDocketRegister role="lawyer" />
       ) : (
         <div className="space-y-6">
-          {/* <PageHeader
-            title="Imported Cases"
-            description="Cases you've pulled in from eCourts."
-          /> */}
-
           {/* Mobile: Import/Search Case stays on top, chips come next, search + filter
               share the bottom row, just above the list. Desktop: search + filter share
               one row up top (left), the button sits at the far right of that same row,

@@ -1,8 +1,9 @@
-import { Link } from "@tanstack/react-router";
-import { CalendarClock, Landmark, User, Hash, Download, ChevronRight } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { CalendarClock, Landmark, User, Hash, Download, Eye } from "lucide-react";
 import type { LegalCase } from "@/types";
 import { StatusDot } from "@/components/app/StatusDot";
 import { ChatButton } from "@/components/app/CaseChat";
+import { IconButton } from "@/components/m3";
 
 function nextHearingDate(caseItem: LegalCase): string | undefined {
   const today = new Date().toISOString().slice(0, 10);
@@ -22,6 +23,7 @@ function formatDate(iso?: string): string | undefined {
 }
 
 export function CaseListCard({ caseItem }: { caseItem: LegalCase }) {
+  const navigate = useNavigate();
   const hearing = formatDate(nextHearingDate(caseItem));
   const caseRef = caseItem.caseDetails.caseNumber;
   const isImported = caseItem.source === "ecourt";
@@ -77,23 +79,22 @@ export function CaseListCard({ caseItem }: { caseItem: LegalCase }) {
       </div>
 
       {isImported ? (
-        <div className="mt-auto flex items-center justify-between border-t border-border/60 pt-2 text-[11px] text-muted-foreground">
-          <span className="inline-flex items-center gap-1">
-            <Download className="h-3 w-3" />
-            Imported from eCourts
+        <div className="mt-auto flex items-center justify-between gap-1.5 border-t border-border/60 pt-2">
+          <span className="inline-flex min-w-0 items-center gap-1 text-[11px] text-muted-foreground">
+            <Download className="h-3 w-3 shrink-0" />
+            <span className="truncate">Imported from eCourts</span>
           </span>
-          <Link
-            to="/lawyer/cases/$id"
-            params={{ id: caseItem.id }}
-            aria-label={`View details for case ${caseItem.title}`}
-            className="inline-flex items-center gap-0.5 font-semibold text-primary hover:underline"
+          <IconButton
+            variant="tonal"
+            title="View case details"
+            ariaLabel={`View details for case ${caseItem.title}`}
+            onClick={() => navigate({ to: "/lawyer/cases/$id", params: { id: caseItem.id } })}
           >
-            View Details
-            <ChevronRight className="h-3 w-3" />
-          </Link>
+            <Eye className="h-4 w-4" />
+          </IconButton>
         </div>
       ) : (
-        <div className="mt-auto flex items-center justify-end border-t border-border/60 pt-2">
+        <div className="mt-auto flex items-center justify-end gap-1.5 border-t border-border/60 pt-2">
           <ChatButton caseItem={caseItem} role="lawyer" />
         </div>
       )}
