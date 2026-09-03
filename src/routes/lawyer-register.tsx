@@ -1,11 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import {
   Briefcase,
   Building2,
   Camera,
   Check,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Layers,
   Plus,
   Scale,
@@ -15,7 +18,10 @@ import {
   User,
   X,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { AuthLayout } from "@/layouts/AuthLayout";
+import { FormStepper } from "@/components/app/FormStepper";
+import type { FormStep } from "@/components/app/FormStepper";
 import { PermissionsGate } from "@/components/app/PermissionsGate";
 import { usePermissionsGate } from "@/features/permissions/usePermissionsGate";
 import { LAWYER_PRACTICE_AREAS } from "@/components/app/lawyerPracticeAreas";
@@ -23,6 +29,7 @@ import { INDIAN_COURTS, INDIAN_CITIES, INDIAN_LANGUAGES } from "@/data/courts";
 import { addLawyer } from "@/data/appStore";
 import { readFileAsDataUrl } from "@/lib/files";
 import type { LegalCategory, LawyerAward, LawyerPracticeArea } from "@/types";
+import { Button, IconButton, TextField, Select, Checkbox, InputChip } from "@/components/m3";
 
 const MAX_ID_PROOF_BYTES = 5 * 1024 * 1024;
 
@@ -52,10 +59,49 @@ export const Route = createFileRoute("/lawyer-register")({
   component: LawyerRegister,
 });
 
+/** Desktop wizard steps. Mobile ignores these and renders the form as one
+ * continuous scroll, so the grouping only ever affects `lg:` and up. */
+const REGISTER_STEPS: FormStep[] = [
+  { id: 1, label: "Your details" },
+  { id: 2, label: "Practice areas" },
+  { id: 3, label: "Contact & credentials" },
+  { id: 4, label: "Verification" },
+];
+
+/** Shows its children only when `n` is the active step — but only on desktop.
+ * Below `lg` every step renders, preserving the existing single-scroll form. */
+function Step({ n, current, children }: { n: number; current: number; children: ReactNode }) {
+  return (
+    <div
+      className={cn(
+        "w-full min-w-0 space-y-3 lg:space-y-2.5",
+        n === current
+          ? "lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-y-auto lg:pr-1.5"
+          : "lg:hidden",
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
 function LawyerRegister() {
   const navigate = useNavigate();
   const [submitted, setSubmitted] = useState(false);
   const [permissionsAcknowledged, acknowledgePermissions] = usePermissionsGate();
+
+  // Desktop wizard position. `furthestStep` keeps already-visited steps
+  // clickable in the stepper without letting users skip ahead.
+  const [step, setStep] = useState(1);
+  const [furthestStep, setFurthestStep] = useState(1);
+  const goToStep = (id: number) => setStep(id);
+  const goBack = () => setStep((s) => Math.max(1, s - 1));
+  const goNext = () =>
+    setStep((s) => {
+      const next = Math.min(REGISTER_STEPS.length, s + 1);
+      setFurthestStep((f) => Math.max(f, next));
+      return next;
+    });
 
   // Registration type toggle
   const [registrationType, setRegistrationType] = useState<"lawyer" | "firm">("lawyer");
@@ -85,66 +131,62 @@ function LawyerRegister() {
   const [experienceYears, setExperienceYears] = useState(5);
   const [bio, setBio] = useState("");
 
-  // 3-Tier Practice Category Selection State (No default selection)
+  // 3-Tier Practice Category Selection State
   const [selectedPracticeArea, setSelectedPracticeArea] = useState<string>("");
   const [selectedSpecialization, setSelectedSpecialization] = useState<string>("");
-  const [selectedService, setSelectedService] = useState<string>("");
   const [selectedServicesMulti, setSelectedServicesMulti] = useState<string[]>([]);
-  const [isMultiServiceDropdownOpen, setIsMultiServiceDropdownOpen] = useState(false);
 
-  // Selected Practice Entries list - starts empty so lawyer selects their own
+  // Selected Practice Entries list
   const [selectedPracticeEntries, setSelectedPracticeEntries] = useState<SelectedPracticeEntry[]>(
     [],
   );
   const [practiceError, setPracticeError] = useState("");
 
   // Available specializations for current practice area
-  const currentPracticeAreaObj = useMemo(() => {
-    if (!selectedPracticeArea) return undefined;
-    return LAWYER_PRACTICE_AREAS.find((pa) => pa.name === selectedPracticeArea);
+  const availableSpecializations = useMemo(() => {
+    if (!selectedPracticeArea) return [];
+    const pa = LAWYER_PRACTICE_AREAS.find((p) => p.category === selectedPracticeArea);
+    return pa ? pa.case_types : [];
   }, [selectedPracticeArea]);
 
-  const availableSpecializations = useMemo(() => {
-    return currentPracticeAreaObj?.specializations ?? [];
-  }, [currentPracticeAreaObj]);
-
   // Available legal services for current specialization
-  const currentSpecializationObj = useMemo(() => {
-    if (!selectedSpecialization) return undefined;
-    return availableSpecializations.find((s) => s.name === selectedSpecialization);
-  }, [availableSpecializations, selectedSpecialization]);
-
   const availableLegalServices = useMemo(() => {
-    return currentSpecializationObj?.legalServices ?? [];
-  }, [currentSpecializationObj]);
+    if (!selectedSpecialization) return [];
+    const spec = availableSpecializations.find((s) => s.case_type === selectedSpecialization);
+    return spec ? spec.legal_services : [];
+  }, [selectedSpecialization, availableSpecializations]);
 
-  // Handle Practice Area change
-  function handlePracticeAreaChange(newArea: string) {
-    setSelectedPracticeArea(newArea);
+  // Handle Practice Area Selection change
+  function handlePracticeAreaChange(value: string) {
+    setSelectedPracticeArea(value);
     setSelectedSpecialization("");
-    setSelectedService("");
     setSelectedServicesMulti([]);
-    setIsMultiServiceDropdownOpen(false);
+    setPracticeError("");
   }
 
-  // Handle Specialization change
-  function handleSpecializationChange(newSpec: string) {
-    setSelectedSpecialization(newSpec);
-    setSelectedService("");
-    setSelectedServicesMulti([]);
-    setIsMultiServiceDropdownOpen(false);
+  // Handle Specialization Selection change
+  function handleSpecializationChange(value: string) {
+    setSelectedSpecialization(value);
+    setPracticeError("");
+    const spec = availableSpecializations.find((s) => s.case_type === value);
+    if (spec && spec.legal_services) {
+      setSelectedServicesMulti([...spec.legal_services]);
+    } else {
+      setSelectedServicesMulti([]);
+    }
   }
 
   // Toggle multi-select service checkbox
   function toggleServiceInMulti(serviceName: string) {
     setSelectedServicesMulti((prev) =>
-      prev.includes(serviceName) ? prev.filter((s) => s !== serviceName) : [...prev, serviceName],
+      prev.includes(serviceName)
+        ? prev.filter((s) => s !== serviceName)
+        : [...prev, serviceName],
     );
   }
 
-  // Select all services in current specialization
+  // Select all or deselect all services for active specialization
   function selectAllServicesInSpec() {
-    if (!availableLegalServices.length) return;
     if (selectedServicesMulti.length === availableLegalServices.length) {
       setSelectedServicesMulti([]);
     } else {
@@ -167,11 +209,9 @@ function LawyerRegister() {
     const servicesToAdd =
       selectedServicesMulti.length > 0
         ? selectedServicesMulti
-        : selectedService
-          ? [selectedService]
-          : availableLegalServices.length > 0
-            ? [availableLegalServices[0]]
-            : ["General Practice"];
+        : availableLegalServices.length > 0
+          ? [availableLegalServices[0]]
+          : ["General Practice"];
 
     setSelectedPracticeEntries((prev) => {
       const next = [...prev];
@@ -194,9 +234,10 @@ function LawyerRegister() {
       return next;
     });
 
+    // Reset selection after adding
+    setSelectedPracticeArea("");
+    setSelectedSpecialization("");
     setSelectedServicesMulti([]);
-    setSelectedService("");
-    setIsMultiServiceDropdownOpen(false);
   }
 
   // Remove a practice entry
@@ -231,80 +272,49 @@ function LawyerRegister() {
     setIdProofFile(file);
   }
 
-  function addTag(
-    value: string,
-    setList: React.Dispatch<React.SetStateAction<string[]>>,
-    setInput: (v: string) => void,
-  ) {
-    const v = value.trim();
-    if (!v) return;
-    setList((prev) => (prev.includes(v) ? prev : [...prev, v]));
-    setInput("");
-  }
-
-  function removeTag(index: number, setList: React.Dispatch<React.SetStateAction<string[]>>) {
-    setList((prev) => prev.filter((_, i) => i !== index));
-  }
-
   function addAward() {
-    const title = awardTitle.trim();
-    const year = awardYear.trim();
-    if (!title || !year) return;
-    setAwards((prev) => [...prev, { title, year }]);
+    const t = awardTitle.trim();
+    if (!t) return;
+    setAwards((prev) => [...prev, { title: t, year: awardYear.trim() || new Date().getFullYear().toString() }]);
     setAwardTitle("");
     setAwardYear("");
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (selectedPracticeEntries.length === 0) {
-      setPracticeError("Please add at least one Practice Category.");
-      return;
-    }
-
-    const primaryArea = selectedPracticeEntries[0]?.practiceArea || selectedPracticeArea;
-    const category = mapPracticeAreaToCategory(primaryArea);
-
-    // Group practice areas with calculated proficiency
-    const uniqueAreaNames = Array.from(new Set(selectedPracticeEntries.map((e) => e.practiceArea)));
-    const practiceAreas: LawyerPracticeArea[] = uniqueAreaNames.map((areaName, idx) => ({
-      name: areaName,
-      proficiency: Math.max(60, 95 - idx * 5),
-    }));
-
-    // Specializations (2nd tier) and legal services (3rd tier) are kept as
-    // separate lists — matching how the citizen "Find a Lawyer" filters
-    // narrow down at each level independently.
+    const primaryPractice = selectedPracticeEntries[0]?.practiceArea || "Civil Law";
+    const category = mapPracticeAreaToCategory(primaryPractice);
     const specializations = Array.from(
-      new Set(selectedPracticeEntries.map((e) => e.specialization).filter(Boolean)),
+      new Set(selectedPracticeEntries.map((pe) => pe.specialization)),
     );
     const legalServices = Array.from(
-      new Set(
-        selectedPracticeEntries
-          .map((e) => (e.legalService !== "General Practice" ? e.legalService : ""))
-          .filter(Boolean),
-      ),
+      new Set(selectedPracticeEntries.map((pe) => pe.legalService)),
     );
-
-    const idProofUrl = idProofFile ? await readFileAsDataUrl(idProofFile) : undefined;
+    const practiceAreas = Array.from(
+      new Set(selectedPracticeEntries.map((pe) => pe.practiceArea)),
+    );
+    const photoUrl = photoPreview || undefined;
+    const idProofUrl = idProofFile ? URL.createObjectURL(idProofFile) : undefined;
 
     addLawyer({
-      name,
-      category,
+      name: name.trim() || (isFirm ? "Law Firm" : "Lawyer"),
+      roleTitle: isFirm ? "Law Firm / Organisation" : "Advocate",
+      email: email.trim() || "lawyer@CloseUrCase.app",
+      phone: phone.trim() || "+91 98100 12345",
+      barId: barId.trim() || "BAR/2026/001",
       city: cities[0] || "Hyderabad",
-      email,
-      phone,
-      barId,
-      experienceYears: Number(experienceYears) || 5,
+      cities: cities.length ? cities : undefined,
+      category,
+      experienceYears,
       status: "Pending",
-      officeAddress: address || undefined,
+      photoUrl,
+      officeAddress: address.trim() || undefined,
       bio: bio.trim() || undefined,
       languages: languages.length ? languages : undefined,
       specializations: specializations.length ? specializations : undefined,
       legalServices: legalServices.length ? legalServices : undefined,
       courts: courts.length ? courts : undefined,
-      practiceAreas: practiceAreas.length ? practiceAreas : undefined,
+      practiceAreas: practiceAreas.length ? practiceAreas.map((name, i) => ({ name, proficiency: Math.max(60, 95 - i * 5) })) : undefined,
       awards: awards.length ? awards : undefined,
       idProofUrl,
       idProofFileName: idProofFile?.name,
@@ -313,7 +323,7 @@ function LawyerRegister() {
   };
 
   if (!permissionsAcknowledged) {
-    return <PermissionsGate onContinue={acknowledgePermissions} />;
+    return <PermissionsGate onContinue={acknowledgePermissions} image="/lawyer-login.png" />;
   }
 
   if (submitted) {
@@ -329,16 +339,20 @@ function LawyerRegister() {
             <code className="rounded bg-muted px-1.5 py-0.5 font-bold text-primary">{barId}</code>{" "}
             has been submitted to the Super Admin for verification.
           </p>
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+          <div
+            className="rounded-xl p-3 text-xs leading-relaxed"
+            style={{
+              backgroundColor:
+                "color-mix(in srgb, var(--md-extended-color-warning) 8%, transparent)",
+              color: "var(--md-extended-color-on-warning-container)",
+            }}
+          >
             <strong>Note:</strong> You can log in and explore the Lawyer Workspace while
             verification is underway.
           </div>
-          <button
-            onClick={() => navigate({ to: "/login" })}
-            className="w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-xs font-bold text-foreground hover:bg-muted transition-all"
-          >
+          <Button variant="outlined" onClick={() => navigate({ to: "/login" })} className="w-full">
             Back to Sign in
-          </button>
+          </Button>
         </div>
       </AuthLayout>
     );
@@ -347,6 +361,7 @@ function LawyerRegister() {
   return (
     <AuthLayout
       wide
+      fitDesktop
       title={isFirm ? "Law Firm Registration" : "Lawyer Registration"}
       subtitle="Register your credentials and select your multi-tier practice categories to get matched with clients."
       footer={
@@ -358,537 +373,473 @@ function LawyerRegister() {
         </>
       }
     >
-      <form className="space-y-5" onSubmit={handleSubmit}>
-        {/* ── Registration Type Toggle ── */}
-        <div className="flex items-center justify-center">
-          <div className="inline-flex rounded-xl border border-border bg-muted p-1 gap-1">
-            <button
-              type="button"
-              id="toggle-lawyer"
-              onClick={() => setRegistrationType("lawyer")}
-              className={`flex items-center gap-2 rounded-lg px-5 py-2 text-xs font-semibold transition-all duration-200 ${
-                !isFirm
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <User className="h-3.5 w-3.5" />
-              Individual Lawyer
-            </button>
-            <button
-              type="button"
-              id="toggle-firm"
-              onClick={() => setRegistrationType("firm")}
-              className={`flex items-center gap-2 rounded-lg px-5 py-2 text-xs font-semibold transition-all duration-200 ${
-                isFirm
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Building2 className="h-3.5 w-3.5" />
-              Law Firm / Organisation
-            </button>
-          </div>
-        </div>
-
-        {/* ── Photo / Logo Upload ── */}
-        <div className="flex flex-col items-center gap-3">
-          <button
-            type="button"
-            id="photo-upload-btn"
-            onClick={() => photoInputRef.current?.click()}
-            className="group relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-primary/40 bg-primary/5 transition-all hover:border-primary hover:bg-primary/10"
-          >
-            {photoPreview ? (
-              <img
-                src={photoPreview}
-                alt="Profile preview"
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex flex-col items-center gap-1">
-                <Camera className="h-6 w-6 text-primary/60 group-hover:text-primary transition-colors" />
-              </div>
-            )}
-            {/* hover overlay */}
-            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Camera className="h-5 w-5 text-white" />
-            </div>
-          </button>
-          <p className="text-[11px] text-muted-foreground">
-            {isFirm ? "Upload Organisation Logo" : "Upload Lawyer Photo"} (optional)
-          </p>
-          <input
-            ref={photoInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handlePhotoChange}
+      <form
+        className="cuc-auth-form flex w-full min-w-0 flex-col space-y-3 lg:h-full lg:min-h-0 lg:flex-1"
+        onKeyDown={(e) => {
+          if (e.key !== "Enter") return;
+          const target = e.target as HTMLElement;
+          if (target.closest("textarea")) return;
+          const form = target.closest("form");
+          if (!form) return;
+          e.preventDefault();
+          form.requestSubmit();
+        }}
+        onSubmit={handleSubmit}
+      >
+        {/* Desktop Stepper */}
+        <div className="hidden lg:block lg:shrink-0">
+          <FormStepper
+            steps={REGISTER_STEPS}
+            current={step}
+            furthest={furthestStep}
+            onStepClick={goToStep}
           />
-          {photoFile && (
-            <button
-              type="button"
-              onClick={() => {
-                setPhotoFile(null);
-                setPhotoPreview(null);
-              }}
-              className="flex items-center gap-1 text-[11px] text-destructive hover:underline"
-            >
-              <X className="h-3 w-3" /> Remove photo
-            </button>
-          )}
         </div>
 
-        {/* Full Name / Organisation Name */}
-        <Field label={isFirm ? "Organisation Name *" : "Full name *"}>
-          <input
-            className={inputCls}
+        <Step n={1} current={step}>
+          {/* Registration Type Toggle */}
+          <div className="flex w-full min-w-0 items-center justify-center">
+            <div className="grid w-full min-w-0 grid-cols-2 gap-1 rounded-xl border border-border bg-muted p-1 *:min-w-0">
+              <Button
+                type="button"
+                id="toggle-lawyer"
+                variant={!isFirm ? "filled" : "text"}
+                icon={<User className="h-3.5 w-3.5" />}
+                onClick={() => setRegistrationType("lawyer")}
+                className={cn("w-full", !isFirm ? "shadow-sm" : "text-muted-foreground")}
+              >
+                Individual Lawyer
+              </Button>
+              <Button
+                type="button"
+                id="toggle-firm"
+                variant={isFirm ? "filled" : "text"}
+                icon={<Building2 className="h-3.5 w-3.5" />}
+                onClick={() => setRegistrationType("firm")}
+                className={cn("w-full", isFirm ? "shadow-sm" : "text-muted-foreground")}
+              >
+                Law Firm / Organisation
+              </Button>
+            </div>
+          </div>
+
+          {/* Photo / Logo Upload */}
+          <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/40 p-2.5">
+            <button
+              type="button"
+              id="photo-upload-btn"
+              onClick={() => photoInputRef.current?.click()}
+              className="group relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-primary/40 bg-primary/5 transition-all hover:border-primary hover:bg-primary/10"
+            >
+              {photoPreview ? (
+                <img
+                  src={photoPreview}
+                  alt="Profile preview"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <Camera className="h-4 w-4 text-primary/60 transition-colors group-hover:text-primary" />
+              )}
+              <div
+                className="absolute inset-0 flex items-center justify-center rounded-full opacity-0 transition-opacity group-hover:opacity-100"
+                style={{
+                  backgroundColor: "color-mix(in srgb, var(--md-sys-color-scrim) 30%, transparent)",
+                }}
+              >
+                <Camera className="h-3.5 w-3.5 text-white" />
+              </div>
+            </button>
+
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-medium text-foreground">
+                {isFirm ? "Organisation Logo" : "Lawyer Photo"}{" "}
+                <span className="font-normal text-muted-foreground">(optional)</span>
+              </p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                JPG or PNG. Click the circle to upload.
+              </p>
+              {photoFile && (
+                <Button
+                  type="button"
+                  variant="text"
+                  icon={<X className="h-3 w-3" />}
+                  onClick={() => {
+                    setPhotoFile(null);
+                    setPhotoPreview(null);
+                  }}
+                  className="h-auto! min-h-0! px-0! text-[11px]"
+                >
+                  Remove photo
+                </Button>
+              )}
+            </div>
+
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handlePhotoChange}
+            />
+          </div>
+
+          {/* Full Name */}
+          <TextField
+            label={isFirm ? "Organisation Name" : "Full name"}
             required
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={setName}
             placeholder={isFirm ? "M/s. Reddy & Associates" : "Adv. Swathi Reddy"}
+            className="w-full"
           />
-        </Field>
 
-        {/* Service Cities – full width so many city tags don't crowd */}
-        <TagDropdownField
-          label="Service Cities *"
-          placeholder="-- Select City to Add --"
-          options={INDIAN_CITIES}
-          values={cities}
-          onAdd={(val) => {
-            if (val && !cities.includes(val)) {
-              setCities((prev) => [...prev, val]);
-            }
-          }}
-          onRemove={(i) => setCities((prev) => prev.filter((_, idx) => idx !== i))}
-        />
+          {/* Service Cities */}
+          <TagDropdownField
+            label="Service Cities *"
+            placeholder="-- Select City to Add --"
+            options={INDIAN_CITIES}
+            values={cities}
+            onAdd={(val) => {
+              if (val && !cities.includes(val)) {
+                setCities((prev) => [...prev, val]);
+              }
+            }}
+            onRemove={(i) => setCities((prev) => prev.filter((_, idx) => idx !== i))}
+          />
+        </Step>
 
-        {/* ── 3-Tier Multi-Select Practice Category Section ── */}
-        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 sm:p-5 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-primary/15 pb-3">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Briefcase className="h-4 w-4" />
-              </div>
-              <div>
-                <h3 className="text-xs font-bold text-foreground">
-                  Practice Category &amp; Specializations (3-Tier Dropdowns)
-                </h3>
-                <p className="text-[11px] text-muted-foreground">
-                  Select Practice Area → Specialization → Specific Legal Services from the taxonomy
-                </p>
-              </div>
-            </div>
-            {selectedPracticeEntries.length > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary">
-                <Check className="h-3 w-3" />
-                {selectedPracticeEntries.length} Selected
-              </span>
-            )}
-          </div>
-
-          {/* 3 Cascading Dropdowns */}
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            {/* Dropdown 1: Practice Area / Category */}
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-foreground flex items-center gap-1">
-                <span>1. Practice Area *</span>
-              </label>
-              <select
-                className={selectCls}
-                value={selectedPracticeArea}
-                onChange={(e) => handlePracticeAreaChange(e.target.value)}
-              >
-                <option value="">-- Select Practice Area --</option>
-                {LAWYER_PRACTICE_AREAS.map((pa) => (
-                  <option key={pa.name} value={pa.name}>
-                    {pa.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <Step n={2} current={step}>
+          <div className="grid grid-cols-1 gap-2.5">
+            {/* Dropdown 1: Practice Area */}
+            <Select
+              label="Practice Area"
+              value={selectedPracticeArea}
+              onChange={handlePracticeAreaChange}
+              options={[
+                { value: "", label: "-- Select Practice Area --" },
+                ...LAWYER_PRACTICE_AREAS.map((pa) => ({
+                  value: pa.category,
+                  label: pa.category,
+                })),
+              ]}
+              className="w-full"
+            />
 
             {/* Dropdown 2: Specialization */}
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-foreground flex items-center gap-1">
-                <span>2. Specialization *</span>
-              </label>
-              <select
-                className={selectCls}
-                value={selectedSpecialization}
-                onChange={(e) => handleSpecializationChange(e.target.value)}
-                disabled={!selectedPracticeArea || availableSpecializations.length === 0}
-              >
-                <option value="">
-                  {!selectedPracticeArea
-                    ? "-- Select Practice Area First --"
-                    : availableSpecializations.length === 0
-                      ? "No specializations available"
-                      : "-- Select Specialization --"}
-                </option>
-                {availableSpecializations.map((spec) => (
-                  <option key={spec.name} value={spec.name}>
-                    {spec.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label="Specialization"
+              value={selectedSpecialization}
+              onChange={handleSpecializationChange}
+              disabled={!selectedPracticeArea || availableSpecializations.length === 0}
+              options={[
+                { value: "", label: "-- Select Specialization --" },
+                ...availableSpecializations.map((spec) => ({
+                  value: spec.case_type,
+                  label: spec.case_type,
+                })),
+              ]}
+              className="w-full"
+            />
 
-            {/* Dropdown 3: Multi-Select Legal Services */}
-            <div className="relative">
-              <label className="mb-1 block text-xs font-semibold text-foreground flex items-center justify-between">
-                <span>3. Legal Service(s)</span>
-                {selectedSpecialization && availableLegalServices.length > 0 && (
-                  <button
+            {/* Multi-Select Legal Services Inline Box */}
+            {selectedSpecialization && availableLegalServices.length > 0 && (
+              <div className="space-y-1.5 rounded-xl border border-border bg-muted/30 p-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-foreground">
+                    Legal Services ({availableLegalServices.length})
+                  </span>
+                  <Button
                     type="button"
+                    variant="text"
                     onClick={selectAllServicesInSpec}
-                    className="text-[10px] text-primary hover:underline font-medium"
+                    className="h-auto! min-h-0! px-0! text-[10px] text-primary hover:underline"
                   >
                     {selectedServicesMulti.length === availableLegalServices.length
                       ? "Deselect all"
                       : "Select all"}
-                  </button>
-                )}
-              </label>
-
-              {/* Custom Multi-Select Dropdown Trigger */}
-              <div
-                onClick={() => {
-                  if (selectedSpecialization) {
-                    setIsMultiServiceDropdownOpen((prev) => !prev);
-                  }
-                }}
-                className={`flex min-h-[34px] w-full items-center justify-between rounded-lg border border-border bg-surface px-3 py-1.5 text-xs transition-colors ${
-                  !selectedSpecialization
-                    ? "cursor-not-allowed opacity-60 text-muted-foreground"
-                    : "cursor-pointer text-foreground focus-within:border-primary hover:border-primary/60"
-                }`}
-              >
-                <span className="truncate">
-                  {!selectedSpecialization
-                    ? "-- Select Specialization First --"
-                    : selectedServicesMulti.length === 0
-                      ? `Choose services (${availableLegalServices.length})`
-                      : `${selectedServicesMulti.length} service(s) checked`}
-                </span>
-                <ChevronDown
-                  className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${
-                    isMultiServiceDropdownOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </div>
-
-              {/* Multi-Select Dropdown Popover */}
-              {isMultiServiceDropdownOpen && selectedSpecialization && (
-                <div className="absolute z-30 left-0 right-0 mt-1 max-h-56 overflow-y-auto rounded-lg border border-border bg-surface p-2 shadow-lg space-y-1">
-                  {availableLegalServices.length === 0 ? (
-                    <p className="p-2 text-center text-xs text-muted-foreground">
-                      No specific services listed
-                    </p>
-                  ) : (
-                    availableLegalServices.map((service) => {
-                      const isChecked = selectedServicesMulti.includes(service);
-                      return (
-                        <label
-                          key={service}
-                          className="flex items-center gap-2 rounded-md p-1.5 text-xs text-foreground hover:bg-muted/70 cursor-pointer select-none"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => toggleServiceInMulti(service)}
-                            className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary/30"
-                          />
-                          <span className="flex-1 leading-snug">{service}</span>
-                        </label>
-                      );
-                    })
-                  )}
-                  <div className="pt-2 border-t border-border flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => setIsMultiServiceDropdownOpen(false)}
-                      className="rounded bg-primary px-2.5 py-1 text-[10px] font-bold text-primary-foreground hover:bg-primary/90"
-                    >
-                      Done
-                    </button>
-                  </div>
+                  </Button>
                 </div>
-              )}
-            </div>
-          </div>
+                <div className="max-h-36 overflow-y-auto space-y-1 pr-1">
+                  {availableLegalServices.map((service) => {
+                    const isChecked = selectedServicesMulti.includes(service);
+                    return (
+                      <label
+                        key={service}
+                        className="flex items-center gap-2 rounded-lg p-1 text-xs text-foreground hover:bg-background/80 cursor-pointer select-none"
+                      >
+                        <Checkbox
+                          checked={isChecked}
+                          onChange={() => toggleServiceInMulti(service)}
+                        />
+                        <span className="flex-1 leading-snug">{service}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
-          {/* Action Row */}
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-            <button
+            <Button
               type="button"
+              variant="filled"
+              icon={<Plus className="h-3.5 w-3.5" />}
               onClick={handleAddPracticeEntries}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-all shadow-xs"
+              className="w-full shadow-xs"
             >
-              <Plus className="h-3.5 w-3.5" />
               Add to Practice Areas
-            </button>
+            </Button>
 
-            {selectedPracticeEntries.length > 0 && (
-              <button
-                type="button"
-                onClick={clearAllPracticeEntries}
-                className="text-[11px] text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1"
-              >
-                <Trash2 className="h-3 w-3" />
-                Clear All
-              </button>
+            {practiceError && (
+              <p className="text-xs font-medium text-destructive">{practiceError}</p>
             )}
           </div>
 
-          {practiceError && <p className="text-xs font-medium text-destructive">{practiceError}</p>}
-
-          {/* Selected Badges / Chips Display */}
-          {selectedPracticeEntries.length > 0 ? (
-            <div className="space-y-2 pt-2 border-t border-primary/15">
-              <span className="block text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                Selected Categories &amp; Services ({selectedPracticeEntries.length}):
-              </span>
-              <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-1">
-                {selectedPracticeEntries.map((entry) => (
-                  <span
-                    key={entry.id}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-background px-2.5 py-1.5 text-xs text-foreground shadow-2xs group"
-                  >
-                    <span className="font-bold text-primary">{entry.practiceArea}</span>
-                    <span className="text-muted-foreground">›</span>
-                    <span className="font-semibold text-foreground/90">{entry.specialization}</span>
-                    {entry.legalService && (
-                      <>
-                        <span className="text-muted-foreground">›</span>
-                        <span className="text-xs text-muted-foreground">{entry.legalService}</span>
-                      </>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => removePracticeEntry(entry.id)}
-                      className="ml-1 text-muted-foreground hover:text-destructive group-hover:text-foreground"
-                      aria-label="Remove item"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
+          <div>
+            {/* Selected Categories Display */}
+            {selectedPracticeEntries.length > 0 ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Selected ({selectedPracticeEntries.length})
                   </span>
-                ))}
+                  <Button
+                    type="button"
+                    variant="text"
+                    icon={<Trash2 className="h-3 w-3" />}
+                    onClick={clearAllPracticeEntries}
+                    className="h-auto! min-h-0! px-0! text-[11px]"
+                  >
+                    Clear all
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1">
+                  {selectedPracticeEntries.map((entry) => (
+                    <InputChip
+                      key={entry.id}
+                      label={
+                        entry.legalService
+                          ? `${entry.practiceArea} › ${entry.specialization} › ${entry.legalService}`
+                          : `${entry.practiceArea} › ${entry.specialization}`
+                      }
+                      onRemove={() => removePracticeEntry(entry.id)}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="rounded-lg border border-dashed border-border p-3 text-center text-xs text-muted-foreground">
-              No practice categories added yet. Select from the 3 dropdowns above and click{" "}
-              <strong className="text-foreground">"Add to Practice Areas"</strong>.
-            </div>
-          )}
-        </div>
+            ) : (
+              <p className="text-center text-[11px] text-muted-foreground">
+                No practice categories added yet. Select area & specialization above.
+              </p>
+            )}
+          </div>
+        </Step>
 
-        {/* Email & Phone */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Field label="Email *">
-            <input
+        <Step n={3} current={step}>
+          <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 *:min-w-0">
+            <TextField
+              label="Email"
               type="email"
-              className={inputCls}
               required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={setEmail}
               placeholder="swathi@law.com"
+              className="w-full"
             />
-          </Field>
-
-          <Field label="Phone *">
-            <input
-              className={inputCls}
+            <TextField
+              label="Phone"
+              type="tel"
               required
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+91 98100 12345"
+              onChange={(v) => setPhone(v.replace(/\D/g, "").slice(0, 10))}
+              placeholder="98100 12345"
+              prefixText="+91"
+              maxLength={10}
+              className="w-full"
             />
-          </Field>
-        </div>
+          </div>
 
-        {/* Bar ID & Years of Experience */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Field label="Bar Registration ID *">
-            <input
-              className={inputCls}
+          <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 *:min-w-0">
+            <TextField
+              label="Bar Registration ID"
               required
               value={barId}
-              onChange={(e) => setBarId(e.target.value)}
+              onChange={setBarId}
               placeholder="TS/2014/1023"
+              className="w-full"
             />
-          </Field>
-
-          <Field label="Years of Experience *">
-            <input
+            <TextField
+              label="Years of Experience"
               type="number"
-              min={1}
-              max={50}
-              className={inputCls}
               required
-              value={experienceYears}
-              onChange={(e) => setExperienceYears(Number(e.target.value))}
+              value={String(experienceYears)}
+              onChange={(v) => setExperienceYears(Math.min(50, Math.max(1, Number(v) || 1)))}
+              className="w-full"
             />
-          </Field>
-        </div>
+          </div>
 
-        {/* Office Address */}
-        <Field label="Address">
-          <textarea
-            className={inputCls}
+          <TextField
+            label="Address"
+            type="textarea"
             rows={2}
             value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            placeholder="Chamber No. 402, High Court Complex, Nampally, Hyderabad"
+            onChange={setAddress}
+            placeholder="Chamber No. 402, High Court Complex, Hyderabad"
+            className="w-full"
           />
-        </Field>
 
-        {/* Bio / About */}
-        <Field label="Bio / About">
-          <textarea
-            className={inputCls}
-            rows={3}
+          <TextField
+            label="Bio / About"
+            type="textarea"
+            rows={2}
             value={bio}
-            onChange={(e) => setBio(e.target.value)}
+            onChange={setBio}
             placeholder="Tell clients about your practice, experience, and approach…"
+            className="w-full"
           />
-        </Field>
+        </Step>
 
-        {/* Languages Spoken */}
-        <TagDropdownField
-          label="Languages Spoken"
-          placeholder="-- Select a Language to Add --"
-          options={INDIAN_LANGUAGES}
-          values={languages}
-          onAdd={(val) => {
-            if (val && !languages.includes(val)) {
-              setLanguages((prev) => [...prev, val]);
-            }
-          }}
-          onRemove={(i) => setLanguages((prev) => prev.filter((_, idx) => idx !== i))}
-        />
-
-        {/* Courts Practiced In */}
-        <CourtsDropdownField
-          label="Courts Practiced In"
-          values={courts}
-          onAdd={(val) => {
-            if (val && !courts.includes(val)) {
-              setCourts((prev) => [...prev, val]);
-            }
-          }}
-          onRemove={(i) => setCourts((prev) => prev.filter((_, idx) => idx !== i))}
-        />
-
-        {/* Awards & Recognition */}
-        <Field label="Awards & Recognition">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <input
-              className={`${inputCls} sm:flex-1`}
-              value={awardTitle}
-              onChange={(e) => setAwardTitle(e.target.value)}
-              placeholder="e.g. Client's Choice Lawyer"
+        <Step n={4} current={step}>
+          <div className="grid min-w-0 grid-cols-1 gap-2.5 lg:grid-cols-2 *:min-w-0">
+            <TagDropdownField
+              label="Languages Spoken"
+              placeholder="-- Select a Language to Add --"
+              options={INDIAN_LANGUAGES}
+              values={languages}
+              onAdd={(val) => {
+                if (val && !languages.includes(val)) {
+                  setLanguages((prev) => [...prev, val]);
+                }
+              }}
+              onRemove={(i) => setLanguages((prev) => prev.filter((_, idx) => idx !== i))}
             />
-            <div className="flex gap-2">
-              <input
-                className={`${inputCls} w-24`}
-                value={awardYear}
-                onChange={(e) => setAwardYear(e.target.value)}
-                placeholder="2025"
-                aria-label="Award year"
+
+            <CourtsDropdownField
+              label="Courts Practiced In"
+              values={courts}
+              onAdd={(val) => {
+                if (val && !courts.includes(val)) {
+                  setCourts((prev) => [...prev, val]);
+                }
+              }}
+              onRemove={(i) => setCourts((prev) => prev.filter((_, idx) => idx !== i))}
+            />
+          </div>
+
+          <Field label="Awards & Recognition">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <TextField
+                value={awardTitle}
+                onChange={setAwardTitle}
+                placeholder="e.g. Client's Choice Lawyer"
+                className="sm:flex-1"
               />
-              <button type="button" onClick={addAward} className={addBtnCls}>
-                Add
-              </button>
+              <div className="flex gap-2">
+                <TextField
+                  value={awardYear}
+                  onChange={setAwardYear}
+                  placeholder="2025"
+                  className="w-24"
+                />
+                <Button type="button" variant="outlined" onClick={addAward}>
+                  Add
+                </Button>
+              </div>
             </div>
-          </div>
-          {awards.length > 0 && (
-            <ul className="mt-2 space-y-1.5">
-              {awards.map((a, i) => (
-                <li
-                  key={`${a.title}-${i}`}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-background px-3 py-2 text-xs"
-                >
-                  <span className="font-semibold text-foreground">
-                    {a.title} <span className="font-normal text-muted-foreground">({a.year})</span>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setAwards((prev) => prev.filter((_, x) => x !== i))}
-                    className="text-muted-foreground hover:text-destructive"
-                    aria-label={`Remove ${a.title}`}
+            {awards.length > 0 && (
+              <ul className="mt-2 max-h-24 overflow-y-auto space-y-1.5 pr-1">
+                {awards.map((a, i) => (
+                  <li
+                    key={`${a.title}-${i}`}
+                    className="flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-background px-3 py-1.5 text-xs"
                   >
-                    ×
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Field>
-
-        {/* ID Proof */}
-        <Field label="ID Proof Document">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => idProofInputRef.current?.click()}
-              className={`${addBtnCls} inline-flex items-center gap-1.5`}
-            >
-              <Upload className="h-3.5 w-3.5" />
-              Choose File
-            </button>
-            {idProofFile ? (
-              <span className="flex min-w-0 items-center gap-1.5 text-xs text-foreground">
-                <span className="truncate font-medium">{idProofFile.name}</span>
-                <button
-                  type="button"
-                  onClick={() => setIdProofFile(null)}
-                  className="shrink-0 text-muted-foreground hover:text-destructive"
-                  aria-label="Remove ID proof"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </span>
-            ) : (
-              <span className="text-xs text-muted-foreground">No file chosen</span>
+                    <span className="font-semibold text-foreground">
+                      {a.title}{" "}
+                      <span className="font-normal text-muted-foreground">({a.year})</span>
+                    </span>
+                    <IconButton
+                      onClick={() => setAwards((prev) => prev.filter((_, x) => x !== i))}
+                      ariaLabel={`Remove ${a.title}`}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </IconButton>
+                  </li>
+                ))}
+              </ul>
             )}
-          </div>
-          <input
-            ref={idProofInputRef}
-            type="file"
-            accept="image/*,.pdf"
-            className="hidden"
-            onChange={handleIdProofChange}
-          />
-          <p className="mt-1.5 text-[11px] text-muted-foreground">
-            Government-issued ID or Bar Council Card (Aadhaar, Bar ID, PAN) — JPG, PNG or PDF, up to
-            5MB.
-          </p>
-          {idProofError && (
-            <p className="mt-1 text-[11px] font-medium text-destructive">{idProofError}</p>
-          )}
-        </Field>
+          </Field>
 
-        {/* Submit */}
-        <button
-          type="submit"
-          className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
-        >
+          <Field label="ID Proof Document">
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outlined"
+                icon={<Upload className="h-3.5 w-3.5" />}
+                onClick={() => idProofInputRef.current?.click()}
+              >
+                Choose File
+              </Button>
+              {idProofFile ? (
+                <span className="flex min-w-0 items-center gap-1.5 text-xs text-foreground">
+                  <span className="truncate font-medium">{idProofFile.name}</span>
+                  <IconButton onClick={() => setIdProofFile(null)} ariaLabel="Remove ID proof">
+                    <X className="h-3.5 w-3.5" />
+                  </IconButton>
+                </span>
+              ) : (
+                <span className="text-xs text-muted-foreground">No file chosen</span>
+              )}
+            </div>
+            <input
+              ref={idProofInputRef}
+              type="file"
+              accept="image/*,.pdf"
+              className="hidden"
+              onChange={handleIdProofChange}
+            />
+            <p className="mt-1 text-[11px] leading-tight text-muted-foreground">
+              Aadhaar, Bar ID, or PAN — JPG, PNG or PDF, up to 5MB.
+            </p>
+            {idProofError && (
+              <p className="mt-1 text-[11px] font-medium text-destructive">{idProofError}</p>
+            )}
+          </Field>
+        </Step>
+
+        {/* Wizard Footer Navigation */}
+        <div className="hidden items-center justify-between gap-3 border-t border-border pt-3 lg:mt-auto lg:flex lg:shrink-0">
+          <Button
+            type="button"
+            variant="outlined"
+            icon={<ChevronLeft className="h-4 w-4" />}
+            onClick={goBack}
+            disabled={step === 1}
+          >
+            Back
+          </Button>
+          {step < REGISTER_STEPS.length ? (
+            <Button
+              type="button"
+              variant="filled"
+              trailingIcon
+              icon={<ChevronRight className="h-4 w-4" />}
+              onClick={goNext}
+            >
+              Continue
+            </Button>
+          ) : (
+            <Button type="submit" variant="filled" className="shadow-md">
+              Submit for Verification
+            </Button>
+          )}
+        </div>
+
+        <Button type="submit" variant="filled" className="w-full shadow-md lg:hidden">
           Submit for Verification
-        </button>
+        </Button>
       </form>
     </AuthLayout>
   );
 }
-
-const inputCls =
-  "w-full rounded-lg border border-border bg-surface px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none";
-const selectCls =
-  "w-full min-w-0 truncate rounded-lg border border-border bg-surface px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none";
-const addBtnCls =
-  "shrink-0 rounded-lg border border-border bg-surface px-3 py-2 text-xs font-bold text-foreground hover:bg-muted transition-all";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -926,42 +877,23 @@ function TagDropdownField({
   };
 
   return (
-    <Field label={label}>
-      <div className="flex gap-2">
-        <select
-          className={selectCls}
-          value={selectedVal}
-          onChange={(e) => handleSelect(e.target.value)}
-        >
-          <option value="">{placeholder}</option>
-          {availableOptions.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
-        </select>
-      </div>
+    <div>
+      <Select
+        label={label}
+        value={selectedVal}
+        onChange={handleSelect}
+        options={availableOptions.map((opt) => ({ value: opt, label: opt }))}
+        supportingText={placeholder}
+        className="w-full"
+      />
       {values.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
+        <div className="mt-2 flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
           {values.map((v, i) => (
-            <span
-              key={`${v}-${i}`}
-              className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary"
-            >
-              {v}
-              <button
-                type="button"
-                onClick={() => onRemove(i)}
-                className="text-muted-foreground hover:text-destructive p-0.5 leading-none transition-colors"
-                aria-label={`Remove ${v}`}
-              >
-                ×
-              </button>
-            </span>
+            <InputChip key={`${v}-${i}`} label={v} onRemove={() => onRemove(i)} />
           ))}
         </div>
       )}
-    </Field>
+    </div>
   );
 }
 
@@ -993,72 +925,52 @@ function CourtsDropdownField({
   };
 
   return (
-    <Field label={label}>
+    <div>
       <div className="space-y-2">
-        {/* Quick filter input for 500+ courts list */}
-        <div className="flex gap-2">
-          <input
-            type="text"
-            className={`${inputCls} text-xs`}
-            placeholder="Type to filter court list (e.g. Telangana, Bombay, Consumer, NCLT)..."
+        <div className="flex items-start gap-2">
+          <TextField
+            label={label}
             value={searchFilter}
-            onChange={(e) => setSearchFilter(e.target.value)}
+            onChange={setSearchFilter}
+            placeholder="Search courts…"
+            className="flex-1"
           />
           {searchFilter && (
-            <button
-              type="button"
-              onClick={() => setSearchFilter("")}
-              className="rounded-lg border border-border bg-surface px-2.5 text-xs text-muted-foreground hover:bg-muted"
-            >
+            <Button type="button" variant="outlined" onClick={() => setSearchFilter("")}>
               Clear
-            </button>
+            </Button>
           )}
         </div>
 
-        {/* Dropdown Select */}
-        <select
-          className={selectCls}
+        <Select
+          label="Select court to add"
           value={selectedCourt}
-          onChange={(e) => {
-            const val = e.target.value;
+          onChange={(val) => {
             setSelectedCourt(val);
             if (val) handleAddCourt(val);
           }}
-        >
-          <option value="">
-            {filteredCourts.length === 0
+          options={filteredCourts.map((c) => ({ value: c, label: c }))}
+          supportingText={
+            filteredCourts.length === 0
               ? "No matching courts found"
-              : `-- Select Court to Add (${filteredCourts.length} courts) --`}
-          </option>
-          {filteredCourts.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
+              : `${filteredCourts.length} courts available`
+          }
+          className="w-full"
+        />
       </div>
 
       {values.length > 0 && (
-        <div className="mt-2.5 flex flex-wrap gap-1.5">
+        <div className="mt-2 flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
           {values.map((v, i) => (
-            <span
+            <InputChip
               key={`${v}-${i}`}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary"
-            >
-              <Scale className="h-3 w-3 text-primary shrink-0" />
-              <span>{v}</span>
-              <button
-                type="button"
-                onClick={() => onRemove(i)}
-                className="text-muted-foreground hover:text-destructive ml-1 p-0.5 leading-none transition-colors"
-                aria-label={`Remove ${v}`}
-              >
-                ×
-              </button>
-            </span>
+              label={v}
+              icon={<Scale className="h-3 w-3" />}
+              onRemove={() => onRemove(i)}
+            />
           ))}
         </div>
       )}
-    </Field>
+    </div>
   );
 }

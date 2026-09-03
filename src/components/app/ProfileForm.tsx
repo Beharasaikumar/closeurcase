@@ -4,11 +4,20 @@ import { AvatarUploadField } from "@/components/app/AvatarUploadField";
 import { TextField, Button } from "@/components/m3";
 import type { UserRole } from "@/types";
 
+export interface ProfileFormFields {
+  name: string;
+  email: string;
+  phone: string;
+  city: string;
+}
+
 export function ProfileForm({
   role,
   defaults,
   defaultPhotoUrl,
   wide = false,
+  extraField,
+  onSave,
 }: {
   role: UserRole;
   defaults: { name: string; email: string; phone: string; city: string; aadhar?: string };
@@ -17,6 +26,16 @@ export function ProfileForm({
    * column) instead of a single narrow stacked card — used by the citizen
    * dashboard, where the page otherwise leaves most of the viewport empty. */
   wide?: boolean;
+  /** Role-specific highlighted info card rendered below the contact fields
+   * (e.g. citizen's Aadhaar field, lawyer's Bar ID, admin's Access Level).
+   * Receives the current name/email/phone/city so a caller can build its own
+   * derived content if needed. Defaults to the built-in Aadhaar field when
+   * omitted, so citizen.profile.tsx keeps working unchanged. */
+  extraField?: (fields: ProfileFormFields) => React.ReactNode;
+  /** Called with the edited fields when the form is submitted, in addition
+   * to the built-in local "saved" confirmation flash. Used to persist edits
+   * to appStore. */
+  onSave?: (fields: ProfileFormFields) => void;
 }) {
   const [saved, setSaved] = useState(false);
   const [name, setName] = useState(defaults.name);
@@ -70,7 +89,7 @@ export function ProfileForm({
     </>
   );
 
-  const aadhaarField = (
+  const defaultAadhaarField = (
     <div className="rounded-lg border border-primary/20 bg-primary/5 p-3.5 space-y-2">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
         <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
@@ -106,6 +125,9 @@ export function ProfileForm({
     </div>
   );
 
+  const currentFields: ProfileFormFields = { name, email, phone, city };
+  const infoCard = extraField ? extraField(currentFields) : defaultAadhaarField;
+
   const saveRow = (
     <div className="flex items-center gap-3 pt-1">
       <Button type="submit">Save Changes</Button>
@@ -119,6 +141,7 @@ export function ProfileForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    onSave?.(currentFields);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -126,15 +149,20 @@ export function ProfileForm({
   if (wide) {
     return (
       <form
-        className="grid grid-cols-1 gap-6 rounded-xl border border-border bg-surface p-5 sm:p-6 lg:grid-cols-[280px_1fr] lg:gap-8"
+        className="mx-auto grid w-full max-w-3xl grid-cols-1 gap-6 rounded-xl border border-border bg-surface p-5 sm:p-6 lg:max-w-4xl lg:grid-cols-[220px_1fr] lg:gap-8 lg:p-8"
         onSubmit={handleSubmit}
       >
-        <div className="lg:pt-1">
-          <AvatarUploadField role={role} name={defaults.name} defaultPhotoUrl={defaultPhotoUrl} />
+        <div className="flex items-center justify-center border-b border-border pb-6 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-8">
+          <AvatarUploadField
+            role={role}
+            name={defaults.name}
+            defaultPhotoUrl={defaultPhotoUrl}
+            centered
+          />
         </div>
         <div className="min-w-0 space-y-4">
           {nameAndContactFields}
-          {aadhaarField}
+          {infoCard}
           {saveRow}
         </div>
       </form>
@@ -148,7 +176,7 @@ export function ProfileForm({
     >
       <AvatarUploadField role={role} name={defaults.name} defaultPhotoUrl={defaultPhotoUrl} />
       {nameAndContactFields}
-      {aadhaarField}
+      {infoCard}
       {saveRow}
     </form>
   );

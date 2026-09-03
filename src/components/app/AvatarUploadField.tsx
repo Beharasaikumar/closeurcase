@@ -15,6 +15,7 @@ export function AvatarUploadField({
   role,
   name,
   defaultPhotoUrl,
+  centered = false,
 }: {
   role: UserRole;
   name: string;
@@ -22,6 +23,11 @@ export function AvatarUploadField({
    * name-hashed avatar fallback for seed profiles where that hash picks a
    * mismatched photo. */
   defaultPhotoUrl?: string;
+  /** Stacks the avatar above the upload/remove controls, centered — used in
+   * the profile page's sidebar column so the block reads as an intentional
+   * vertical unit instead of a short horizontal strip floating above empty
+   * space. */
+  centered?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [photoUrl, setPhotoUrl] = useState(() => getProfilePhoto(role));
@@ -45,6 +51,53 @@ export function AvatarUploadField({
     };
     reader.readAsDataURL(file);
   };
+
+  const fileInput = (
+    <input
+      ref={inputRef}
+      type="file"
+      accept="image/png,image/jpeg"
+      className="hidden"
+      onChange={(e) => {
+        const file = e.target.files?.[0];
+        if (file) handleFile(file);
+        e.target.value = "";
+      }}
+    />
+  );
+
+  if (centered) {
+    return (
+      <div className="flex flex-col items-center gap-3 text-center">
+        <UserAvatar name={name} photoUrl={photoUrl ?? defaultPhotoUrl} size="lg" />
+        <div className="space-y-1.5">
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-muted"
+            >
+              <Camera className="h-3.5 w-3.5" />
+              {photoUrl ? "Change photo" : "Upload photo"}
+            </button>
+            {photoUrl && (
+              <button
+                type="button"
+                onClick={() => clearProfilePhoto(role)}
+                className="flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/10"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Remove
+              </button>
+            )}
+          </div>
+          <p className="text-[11px] text-muted-foreground">JPG or PNG, up to 5MB.</p>
+          {error && <p className="text-[11px] font-medium text-destructive">{error}</p>}
+        </div>
+        {fileInput}
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center gap-4">
@@ -73,17 +126,7 @@ export function AvatarUploadField({
         <p className="text-[11px] text-muted-foreground">JPG or PNG, up to 5MB.</p>
         {error && <p className="text-[11px] font-medium text-destructive">{error}</p>}
       </div>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/png,image/jpeg"
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) handleFile(file);
-          e.target.value = "";
-        }}
-      />
+      {fileInput}
     </div>
   );
 }

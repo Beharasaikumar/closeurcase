@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 export function AuthLayout({
   title,
@@ -8,6 +9,8 @@ export function AuthLayout({
   footer,
   centerLogoOnMobile = false,
   wide = false,
+  fitDesktop = false,
+  image = "/lawyer-login.png",
 }: {
   title: string;
   subtitle?: string;
@@ -16,48 +19,65 @@ export function AuthLayout({
   /** Mobile only: shows a larger, centered logo + wordmark above the card
    * instead of the (mobile-hidden) navbar logo. */
   centerLogoOnMobile?: boolean;
-  /** When true, expands container to full viewport width up to 1560px for rich forms. */
+  /** When true, expands the form column for rich multi-step forms. */
   wide?: boolean;
+  /** Desktop only: run as a fixed-height application screen — the area below
+   * the header is exactly `100vh - header`, and nothing inside it scrolls.
+   * Callers using this must keep each screen's content within that budget. */
+  fitDesktop?: boolean;
+  /** Right-panel illustration, desktop only. Defaults to the lawyer/courtroom
+   * artwork; pass a different asset (e.g. citizen-login.png) per screen. */
+  image?: string;
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    /* Desktop: the page itself never scrolls (h-screen + overflow-hidden) — only
+       the left column does. That keeps the right-hand image fixed and fully in
+       frame. Mobile keeps normal document flow so the whole page scrolls. */
+    <div className="flex min-h-screen flex-col bg-background lg:h-screen lg:min-h-0 lg:overflow-hidden">
       {/* Header is mobile-hidden entirely — the centered logo (when
           centerLogoOnMobile) and the footer's cross-role links already cover
           navigation on small screens. */}
-      <header className="hidden border-b border-border bg-surface sm:block">
-        <div
-          className={`mx-auto flex h-16 w-full items-center justify-between px-6 sm:px-8 ${
-            wide ? "max-w-[1560px] px-8 lg:px-12" : "max-w-6xl"
-          }`}
-        >
-          <Link
-            to="/"
-            className="flex items-center gap-3 font-semibold tracking-tight hover:opacity-90 transition-opacity"
-          >
-            <img src="/logo.png" alt="CloseUrCase Logo" className="h-10 w-10 object-contain" />
-            <span className="text-foreground text-xl font-extrabold tracking-tight">
-              CloseUrCase
+      <header className="hidden shrink-0 border-b border-border bg-surface sm:block">
+        <div className="mx-auto flex h-16 w-full max-w-[1560px] items-center justify-between px-6 sm:px-8 lg:px-10">
+          <Link to="/" className="flex items-center gap-2.5 shrink-0 hover:opacity-90">
+            <img src="/logo.png" alt="CloseUrCase Logo" className="h-9 w-9 object-contain" />
+            <span className="flex flex-col leading-tight">
+              <span className="text-base font-bold tracking-tight text-foreground">
+                CloseUrCase
+              </span>
+              <span className="text-[10px] font-medium tracking-wide text-muted-foreground">
+                Just click for justice
+              </span>
             </span>
           </Link>
         </div>
       </header>
-      <main
-        className={`flex flex-1 items-start justify-center py-6 sm:py-8 md:py-10 ${
-          wide ? "px-4 sm:px-8 lg:px-12 xl:px-16" : "px-6"
-        }`}
-      >
-        <div
-          className={`mx-auto w-full grid grid-cols-1 items-start gap-8 lg:gap-10 ${
-            wide
-              ? "max-w-[1560px] lg:grid-cols-12"
-              : "max-w-6xl lg:grid-cols-2 lg:gap-12 items-center"
-          }`}
+
+      {/* `min-w-0` on the row and on <main> is load-bearing: flex children
+          default to `min-width: auto`, which lets wide content (the stepper,
+          long dropdown labels) push the column — and therefore the page —
+          wider than the viewport. Allowing them to shrink is what actually
+          prevents horizontal overflow, rather than clipping it. */}
+      <div className="flex w-full min-w-0 flex-1 lg:min-h-0">
+        {/* ── Left column ──
+            In `fitDesktop` mode this never scrolls: it is a fixed-height flex
+            box and the card inside is sized to fit. Otherwise it falls back to
+            scrolling, which the simpler auth screens still rely on. */}
+        <main
+          className={cn(
+            "w-full min-w-0 lg:h-full lg:w-[55%] lg:overflow-x-hidden xl:w-[54%]",
+            fitDesktop ? "lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden" : "lg:overflow-y-auto",
+          )}
         >
-          {/* Left Side: Form Card */}
           <div
-            className={`w-full ${
-              wide ? "lg:col-span-7 xl:col-span-7" : "max-w-md mx-auto lg:max-w-none"
-            }`}
+            className={cn(
+              "mx-auto w-full min-w-0 px-6 py-6 sm:py-6 lg:px-10 xl:px-14",
+              wide ? "max-w-[760px]" : "max-w-xl",
+              // On desktop the left column is a flex column. Using `lg:my-auto` on the card child
+              // vertically centers content when there is room, while preventing `justify-center`
+              // overflow from pushing the header/title off the top of the viewport.
+              "lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:py-4",
+            )}
           >
             {centerLogoOnMobile && (
               <div className="mb-6 flex flex-col items-center gap-3 sm:hidden">
@@ -67,50 +87,61 @@ export function AuthLayout({
                 </span>
               </div>
             )}
-            <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 lg:p-10 shadow-sm">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            <div
+              className={cn(
+                // Mobile keeps the bordered/shadowed card. Desktop drops all
+                // of that chrome — no border, no shadow, no card background —
+                // so the form sits directly on the page and uses the full
+                // width of the left column, the way Facebook's login/signup
+                // forms do, rather than looking boxed-in.
+                "w-full min-w-0 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-6",
+                "lg:my-auto lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none",
+                fitDesktop &&
+                  "lg:flex lg:h-full lg:max-h-[610px] lg:min-h-0 lg:flex-col",
+              )}
+            >
+              <h1 className="shrink-0 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
                 {title}
               </h1>
-              {subtitle && <p className="mt-1.5 text-sm text-muted-foreground">{subtitle}</p>}
-              <div className="mt-6 space-y-4">{children}</div>
-            </div>
-            {footer && (
-              <div className="mt-4 text-center text-sm text-muted-foreground">{footer}</div>
-            )}
-          </div>
-
-          {/* Right Side: Law Related Image & Info */}
-          <div
-            className={`hidden lg:flex flex-col justify-start w-full ${
-              wide ? "lg:col-span-5 xl:col-span-5 sticky top-8" : "items-center justify-center"
-            }`}
-          >
-            <div
-              className={`relative overflow-hidden rounded-2xl border border-border bg-surface shadow-md w-full ${
-                wide ? "h-[640px]" : "max-w-lg"
-              }`}
-            >
-              <img
-                src="/law_image.png"
-                alt="Law and Justice"
-                className={`w-full object-cover ${wide ? "h-full" : "h-[460px]"}`}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/40 to-transparent p-6 sm:p-8 flex flex-col justify-end">
-                <span className="inline-block rounded-full bg-primary/20 px-3 py-1 text-xs font-semibold text-primary backdrop-blur-xs w-fit">
-                  CloseUrCase Platform
-                </span>
-                <h3 className="mt-2.5 text-xl font-bold text-foreground sm:text-2xl">
-                  AI-Powered Legal Case Management
-                </h3>
-                <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  Connecting citizens, lawyers, and administrators with structure, transparency, and
-                  clarity.
+              {subtitle && (
+                <p className="mt-1 shrink-0 text-[13px] leading-snug text-muted-foreground sm:text-sm">
+                  {subtitle}
                 </p>
+              )}
+              <div
+                className={cn(
+                  "mt-4 min-w-0",
+                  fitDesktop && "lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-hidden",
+                )}
+              >
+                {children}
               </div>
+              {footer && (
+                <div
+                  className={cn(
+                    "mt-4 shrink-0 text-center text-sm text-muted-foreground",
+                    fitDesktop && "lg:mt-3 lg:text-[13px]",
+                  )}
+                >
+                  {footer}
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      </main>
+        </main>
+
+        {/* ── Right: static full-height image, desktop only, never scrolls.
+            Widths are the exact complement of <main>'s so the row totals 100%
+            and the image can never define the page width. ── */}
+        <aside className="relative hidden min-w-0 shrink-0 overflow-hidden lg:block lg:w-[45%] xl:w-[46%]">
+          <img
+            src={image}
+            alt=""
+            aria-hidden
+            className="absolute inset-0 h-full w-full object-cover object-center"
+          />
+        </aside>
+      </div>
     </div>
   );
 }

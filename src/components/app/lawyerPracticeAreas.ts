@@ -7,30 +7,30 @@ import type { LegalCategory } from "@/types";
    flow, the same way the rest of the public CTAs do. Shared by PublicNav
    (desktop) and PublicLayout (mobile) so the two stay in sync. */
 export interface LawyerSpecialization {
-  name: string;
-  legalServices: string[];
+  case_type: string;
+  legal_services: string[];
 }
 
 export interface LawyerPracticeArea {
-  name: string;
-  specializations: LawyerSpecialization[];
+  category: string;
+  case_types: LawyerSpecialization[];
 }
 
 export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
   {
-    name: "Criminal Defense",
-    specializations: [
+    category: "Criminal Defense",
+    case_types: [
       {
-        name: "Anticipatory Bail",
-        legalServices: [
+        case_type: "Anticipatory Bail",
+        legal_services: [
           "File Anticipatory Bail Application",
           "Anticipatory Bail Hearing",
           "Anticipatory Bail Appeal",
         ],
       },
       {
-        name: "Criminal",
-        legalServices: [
+        case_type: "Criminal",
+        legal_services: [
           "File Criminal Case",
           "Criminal Defense",
           "Criminal Case Consultation",
@@ -39,8 +39,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Cyber Crime",
-        legalServices: [
+        case_type: "Cyber Crime",
+        legal_services: [
           "Cyber Crime Complaint",
           "Cyber Fraud Case",
           "Online Harassment Case",
@@ -49,8 +49,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Fraud Case",
-        legalServices: [
+        case_type: "Fraud Case",
+        legal_services: [
           "File Fraud Case",
           "Fraud Case Defense",
           "Financial Fraud Complaint",
@@ -58,8 +58,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Litigation",
-        legalServices: [
+        case_type: "Litigation",
+        legal_services: [
           "Civil Litigation",
           "Criminal Litigation",
           "Court Representation",
@@ -68,8 +68,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "POCSO Act",
-        legalServices: [
+        case_type: "POCSO Act",
+        legal_services: [
           "POCSO Case Filing",
           "POCSO Case Defense",
           "POCSO Bail Application",
@@ -78,8 +78,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Anti Corruption",
-        legalServices: [
+        case_type: "Anti Corruption",
+        legal_services: [
           "Anti Corruption Complaint",
           "Anti Corruption Case Defense",
           "Vigilance Case",
@@ -87,8 +87,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "PMLA",
-        legalServices: [
+        case_type: "PMLA",
+        legal_services: [
           "PMLA Case Defense",
           "PMLA Bail Application",
           "PMLA Property Attachment Matter",
@@ -99,11 +99,11 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
     ],
   },
   {
-    name: "Corporate Law",
-    specializations: [
+    category: "Corporate Law",
+    case_types: [
       {
-        name: "Arbitration",
-        legalServices: [
+        case_type: "Arbitration",
+        legal_services: [
           "Arbitration Consultation",
           "File Arbitration Case",
           "Arbitration Representation",
@@ -112,8 +112,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Startup",
-        legalServices: [
+        case_type: "Startup",
+        legal_services: [
           "Startup Legal Consultation",
           "Business Registration",
           "Founder Agreement",
@@ -122,8 +122,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Corporate",
-        legalServices: [
+        case_type: "Corporate",
+        legal_services: [
           "Corporate Legal Consultation",
           "Company Law Compliance",
           "Corporate Dispute",
@@ -132,8 +132,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Breach of Contract",
-        legalServices: [
+        case_type: "Breach of Contract",
+        legal_services: [
           "Contract Review",
           "Breach of Contract Notice",
           "Breach of Contract Case",
@@ -142,8 +142,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "NCLT",
-        legalServices: [
+        case_type: "NCLT",
+        legal_services: [
           "NCLT Case Filing",
           "NCLT Representation",
           "Company Petition",
@@ -152,8 +152,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Bankruptcy / Insolvency",
-        legalServices: [
+        case_type: "Bankruptcy / Insolvency",
+        legal_services: [
           "Insolvency Consultation",
           "Insolvency Proceedings",
           "Bankruptcy Proceedings",
@@ -162,8 +162,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Patent",
-        legalServices: [
+        case_type: "Patent",
+        legal_services: [
           "Patent Search",
           "Patent Application",
           "Patent Registration",
@@ -172,8 +172,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Media and Entertainment",
-        legalServices: [
+        case_type: "Media and Entertainment",
+        legal_services: [
           "Media Legal Consultation",
           "Entertainment Contract",
           "Copyright Dispute",
@@ -182,8 +182,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Trademark & Copyright",
-        legalServices: [
+        case_type: "Trademark & Copyright",
+        legal_services: [
           "Trademark Search",
           "Trademark Registration",
           "Trademark Infringement",
@@ -192,8 +192,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Documentation",
-        legalServices: [
+        case_type: "Documentation",
+        legal_services: [
           "Legal Document Drafting",
           "Agreement Drafting",
           "Contract Drafting",
@@ -204,11 +204,11 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
     ],
   },
   {
-    name: "Family Law",
-    specializations: [
+    category: "Family Law",
+    case_types: [
       {
-        name: "Wills / Trusts",
-        legalServices: [
+        case_type: "Wills / Trusts",
+        legal_services: [
           "Will Drafting",
           "Will Registration",
           "Will Review",
@@ -217,8 +217,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Child Custody",
-        legalServices: [
+        case_type: "Child Custody",
+        legal_services: [
           "Child Custody Case",
           "Child Custody Petition",
           "Child Visitation Matter",
@@ -227,8 +227,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Muslim Law",
-        legalServices: [
+        case_type: "Muslim Law",
+        legal_services: [
           "Muslim Marriage Matter",
           "Muslim Divorce Matter",
           "Muslim Personal Law Consultation",
@@ -237,8 +237,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Domestic Violence",
-        legalServices: [
+        case_type: "Domestic Violence",
+        legal_services: [
           "Domestic Violence Complaint",
           "Domestic Violence Case",
           "Protection Order",
@@ -247,8 +247,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Succession Certificate",
-        legalServices: [
+        case_type: "Succession Certificate",
+        legal_services: [
           "Succession Certificate Application",
           "Succession Certificate Case",
           "Succession Certificate Consultation",
@@ -256,8 +256,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Divorce",
-        legalServices: [
+        case_type: "Divorce",
+        legal_services: [
           "File for Divorce",
           "Reply / Send Legal Notice for Divorce",
           "Contest Divorce Case",
@@ -268,8 +268,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Family",
-        legalServices: [
+        case_type: "Family",
+        legal_services: [
           "Family Dispute",
           "Family Settlement",
           "Maintenance Matter",
@@ -278,8 +278,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Court Marriage",
-        legalServices: [
+        case_type: "Court Marriage",
+        legal_services: [
           "Court Marriage Registration",
           "Marriage Registration",
           "Special Marriage Act Registration",
@@ -287,8 +287,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Dowry Case",
-        legalServices: [
+        case_type: "Dowry Case",
+        legal_services: [
           "Dowry Complaint",
           "Dowry Harassment Case",
           "Dowry Case Defense",
@@ -299,11 +299,11 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
     ],
   },
   {
-    name: "Banking & Finance",
-    specializations: [
+    category: "Banking & Finance",
+    case_types: [
       {
-        name: "Cheque Bounce",
-        legalServices: [
+        case_type: "Cheque Bounce",
+        legal_services: [
           "Cheque Bounce Legal Notice",
           "File Cheque Bounce Case",
           "Cheque Bounce Case Defense",
@@ -312,8 +312,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Recovery",
-        legalServices: [
+        case_type: "Recovery",
+        legal_services: [
           "Money Recovery Notice",
           "Debt Recovery Case",
           "Loan Recovery Matter",
@@ -322,8 +322,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Tax",
-        legalServices: [
+        case_type: "Tax",
+        legal_services: [
           "Tax Consultation",
           "Income Tax Matter",
           "Tax Notice Reply",
@@ -332,8 +332,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Banking / Finance",
-        legalServices: [
+        case_type: "Banking / Finance",
+        legal_services: [
           "Banking Dispute",
           "Loan Dispute",
           "Banking Legal Notice",
@@ -342,8 +342,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "GST",
-        legalServices: [
+        case_type: "GST",
+        legal_services: [
           "GST Registration",
           "GST Notice Reply",
           "GST Compliance",
@@ -352,8 +352,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Customs & Central Excise",
-        legalServices: [
+        case_type: "Customs & Central Excise",
+        legal_services: [
           "Customs Consultation",
           "Customs Dispute",
           "Customs Notice Reply",
@@ -364,11 +364,11 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
     ],
   },
   {
-    name: "Consumer Law",
-    specializations: [
+    category: "Consumer Law",
+    case_types: [
       {
-        name: "Insurance",
-        legalServices: [
+        case_type: "Insurance",
+        legal_services: [
           "Insurance Claim Dispute",
           "Insurance Claim Rejection",
           "Insurance Legal Notice",
@@ -377,8 +377,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Medical Negligence",
-        legalServices: [
+        case_type: "Medical Negligence",
+        legal_services: [
           "Medical Negligence Consultation",
           "Medical Negligence Complaint",
           "Medical Negligence Case",
@@ -387,8 +387,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Motor Accident",
-        legalServices: [
+        case_type: "Motor Accident",
+        legal_services: [
           "Motor Accident Claim",
           "Motor Accident Compensation",
           "Motor Accident Case",
@@ -397,8 +397,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Consumer Court",
-        legalServices: [
+        case_type: "Consumer Court",
+        legal_services: [
           "Consumer Complaint",
           "Consumer Legal Notice",
           "Consumer Court Representation",
@@ -409,11 +409,11 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
     ],
   },
   {
-    name: "Higher Courts",
-    specializations: [
+    category: "Higher Courts",
+    case_types: [
       {
-        name: "Armed Forces Tribunal",
-        legalServices: [
+        case_type: "Armed Forces Tribunal",
+        legal_services: [
           "AFT Case Filing",
           "AFT Representation",
           "Service Matter Appeal",
@@ -421,8 +421,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Supreme Court",
-        legalServices: [
+        case_type: "Supreme Court",
+        legal_services: [
           "Supreme Court Case Filing",
           "Supreme Court Representation",
           "Special Leave Petition (SLP)",
@@ -431,8 +431,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "High Court",
-        legalServices: [
+        case_type: "High Court",
+        legal_services: [
           "High Court Case Filing",
           "High Court Representation",
           "Writ Petition",
@@ -444,11 +444,11 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
     ],
   },
   {
-    name: "International Law",
-    specializations: [
+    category: "International Law",
+    case_types: [
       {
-        name: "Immigration",
-        legalServices: [
+        case_type: "Immigration",
+        legal_services: [
           "Immigration Consultation",
           "Visa Legal Assistance",
           "Immigration Application",
@@ -457,8 +457,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "International Law",
-        legalServices: [
+        case_type: "International Law",
+        legal_services: [
           "International Legal Consultation",
           "Cross Border Dispute",
           "International Contract Matter",
@@ -467,8 +467,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "NRI",
-        legalServices: [
+        case_type: "NRI",
+        legal_services: [
           "NRI Legal Consultation",
           "NRI Property Matter",
           "NRI Family Dispute",
@@ -479,11 +479,11 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
     ],
   },
   {
-    name: "Labour & Civil Matters",
-    specializations: [
+    category: "Labour & Civil Matters",
+    case_types: [
       {
-        name: "Labour & Service",
-        legalServices: [
+        case_type: "Labour & Service",
+        legal_services: [
           "Employment Dispute",
           "Wrongful Termination Matter",
           "Salary / Wage Dispute",
@@ -492,12 +492,12 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "R.T.I",
-        legalServices: ["RTI Application", "RTI Appeal", "RTI Legal Consultation", "RTI Complaint"],
+        case_type: "R.T.I",
+        legal_services: ["RTI Application", "RTI Appeal", "RTI Legal Consultation", "RTI Complaint"],
       },
       {
-        name: "Civil",
-        legalServices: [
+        case_type: "Civil",
+        legal_services: [
           "Civil Suit",
           "Civil Dispute",
           "Civil Litigation",
@@ -508,11 +508,11 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
     ],
   },
   {
-    name: "Property Law",
-    specializations: [
+    category: "Property Law",
+    case_types: [
       {
-        name: "Landlord/Tenant",
-        legalServices: [
+        case_type: "Landlord/Tenant",
+        legal_services: [
           "Landlord / Tenant Dispute",
           "Rent Agreement",
           "Eviction Matter",
@@ -522,8 +522,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "Property",
-        legalServices: [
+        case_type: "Property",
+        legal_services: [
           "Property Dispute",
           "Property Documentation",
           "Property Verification",
@@ -536,8 +536,8 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
         ],
       },
       {
-        name: "RERA",
-        legalServices: [
+        case_type: "RERA",
+        legal_services: [
           "RERA Complaint",
           "RERA Case Filing",
           "Builder Delay Case",

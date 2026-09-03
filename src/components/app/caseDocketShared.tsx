@@ -311,38 +311,38 @@ export function hasUpcomingHearing(c: LegalCase, today: string): boolean {
   return c.caseDetails.historyOfCaseHearings.some((h) => h.hearingDate && h.hearingDate >= today);
 }
 
-function getStatusStyle(colorKey: StatusMetaItem["color"]) {
+export function getStatusStyle(colorKey: StatusMetaItem["color"]) {
   switch (colorKey) {
     case "upcoming":
       return {
-        bg: "bg-[#d9f2dd] text-[#0b3818]",
-        dot: "bg-[#2e6e3e]",
+        bg: "bg-[var(--md-extended-color-success-container)] text-[var(--md-extended-color-on-success-container)]",
+        dot: "bg-[var(--md-extended-color-success)]",
       };
     case "soon":
       return {
-        bg: "bg-[#ffecb3] text-[#3e2e00]",
-        dot: "bg-[#7a5900]",
+        bg: "bg-[var(--md-extended-color-warning-container)] text-[var(--md-extended-color-on-warning-container)]",
+        dot: "bg-[var(--md-extended-color-warning)]",
       };
     case "needs":
       return {
-        bg: "bg-[#f9dedc] text-[#410e0b]",
-        dot: "bg-[#b3261e]",
+        bg: "bg-[var(--md-sys-color-error-container)] text-[var(--md-sys-color-on-error-container)]",
+        dot: "bg-[var(--md-sys-color-error)]",
       };
     case "info":
       return {
-        bg: "bg-[#eaddff] text-[#21005d]",
-        dot: "bg-[#6750a4]",
+        bg: "bg-[var(--md-sys-color-tertiary-container)] text-[var(--md-sys-color-on-tertiary-container)]",
+        dot: "bg-[var(--md-sys-color-tertiary)]",
       };
     case "closed":
       return {
-        bg: "bg-[#e6e0e9] text-[#49454f]",
-        dot: "bg-[#79747e]",
+        bg: "bg-[var(--md-sys-color-surface-container-high)] text-[var(--md-sys-color-on-surface-variant)]",
+        dot: "bg-[var(--md-sys-color-outline)]",
       };
     case "neutral":
     default:
       return {
-        bg: "bg-[#e9e7ec] text-[#1b1b1f]",
-        dot: "bg-[#c4c6d0]",
+        bg: "bg-[var(--md-sys-color-surface-container)] text-[var(--md-sys-color-on-surface)]",
+        dot: "bg-[var(--md-sys-color-outline-variant)]",
       };
   }
 }

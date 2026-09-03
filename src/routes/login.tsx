@@ -4,6 +4,7 @@ import { AuthLayout } from "@/layouts/AuthLayout";
 import { PermissionsGate } from "@/components/app/PermissionsGate";
 import { usePermissionsGate } from "@/features/permissions/usePermissionsGate";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { TextField, IconButton, Button } from "@/components/m3";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Lawyer & Admin sign in — CloseUrCase" }] }),
@@ -18,6 +19,16 @@ export function Login() {
   const [permissionsAcknowledged, acknowledgePermissions] = usePermissionsGate();
 
   const getRole = (e: string) => (e.includes("admin") ? "admin" : "lawyer");
+
+  const handleFormEnterKey = (e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.key !== "Enter") return;
+    const target = e.target as HTMLElement;
+    if (target.closest("textarea")) return;
+    const form = target.closest("form");
+    if (!form) return;
+    e.preventDefault();
+    form.requestSubmit();
+  };
 
   if (!permissionsAcknowledged) {
     return <PermissionsGate onContinue={acknowledgePermissions} />;
@@ -44,60 +55,53 @@ export function Login() {
     >
       <form
         className="space-y-5"
+        onKeyDown={handleFormEnterKey}
         onSubmit={(e) => {
           e.preventDefault();
           const role = getRole(email);
           navigate({ to: role === "lawyer" ? "/lawyer" : "/admin" });
         }}
       >
-        <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-foreground">Email address</label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="w-full rounded-lg border border-border bg-surface pl-9 pr-4 py-2.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-            />
-          </div>
-        </div>
+        <TextField
+          label="Email address"
+          type="email"
+          required
+          value={email}
+          onChange={setEmail}
+          placeholder="you@example.com"
+          leadingIcon={<Mail className="h-4 w-4" />}
+          className="w-full"
+        />
 
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <label className="block text-sm font-medium text-foreground">Password</label>
-            <button type="button" className="text-xs text-primary hover:underline">
+          <TextField
+            label="Password"
+            type={showPassword ? "text" : "password"}
+            required
+            value={password}
+            onChange={setPassword}
+            placeholder="••••••••"
+            leadingIcon={<Lock className="h-4 w-4" />}
+            trailingIcon={
+              <IconButton
+                ariaLabel={showPassword ? "Hide password" : "Show password"}
+                onClick={() => setShowPassword((v) => !v)}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </IconButton>
+            }
+            className="w-full"
+          />
+          <div className="flex justify-end">
+            <Button variant="text" className="h-auto! min-h-0! px-0! text-xs">
               Forgot password?
-            </button>
-          </div>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              type={showPassword ? "text" : "password"}
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full rounded-lg border border-border bg-surface pl-9 pr-10 py-2.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
+            </Button>
           </div>
         </div>
 
-        <button
-          type="submit"
-          className="w-full rounded-lg bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 active:scale-[0.98]"
-        >
+        <Button type="submit" variant="filled" className="-mt-3 w-full">
           Sign in
-        </button>
+        </Button>
       </form>
     </AuthLayout>
   );

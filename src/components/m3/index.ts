@@ -16,4 +16,5 @@ export * from "./Card";
 export * from "./Badge";
 export * from "./Skeleton";
 export * from "./Tooltip";
+export * from "./OtpInput";
 export * from "./linkButtonClass";

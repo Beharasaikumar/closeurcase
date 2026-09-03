@@ -1,3 +1,4 @@
+import { useEffect, useRef, type CSSProperties } from "react";
 import { MdOutlinedSelectEl, MdSelectOptionEl } from "./elements";
 
 export interface SelectOption {
@@ -17,6 +18,7 @@ export function Select({
   errorText,
   supportingText,
   className,
+  style,
 }: {
   label?: string;
   value: string;
@@ -28,9 +30,24 @@ export function Select({
   errorText?: string;
   supportingText?: string;
   className?: string;
+  /** Escape hatch for one-off shape/size overrides, same pattern as Button/TextField. */
+  style?: CSSProperties;
 }) {
+  const selectRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    function handleScroll() {
+      if (selectRef.current && (selectRef.current as unknown as { open?: boolean }).open) {
+        (selectRef.current as unknown as { open?: boolean }).open = false;
+      }
+    }
+    window.addEventListener("scroll", handleScroll, { capture: true, passive: true });
+    return () => window.removeEventListener("scroll", handleScroll, { capture: true });
+  }, []);
+
   return (
     <MdOutlinedSelectEl
+      ref={selectRef}
       label={label}
       value={value}
       disabled={disabled}
@@ -39,11 +56,20 @@ export function Select({
       errorText={errorText}
       supportingText={supportingText}
       className={className}
+      style={style}
+      menuPositioning="absolute"
       onChange={(e) => onChange((e.target as unknown as { value: string }).value)}
     >
       {options.map((opt) => (
-        <MdSelectOptionEl key={opt.value} value={opt.value} disabled={opt.disabled}>
-          <div slot="headline">{opt.label}</div>
+        <MdSelectOptionEl
+          key={opt.value}
+          value={opt.value}
+          selected={opt.value === value}
+          disabled={opt.disabled}
+        >
+          <div slot="headline" className="truncate">
+            {opt.label}
+          </div>
         </MdSelectOptionEl>
       ))}
     </MdOutlinedSelectEl>

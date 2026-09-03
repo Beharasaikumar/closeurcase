@@ -991,13 +991,13 @@ export function ChatButton({ caseItem, role }: ChatButtonProps) {
       id={`chat-btn-${caseItem.id}`}
       to={role === "citizen" ? "/citizen/chat/$id" : "/lawyer/chat/$id"}
       params={{ id: caseItem.id }}
-      className="relative inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-all hover:scale-105 hover:bg-primary/90 active:scale-95"
+      className="relative inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[var(--md-sys-color-secondary-container)] text-[var(--md-sys-color-on-secondary-container)] transition-colors hover:brightness-95"
       title={`Chat about case ${caseItem.id}`}
+      aria-label={`Chat about case ${caseItem.id}`}
     >
-      <MessageCircle className="h-3.5 w-3.5" />
-      <span>Chat</span>
+      <MessageCircle className="h-4 w-4" />
       {unread > 0 && (
-        <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-[16px] animate-pulse items-center justify-center rounded-full bg-red-500 px-0.5 text-[9px] font-bold text-white">
+        <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] animate-pulse items-center justify-center rounded-full bg-red-500 px-0.5 text-[9px] font-bold text-white">
           {unread > 9 ? "9+" : unread}
         </span>
       )}

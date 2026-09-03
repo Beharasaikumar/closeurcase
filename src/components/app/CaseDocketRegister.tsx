@@ -1,10 +1,38 @@
 import { useState, useEffect, useMemo } from "react";
-import { Search, ChevronDown, ChevronUp, Check, X, Bell, User, Landmark, Calendar, FileText } from "lucide-react";
-import { ChipSet, FilterChip, TextField, Button, IconButton } from "@/components/m3";
+import {
+  Search,
+  ChevronDown,
+  ChevronUp,
+  Check,
+  X,
+  Bell,
+  User,
+  Landmark,
+  Calendar,
+  FileText,
+  Eye,
+  Paperclip,
+  Image as ImageIcon,
+  Download,
+  Maximize2,
+  Minimize2,
+} from "lucide-react";
+import {
+  ChipSet,
+  FilterChip,
+  TextField,
+  IconButton,
+  Dialog,
+  DialogHeader,
+  DialogTitle,
+  DialogContent,
+} from "@/components/m3";
 import { FilterPanelButton, type FilterSection } from "@/components/app/FilterPanelButton";
 import { ExpandableFilterChips } from "@/components/app/ExpandableFilterChips";
+import { DocumentPreviewBody } from "@/components/app/DocumentPreview";
+import { PageHeader } from "@/components/app/PageHeader";
 import { getCases, subscribeToStore, updateCaseStatus } from "@/data/appStore";
-import type { LegalCase } from "@/types";
+import type { LegalCase, CaseDocument } from "@/types";
 import { CasesTable, caseTypeOf } from "@/components/app/CasesTable";
 import {
   STATUS_LIST,
@@ -171,18 +199,19 @@ export function CaseDocketRegister({
   }
 
   return (
-    <div className="mx-auto max-w-[1180px] space-y-6 pb-20 pt-2">
-      {/* Top App Bar */}
-      {/* <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-5">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            Case Register
-          </h1>
-          <div className="mt-0.5 text-xs text-muted-foreground">
-            {cases.length} case{cases.length !== 1 ? "s" : ""} on record
-          </div>
-        </div>
-      </div> */}
+    <div className="mx-auto max-w-[1180px] space-y-6 pb-20">
+      {/* Lawyer's cases page renders its own PageHeader (CasesListView.tsx),
+       * shared across its Assigned/Imported tabs — only citizen needs one here. */}
+      {!isLawyer && (
+        <PageHeader
+          title={upcomingOnly ? "Upcoming Hearings" : "My Cases"}
+          description={
+            upcomingOnly
+              ? "All of your cases with a hearing date coming up."
+              : "Track every case you've filed and its current status."
+          }
+        />
+      )}
 
       {/* Toolbar: Search + Hearing Date Range + Filter Chips */}
       <div className="space-y-3">
@@ -284,7 +313,10 @@ function PendingRequestsInbox({
   onApprove: (c: LegalCase) => void;
   onReject: (c: LegalCase) => void;
 }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
+  const [attachmentsCase, setAttachmentsCase] = useState<LegalCase | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<CaseDocument | null>(null);
+  const [previewFullScreen, setPreviewFullScreen] = useState(false);
 
   return (
     <div
@@ -293,7 +325,8 @@ function PendingRequestsInbox({
         borderWidth: "1.5px",
         borderStyle: "solid",
         borderColor: "color-mix(in srgb, var(--md-extended-color-warning) 45%, transparent)",
-        backgroundColor: "color-mix(in srgb, var(--md-extended-color-warning) 5%, var(--md-sys-color-surface))",
+        backgroundColor:
+          "color-mix(in srgb, var(--md-extended-color-warning) 5%, var(--md-sys-color-surface))",
       }}
     >
       {/* Header */}
@@ -305,14 +338,15 @@ function PendingRequestsInbox({
         <div className="flex items-center gap-2.5">
           <div
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
-            style={{ backgroundColor: "color-mix(in srgb, var(--md-extended-color-warning) 18%, transparent)" }}
+            style={{
+              backgroundColor:
+                "color-mix(in srgb, var(--md-extended-color-warning) 18%, transparent)",
+            }}
           >
             <Bell className="h-3.5 w-3.5" style={{ color: "var(--md-extended-color-warning)" }} />
           </div>
           <div className="text-left">
-            <span className="text-sm font-bold text-foreground">
-              Pending Requests
-            </span>
+            <span className="text-sm font-bold text-foreground">Pending Requests</span>
             <span
               className="ml-2 inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold text-white"
               style={{ backgroundColor: "var(--md-extended-color-warning)" }}
@@ -333,11 +367,172 @@ function PendingRequestsInbox({
 
       {/* Cards */}
       {!collapsed && (
-        <div className="border-t border-dashed px-3 pt-3 pb-4 sm:px-5 sm:pb-5" style={{ borderColor: "color-mix(in srgb, var(--md-extended-color-warning) 35%, transparent)" }}>
+        <div
+          className="border-t border-dashed px-3 pt-3 pb-4 sm:px-5 sm:pb-5"
+          style={{
+            borderColor: "color-mix(in srgb, var(--md-extended-color-warning) 35%, transparent)",
+          }}
+        >
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             {cases.map((c) => (
-              <PendingRequestCard key={c.id} c={c} onApprove={onApprove} onReject={onReject} />
+              <PendingRequestCard
+                key={c.id}
+                c={c}
+                onApprove={onApprove}
+                onReject={onReject}
+                onViewAttachments={() => setAttachmentsCase(c)}
+              />
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ATTACHMENTS VIEWER */}
+      <Dialog
+        open={attachmentsCase !== null}
+        onOpenChange={(o) => !o && setAttachmentsCase(null)}
+        maxWidth="520px"
+      >
+        {attachmentsCase && (
+          <>
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between gap-3 w-full">
+                <span className="min-w-0 flex-1 truncate text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Attachments — {attachmentsCase.title || attachmentsCase.id}
+                </span>
+                <span tabIndex={0} aria-hidden="true" className="sr-only" />
+                <IconButton
+                  ariaLabel="Close"
+                  tabIndex={-1}
+                  onClick={() => setAttachmentsCase(null)}
+                >
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </IconButton>
+              </DialogTitle>
+            </DialogHeader>
+            <DialogContent>
+              {attachmentsCase.files.files.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-border bg-background p-4 text-center text-xs text-muted-foreground">
+                  No attachments uploaded yet.
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {attachmentsCase.files.files.map((d) => {
+                    const isImage = d.fileMimeType?.startsWith("image/");
+                    return (
+                      <li
+                        key={d.id}
+                        className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background p-3"
+                      >
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                            {isImage ? (
+                              <ImageIcon className="h-4 w-4" />
+                            ) : (
+                              <FileText className="h-4 w-4" />
+                            )}
+                          </span>
+                          <div className="min-w-0">
+                            <div
+                              className="truncate text-xs font-semibold text-foreground"
+                              title={d.name}
+                            >
+                              {d.name}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground">
+                              {d.size} · {d.uploadedAt}
+                              {d.uploadedBy ? ` · added by ${d.uploadedBy}` : ""}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1">
+                          <IconButton
+                            ariaLabel="Preview"
+                            title="Preview"
+                            onClick={() => {
+                              setPreviewDoc(d);
+                              setPreviewFullScreen(false);
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </IconButton>
+                          <a
+                            href={
+                              d.fileDataUrl ??
+                              `data:text/plain;charset=utf-8,${encodeURIComponent(d.name)}`
+                            }
+                            download={d.fileDataUrl ? d.name : `${d.name}.txt`}
+                            title="Download"
+                            className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground hover:bg-black/5 hover:text-foreground transition-colors"
+                          >
+                            <Download className="h-4 w-4" />
+                          </a>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </DialogContent>
+          </>
+        )}
+      </Dialog>
+
+      {/* ATTACHMENT PREVIEW — nested above the attachments dialog */}
+      {previewDoc && (
+        <div
+          className="fixed inset-0 z-60 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setPreviewDoc(null);
+          }}
+        >
+          <div
+            className={`flex flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl transition-all ${
+              previewFullScreen ? "h-full w-full" : "max-h-[85vh] w-full max-w-2xl"
+            }`}
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-border px-4 sm:px-6 py-3.5">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  {previewDoc.fileMimeType?.startsWith("image/") ? (
+                    <ImageIcon className="h-4 w-4" />
+                  ) : (
+                    <FileText className="h-4 w-4" />
+                  )}
+                </span>
+                <span className="truncate text-xs font-bold text-foreground">
+                  {previewDoc.name}
+                </span>
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
+                <IconButton
+                  ariaLabel={previewFullScreen ? "Exit full screen" : "Full screen"}
+                  onClick={() => setPreviewFullScreen((v) => !v)}
+                >
+                  {previewFullScreen ? (
+                    <Minimize2 className="h-4 w-4" />
+                  ) : (
+                    <Maximize2 className="h-4 w-4" />
+                  )}
+                </IconButton>
+                <IconButton ariaLabel="Close preview" onClick={() => setPreviewDoc(null)}>
+                  <X className="h-4 w-4" />
+                </IconButton>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto bg-muted/30 p-4 sm:p-6">
+              <DocumentPreviewBody
+                fileDataUrl={previewDoc.fileDataUrl}
+                fileMimeType={previewDoc.fileMimeType}
+                fileName={previewDoc.name}
+                fallback={
+                  <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-xl border border-border bg-background p-6 shadow-sm">
+                    <FileText className="h-12 w-12 text-muted-foreground/60" />
+                    <p className="text-xs font-semibold text-foreground">{previewDoc.name}</p>
+                  </div>
+                }
+              />
+            </div>
           </div>
         </div>
       )}
@@ -349,16 +544,18 @@ function PendingRequestCard({
   c,
   onApprove,
   onReject,
+  onViewAttachments,
 }: {
   c: LegalCase;
   onApprove: (c: LegalCase) => void;
   onReject: (c: LegalCase) => void;
+  onViewAttachments: (c: LegalCase) => void;
 }) {
   const entry = getNextEntry(c);
 
   return (
     <div
-      className="flex flex-col gap-3 rounded-xl border bg-white p-3.5 shadow-xs sm:p-4"
+      className="flex h-full flex-col gap-3 rounded-xl border bg-white p-3.5 shadow-xs sm:p-4"
       style={{
         borderColor: "color-mix(in srgb, var(--md-extended-color-warning) 30%, transparent)",
       }}
@@ -372,7 +569,8 @@ function PendingRequestCard({
           <span
             className="shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold"
             style={{
-              backgroundColor: "color-mix(in srgb, var(--md-extended-color-warning) 15%, transparent)",
+              backgroundColor:
+                "color-mix(in srgb, var(--md-extended-color-warning) 15%, transparent)",
               color: "var(--md-extended-color-warning)",
             }}
           >
@@ -418,24 +616,33 @@ function PendingRequestCard({
         )}
       </div>
 
-      {/* Accept / Decline buttons */}
-      <div className="mt-auto flex items-center justify-end gap-2 border-t pt-2.5" style={{ borderColor: "color-mix(in srgb, var(--md-extended-color-warning) 25%, transparent)" }}>
-        <span className="mr-auto text-[11px] text-muted-foreground">Action required</span>
-        <Button
-          variant="outlined"
-          icon={<X className="h-3.5 w-3.5" />}
+      {/* Standard icon-button footer — View/Attachments/Decline/Accept, same
+       * order and styling as every other card grid in the app. */}
+      <div className="mt-auto flex flex-wrap items-center justify-end gap-1.5 border-t border-border/60 pt-2">
+        <IconButton
+          variant="tonal"
+          title="View attachments"
+          ariaLabel={`View attachments for case ${c.id}`}
+          onClick={() => onViewAttachments(c)}
+        >
+          <Paperclip className="h-4 w-4" />
+        </IconButton>
+        <IconButton
+          variant="tonal"
+          title="Decline case"
+          ariaLabel={`Decline case ${c.id}`}
           onClick={() => onReject(c)}
-          className="!text-[var(--md-sys-color-error)] !border-[var(--md-sys-color-error)]/40 hover:!bg-[var(--md-sys-color-error)]/8 !h-8 !text-xs"
         >
-          Decline
-        </Button>
-        <Button
-          icon={<Check className="h-3.5 w-3.5" />}
+          <X className="h-4 w-4 text-[var(--md-sys-color-error)]" />
+        </IconButton>
+        <IconButton
+          variant="tonal"
+          title="Accept case"
+          ariaLabel={`Accept case ${c.id}`}
           onClick={() => onApprove(c)}
-          className="!bg-[var(--md-extended-color-success)] !h-8 !text-xs"
         >
-          Accept
-        </Button>
+          <Check className="h-4 w-4 text-[var(--md-extended-color-success)]" />
+        </IconButton>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/app/PageHeader";
 import { getCases, getLawyers, getCitizens, subscribeToStore } from "@/data/appStore";
@@ -11,10 +11,11 @@ import {
   ShieldCheck,
   LineChart,
   BarChart3,
-  TrendingUp,
-  Calendar,
   PieChart,
   Scale,
+  Siren,
+  Bell,
+  ChevronRight,
 } from "lucide-react";
 import { Card } from "@/components/m3";
 
@@ -421,160 +422,6 @@ function DailyRegistrationsChart({ data }: { data: DailyRegPoint[] }) {
   );
 }
 
-interface IntakePoint {
-  month: string;
-  fullName: string;
-  count: number;
-  prevCount?: number;
-  breakdown: { category: string; count: number }[];
-}
-
-const MONTHLY_INTAKE_DATA: IntakePoint[] = [
-  {
-    month: "Jun",
-    fullName: "June 2025",
-    count: 12,
-    prevCount: 10,
-    breakdown: [
-      { category: "Property", count: 4 },
-      { category: "Criminal", count: 3 },
-      { category: "Cyber", count: 3 },
-      { category: "Family", count: 2 },
-    ],
-  },
-  {
-    month: "Jul",
-    fullName: "July 2025",
-    count: 18,
-    prevCount: 12,
-    breakdown: [
-      { category: "Property", count: 6 },
-      { category: "Criminal", count: 5 },
-      { category: "Cyber", count: 4 },
-      { category: "Family", count: 3 },
-    ],
-  },
-  {
-    month: "Aug",
-    fullName: "August 2025",
-    count: 24,
-    prevCount: 18,
-    breakdown: [
-      { category: "Property", count: 8 },
-      { category: "Criminal", count: 7 },
-      { category: "Cyber", count: 5 },
-      { category: "Family", count: 4 },
-    ],
-  },
-  {
-    month: "Sep",
-    fullName: "September 2025",
-    count: 31,
-    prevCount: 24,
-    breakdown: [
-      { category: "Property", count: 10 },
-      { category: "Criminal", count: 9 },
-      { category: "Cyber", count: 7 },
-      { category: "Family", count: 5 },
-    ],
-  },
-  {
-    month: "Oct",
-    fullName: "October 2025",
-    count: 28,
-    prevCount: 31,
-    breakdown: [
-      { category: "Property", count: 9 },
-      { category: "Criminal", count: 8 },
-      { category: "Cyber", count: 6 },
-      { category: "Family", count: 5 },
-    ],
-  },
-  {
-    month: "Nov",
-    fullName: "November 2025",
-    count: 39,
-    prevCount: 28,
-    breakdown: [
-      { category: "Property", count: 14 },
-      { category: "Criminal", count: 11 },
-      { category: "Cyber", count: 8 },
-      { category: "Family", count: 6 },
-    ],
-  },
-];
-
-function MonthlyFilingBarChart() {
-  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
-
-  const monthlyIntake = [
-    { month: "Jun", fullName: "June 2025", count: 12, height: "40%" },
-    { month: "Jul", fullName: "July 2025", count: 18, height: "55%" },
-    { month: "Aug", fullName: "August 2025", count: 24, height: "70%" },
-    { month: "Sep", fullName: "September 2025", count: 31, height: "85%" },
-    { month: "Oct", fullName: "October 2025", count: 28, height: "78%" },
-    { month: "Nov", fullName: "November 2025", count: 39, height: "100%" },
-  ];
-
-  return (
-    <div className="rounded-2xl border border-border bg-surface p-6 shadow-2xs space-y-4">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 justify-between border-b border-border pb-3">
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-bold text-foreground">Monthly Case Filing Trend (2025)</h3>
-        </div>
-        <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
-          <TrendingUp className="h-3.5 w-3.5" /> +28% Growth Rate
-        </span>
-      </div>
-
-      <div className="flex items-end justify-between gap-3 h-44 pt-4 px-4 pb-2 border-b border-border bg-background/50 rounded-xl relative">
-        {monthlyIntake.map((m, i) => {
-          const isHovered = hoverIndex === i;
-          return (
-            <div
-              key={m.month}
-              onMouseEnter={() => setHoverIndex(i)}
-              onMouseLeave={() => setHoverIndex(null)}
-              className="flex-1 flex flex-col items-center gap-2 h-full justify-end group cursor-pointer relative"
-            >
-              {/* Floating Tooltip Pill on Hover */}
-              {isHovered && (
-                <div className="absolute -top-7 z-20 rounded-md bg-foreground px-2 py-1 text-[10px] font-bold text-background shadow-sm whitespace-nowrap animate-in fade-in zoom-in-95">
-                  {m.fullName}: {m.count} cases
-                </div>
-              )}
-
-              <span
-                className={`text-[10px] font-bold font-mono transition-colors ${
-                  isHovered ? "text-primary scale-110" : "text-muted-foreground"
-                }`}
-              >
-                {m.count}
-              </span>
-              <div
-                className={`w-full max-w-[36px] rounded-t-lg transition-all duration-300 relative overflow-hidden ${
-                  isHovered ? "bg-primary shadow-sm scale-105" : "bg-primary/20 hover:bg-primary/40"
-                }`}
-                style={{ height: m.height }}
-              >
-                <div className="absolute inset-x-0 top-0 h-1 bg-primary" />
-              </div>
-              <span
-                className={`text-xs font-bold transition-colors ${
-                  isHovered ? "text-primary" : "text-foreground"
-                }`}
-              >
-                {m.month}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 function AdminDashboard() {
   const [casesList, setCasesList] = useState(getCases);
   const [lawyersList, setLawyersList] = useState(getLawyers);
@@ -592,22 +439,12 @@ function AdminDashboard() {
   const pendingLawyers = lawyersList.filter((l) => l.status === "Pending");
   const approvedLawyers = lawyersList.filter((l) => l.status === "Approved");
   const openCases = casesList.filter((c) => c.status !== "Resolved" && c.status !== "Closed");
+  const unassignedEmergencyCases = casesList.filter((c) => c.isEmergency && !c.lawyerId);
 
   const dailyRegData = useMemo(
     () => buildDailyRegistrations(lawyersList, citizensList),
     [lawyersList, citizensList],
   );
-
-  // Monthly Intake Mock Data — carried over from the former Reports page (no live
-  // time-series equivalent exists yet in appStore).
-  const monthlyIntake = [
-    { month: "Jun", count: 12, height: "40%" },
-    { month: "Jul", count: 18, height: "55%" },
-    { month: "Aug", count: 24, height: "70%" },
-    { month: "Sep", count: 31, height: "85%" },
-    { month: "Oct", count: 28, height: "78%" },
-    { month: "Nov", count: 39, height: "100%" },
-  ];
 
   const totalCases = casesList.length;
   const totalLawyers = lawyersList.length;
@@ -740,8 +577,96 @@ function AdminDashboard() {
         <DailyRegistrationsChart data={dailyRegData} />
       </div>
 
-      {/* MONTHLY INTAKE TREND COLUMN BAR CHART */}
-      <MonthlyFilingBarChart />
+      {/* NEEDS ATTENTION — real actionable items, no invented data */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="rounded-2xl border border-border bg-surface p-6 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <div className="flex items-center gap-2">
+              <Siren className="h-4 w-4 text-red-600" />
+              <h3 className="text-sm font-bold text-foreground">Unassigned Emergency Cases</h3>
+            </div>
+            {unassignedEmergencyCases.length > 0 && (
+              <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                {unassignedEmergencyCases.length}
+              </span>
+            )}
+          </div>
+          {unassignedEmergencyCases.length === 0 ? (
+            <p className="py-4 text-center text-xs text-muted-foreground">
+              No emergency cases awaiting assignment.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {unassignedEmergencyCases.slice(0, 5).map((c) => (
+                <Link
+                  key={c.id}
+                  to="/admin/cases"
+                  className="flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs transition-colors hover:bg-red-100"
+                >
+                  <div className="min-w-0">
+                    <div className="truncate font-bold text-foreground">
+                      {c.title || "Untitled Matter"}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {c.id} · {c.citizenName}
+                    </div>
+                  </div>
+                  <ChevronRight className="h-3.5 w-3.5 shrink-0 text-red-600" />
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-2xl border border-border bg-surface p-6 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <div className="flex items-center gap-2">
+              <Bell className="h-4 w-4" style={{ color: "var(--md-extended-color-warning)" }} />
+              <h3 className="text-sm font-bold text-foreground">Pending Lawyer Approvals</h3>
+            </div>
+            {pendingLawyers.length > 0 && (
+              <span
+                className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
+                style={{ backgroundColor: "var(--md-extended-color-warning)" }}
+              >
+                {pendingLawyers.length}
+              </span>
+            )}
+          </div>
+          {pendingLawyers.length === 0 ? (
+            <p className="py-4 text-center text-xs text-muted-foreground">
+              No pending lawyer approvals.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {pendingLawyers.slice(0, 5).map((l) => (
+                <Link
+                  key={l.id}
+                  to="/admin/lawyers"
+                  className="flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-xs transition-colors hover:bg-black/3"
+                  style={{
+                    borderColor:
+                      "color-mix(in srgb, var(--md-extended-color-warning) 30%, transparent)",
+                    backgroundColor:
+                      "color-mix(in srgb, var(--md-extended-color-warning) 6%, transparent)",
+                  }}
+                >
+                  <div className="min-w-0">
+                    <div className="truncate font-bold text-foreground">{l.name}</div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {l.category} Law · Joined {l.joinedAt}
+                    </div>
+                  </div>
+                  <ChevronRight
+                    className="h-3.5 w-3.5 shrink-0"
+                    style={{ color: "var(--md-extended-color-warning)" }}
+                  />
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* PIE CHARTS ROW */}
       <div className="grid gap-6 md:grid-cols-3">

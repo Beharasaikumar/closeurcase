@@ -254,6 +254,7 @@ export function CaseSummarizer() {
             <Folder className="h-3.5 w-3.5 text-primary shrink-0" /> Case
           </span>
           <Select
+            label="Select Case"
             value={selectedId}
             onChange={setSelectedId}
             className="w-full"

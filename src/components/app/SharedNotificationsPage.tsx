@@ -98,7 +98,6 @@ export function SharedNotificationsPage({ role }: { role: Role }) {
       <PageHeader
         title="Notifications"
         description="Stay informed with real-time alerts regarding cases, assignments, and platform updates."
-        onBack={handleBack}
         actionsPosition={role === "citizen" ? "below" : "inline"}
         actions={
           unreadCount > 0 ? (

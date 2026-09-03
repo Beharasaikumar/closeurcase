@@ -145,6 +145,7 @@ export function CaseQA() {
             <Folder className="h-3.5 w-3.5 text-primary" /> Case
           </span>
           <Select
+            label="Select Case"
             value={selectedId}
             onChange={setSelectedId}
             className="w-full"

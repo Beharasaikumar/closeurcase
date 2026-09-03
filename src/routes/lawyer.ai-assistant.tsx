@@ -248,6 +248,7 @@ export function GenerateCounterAI() {
             <Folder className="h-3.5 w-3.5 text-primary" /> Case
           </span>
           <Select
+            label="Select Case"
             value={selectedCaseId}
             onChange={setSelectedCaseId}
             className="w-full"

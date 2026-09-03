@@ -20,6 +20,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { PublicLayout } from "@/layouts/PublicLayout";
+import { Card } from "@/components/m3";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -48,8 +49,10 @@ function AboutPage() {
       title: "Case Filing & AI Assessment",
       subtitle: "Plain language intake & smart prediction",
       icon: Sparkles,
-      color: "text-amber-500 bg-amber-500/10 border-amber-500/30",
-      activeColor: "bg-amber-500 text-white",
+      color:
+        "text-[var(--md-extended-color-warning)] bg-[var(--md-extended-color-warning)]/10 border-[var(--md-extended-color-warning)]/30",
+      activeColor:
+        "bg-[var(--md-extended-color-warning)] text-[var(--md-extended-color-on-warning)]",
       description:
         "Citizens describe their legal dispute in everyday language. The AI assessment model parses the situation, identifies statutory categories (e.g. Civil, Criminal, Property, Family Law), calculates confidence scores, and structures the case draft.",
       details: [
@@ -64,8 +67,10 @@ function AboutPage() {
       title: "Geo-Location & Lawyer Matching",
       subtitle: "Proximity & practice area pairing",
       icon: MapPin,
-      color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/30",
-      activeColor: "bg-emerald-500 text-white",
+      color:
+        "text-[var(--md-extended-color-citizen)] bg-[var(--md-extended-color-citizen)]/10 border-[var(--md-extended-color-citizen)]/30",
+      activeColor:
+        "bg-[var(--md-extended-color-citizen)] text-[var(--md-extended-color-on-citizen)]",
       description:
         "Using GPS or manual region selection, the platform matches the case with nearby verified Lawyers specializing in the predicted legal domain, ensuring swift local legal representation.",
       details: [
@@ -80,8 +85,9 @@ function AboutPage() {
       title: "AI Legal Research & Case Strategy",
       subtitle: "Indexed statutory acts & argument drafting",
       icon: BookOpen,
-      color: "text-indigo-500 bg-indigo-500/10 border-indigo-500/30",
-      activeColor: "bg-indigo-500 text-white",
+      color:
+        "text-[var(--md-extended-color-lawyer)] bg-[var(--md-extended-color-lawyer)]/10 border-[var(--md-extended-color-lawyer)]/30",
+      activeColor: "bg-[var(--md-extended-color-lawyer)] text-[var(--md-extended-color-on-lawyer)]",
       description:
         "Lawyers receive assigned cases with full context. Using the Super Admin indexed Legal Knowledge Base, lawyers can generate draft arguments, search statutory acts/sections, and refine case filings.",
       details: [
@@ -96,8 +102,8 @@ function AboutPage() {
       title: "Transparent Tracking & Resolution",
       subtitle: "Real-time milestones to case closure",
       icon: CheckCircle2,
-      color: "text-blue-500 bg-blue-500/10 border-blue-500/30",
-      activeColor: "bg-blue-500 text-white",
+      color: "text-[var(--md-chart-7)] bg-[var(--md-chart-7)]/10 border-[var(--md-chart-7)]/30",
+      activeColor: "bg-[var(--md-chart-7)] text-white",
       description:
         "Citizens stay informed through live milestone updates. Super Administrators monitor overall platform health, audit log integrity, and handle any procedural overrides until final case disposition.",
       details: [
@@ -162,19 +168,19 @@ function AboutPage() {
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3 text-xs">
             <div className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3.5 py-2 font-medium text-foreground">
-              <Zap className="h-4 w-4 text-amber-500" />
+              <Zap className="h-4 w-4 text-warning" />
               <span>AI Category Prediction</span>
             </div>
             <div className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3.5 py-2 font-medium text-foreground">
-              <MapPin className="h-4 w-4 text-emerald-500" />
+              <MapPin className="h-4 w-4 text-[var(--md-extended-color-citizen)]" />
               <span>Geo-Proximity Lawyer Matching</span>
             </div>
             <div className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3.5 py-2 font-medium text-foreground">
-              <BookOpen className="h-4 w-4 text-indigo-500" />
+              <BookOpen className="h-4 w-4 text-[var(--md-extended-color-lawyer)]" />
               <span>Indexed Legal Knowledge Base</span>
             </div>
             <div className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3.5 py-2 font-medium text-foreground">
-              <ShieldCheck className="h-4 w-4 text-orange-500" />
+              <ShieldCheck className="h-4 w-4 text-[var(--md-extended-color-admin)]" />
               <span>Admin Verification & Audit</span>
             </div>
           </div>
@@ -203,9 +209,17 @@ function AboutPage() {
               onClick={() => setActiveRole("citizen")}
               className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-semibold transition-all ${
                 activeRole === "citizen"
-                  ? "bg-emerald-600 text-white shadow-xs"
+                  ? "shadow-xs"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
               }`}
+              style={
+                activeRole === "citizen"
+                  ? {
+                      backgroundColor: "var(--md-extended-color-citizen)",
+                      color: "var(--md-extended-color-on-citizen)",
+                    }
+                  : undefined
+              }
             >
               <UserCheck className="h-4 w-4" />
               <span>Citizen / User</span>
@@ -214,9 +228,17 @@ function AboutPage() {
               onClick={() => setActiveRole("lawyer")}
               className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-semibold transition-all ${
                 activeRole === "lawyer"
-                  ? "bg-indigo-600 text-white shadow-xs"
+                  ? "shadow-xs"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
               }`}
+              style={
+                activeRole === "lawyer"
+                  ? {
+                      backgroundColor: "var(--md-extended-color-lawyer)",
+                      color: "var(--md-extended-color-on-lawyer)",
+                    }
+                  : undefined
+              }
             >
               <Scale className="h-4 w-4" />
               <span>Lawyer / Lawyer</span>
@@ -225,9 +247,17 @@ function AboutPage() {
               onClick={() => setActiveRole("admin")}
               className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-semibold transition-all ${
                 activeRole === "admin"
-                  ? "bg-orange-600 text-white shadow-xs"
+                  ? "shadow-xs"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
               }`}
+              style={
+                activeRole === "admin"
+                  ? {
+                      backgroundColor: "var(--md-extended-color-admin)",
+                      color: "var(--md-extended-color-on-admin)",
+                    }
+                  : undefined
+              }
             >
               <ShieldCheck className="h-4 w-4" />
               <span>Super Administrator</span>
@@ -240,7 +270,14 @@ function AboutPage() {
           {activeRole === "citizen" && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               <div className="lg:col-span-7 space-y-4">
-                <div className="inline-flex items-center gap-2 rounded-md bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600">
+                <div
+                  className="inline-flex items-center gap-2 rounded-md px-3 py-1 text-xs font-semibold"
+                  style={{
+                    backgroundColor:
+                      "color-mix(in srgb, var(--md-extended-color-citizen) 10%, transparent)",
+                    color: "var(--md-extended-color-citizen)",
+                  }}
+                >
                   <UserCheck className="h-4 w-4" />
                   <span>Citizen Portal Capabilities</span>
                 </div>
@@ -256,7 +293,7 @@ function AboutPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                   <div className="rounded-lg border border-border bg-background p-3.5">
                     <div className="font-semibold text-xs text-foreground flex items-center gap-1.5">
-                      <Sparkles className="h-3.5 w-3.5 text-emerald-500" />
+                      <Sparkles className="h-3.5 w-3.5 text-[var(--md-extended-color-citizen)]" />
                       <span>Smart Intake</span>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -265,7 +302,7 @@ function AboutPage() {
                   </div>
                   <div className="rounded-lg border border-border bg-background p-3.5">
                     <div className="font-semibold text-xs text-foreground flex items-center gap-1.5">
-                      <MapPin className="h-3.5 w-3.5 text-emerald-500" />
+                      <MapPin className="h-3.5 w-3.5 text-[var(--md-extended-color-citizen)]" />
                       <span>Geo Lawyer Search</span>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -274,7 +311,7 @@ function AboutPage() {
                   </div>
                   <div className="rounded-lg border border-border bg-background p-3.5">
                     <div className="font-semibold text-xs text-foreground flex items-center gap-1.5">
-                      <Clock className="h-3.5 w-3.5 text-emerald-500" />
+                      <Clock className="h-3.5 w-3.5 text-[var(--md-extended-color-citizen)]" />
                       <span>Milestone Timeline</span>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -283,7 +320,7 @@ function AboutPage() {
                   </div>
                   <div className="rounded-lg border border-border bg-background p-3.5">
                     <div className="font-semibold text-xs text-foreground flex items-center gap-1.5">
-                      <FileText className="h-3.5 w-3.5 text-emerald-500" />
+                      <FileText className="h-3.5 w-3.5 text-[var(--md-extended-color-citizen)]" />
                       <span>Digital Vault</span>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -295,7 +332,11 @@ function AboutPage() {
                 <div className="pt-3">
                   <Link
                     to="/register"
-                    className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-emerald-700 transition-all"
+                    className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-semibold shadow-xs transition-all hover:opacity-90"
+                    style={{
+                      backgroundColor: "var(--md-extended-color-citizen)",
+                      color: "var(--md-extended-color-on-citizen)",
+                    }}
                   >
                     <span>Sign Up as Citizen</span>
                     <ArrowRight className="h-3.5 w-3.5" />
@@ -303,10 +344,27 @@ function AboutPage() {
                 </div>
               </div>
 
-              <div className="lg:col-span-5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5 space-y-3">
-                <div className="flex items-center justify-between text-xs font-bold text-emerald-700">
+              <div
+                className="lg:col-span-5 rounded-xl border p-5 space-y-3"
+                style={{
+                  borderColor:
+                    "color-mix(in srgb, var(--md-extended-color-citizen) 20%, transparent)",
+                  backgroundColor:
+                    "color-mix(in srgb, var(--md-extended-color-citizen) 5%, transparent)",
+                }}
+              >
+                <div
+                  className="flex items-center justify-between text-xs font-bold"
+                  style={{ color: "var(--md-extended-color-citizen)" }}
+                >
                   <span>LIVE DEMO PREVIEW</span>
-                  <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px]">
+                  <span
+                    className="rounded-full px-2 py-0.5 text-[10px]"
+                    style={{
+                      backgroundColor:
+                        "color-mix(in srgb, var(--md-extended-color-citizen) 20%, transparent)",
+                    }}
+                  >
                     Citizen View
                   </span>
                 </div>
@@ -316,7 +374,10 @@ function AboutPage() {
                     "Landlord refused to return my security deposit after lease completion..."
                   </div>
                   <div className="flex items-center justify-between pt-1">
-                    <span className="text-[11px] font-semibold text-emerald-600">
+                    <span
+                      className="text-[11px] font-semibold"
+                      style={{ color: "var(--md-extended-color-citizen)" }}
+                    >
                       Predicted Category: Property & Rent Act
                     </span>
                     <span className="text-[10px] text-muted-foreground">94% Confidence</span>
@@ -329,7 +390,13 @@ function AboutPage() {
                       Adv. Rajesh Sharma — Property Specialist (2.4 km away)
                     </div>
                   </div>
-                  <span className="rounded-md bg-emerald-600 text-white px-2 py-1 text-[10px] font-bold">
+                  <span
+                    className="rounded-md px-2 py-1 text-[10px] font-bold"
+                    style={{
+                      backgroundColor: "var(--md-extended-color-citizen)",
+                      color: "var(--md-extended-color-on-citizen)",
+                    }}
+                  >
                     Assigned
                   </span>
                 </div>
@@ -340,7 +407,14 @@ function AboutPage() {
           {activeRole === "lawyer" && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               <div className="lg:col-span-7 space-y-4">
-                <div className="inline-flex items-center gap-2 rounded-md bg-indigo-500/10 px-3 py-1 text-xs font-semibold text-indigo-600">
+                <div
+                  className="inline-flex items-center gap-2 rounded-md px-3 py-1 text-xs font-semibold"
+                  style={{
+                    backgroundColor:
+                      "color-mix(in srgb, var(--md-extended-color-lawyer) 10%, transparent)",
+                    color: "var(--md-extended-color-lawyer)",
+                  }}
+                >
                   <Scale className="h-4 w-4" />
                   <span>Lawyer Workspace Capabilities</span>
                 </div>
@@ -356,7 +430,7 @@ function AboutPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                   <div className="rounded-lg border border-border bg-background p-3.5">
                     <div className="font-semibold text-xs text-foreground flex items-center gap-1.5">
-                      <BookOpen className="h-3.5 w-3.5 text-indigo-500" />
+                      <BookOpen className="h-3.5 w-3.5 text-[var(--md-extended-color-lawyer)]" />
                       <span>Statutory Search</span>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -365,7 +439,7 @@ function AboutPage() {
                   </div>
                   <div className="rounded-lg border border-border bg-background p-3.5">
                     <div className="font-semibold text-xs text-foreground flex items-center gap-1.5">
-                      <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
+                      <Sparkles className="h-3.5 w-3.5 text-[var(--md-extended-color-lawyer)]" />
                       <span>Arguments Generator</span>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -374,7 +448,7 @@ function AboutPage() {
                   </div>
                   <div className="rounded-lg border border-border bg-background p-3.5">
                     <div className="font-semibold text-xs text-foreground flex items-center gap-1.5">
-                      <Briefcase className="h-3.5 w-3.5 text-indigo-500" />
+                      <Briefcase className="h-3.5 w-3.5 text-[var(--md-extended-color-lawyer)]" />
                       <span>Case Management</span>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -383,7 +457,7 @@ function AboutPage() {
                   </div>
                   <div className="rounded-lg border border-border bg-background p-3.5">
                     <div className="font-semibold text-xs text-foreground flex items-center gap-1.5">
-                      <ShieldCheck className="h-3.5 w-3.5 text-indigo-500" />
+                      <ShieldCheck className="h-3.5 w-3.5 text-[var(--md-extended-color-lawyer)]" />
                       <span>Verified Profile</span>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -395,7 +469,11 @@ function AboutPage() {
                 <div className="pt-3">
                   <Link
                     to="/lawyer-register"
-                    className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-indigo-700 transition-all"
+                    className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-semibold shadow-xs transition-all hover:opacity-90"
+                    style={{
+                      backgroundColor: "var(--md-extended-color-lawyer)",
+                      color: "var(--md-extended-color-on-lawyer)",
+                    }}
                   >
                     <span>Register as Lawyer</span>
                     <ArrowRight className="h-3.5 w-3.5" />
@@ -403,10 +481,27 @@ function AboutPage() {
                 </div>
               </div>
 
-              <div className="lg:col-span-5 rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-5 space-y-3">
-                <div className="flex items-center justify-between text-xs font-bold text-indigo-700">
+              <div
+                className="lg:col-span-5 rounded-xl border p-5 space-y-3"
+                style={{
+                  borderColor:
+                    "color-mix(in srgb, var(--md-extended-color-lawyer) 20%, transparent)",
+                  backgroundColor:
+                    "color-mix(in srgb, var(--md-extended-color-lawyer) 5%, transparent)",
+                }}
+              >
+                <div
+                  className="flex items-center justify-between text-xs font-bold"
+                  style={{ color: "var(--md-extended-color-lawyer)" }}
+                >
                   <span>LIVE DEMO PREVIEW</span>
-                  <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px]">
+                  <span
+                    className="rounded-full px-2 py-0.5 text-[10px]"
+                    style={{
+                      backgroundColor:
+                        "color-mix(in srgb, var(--md-extended-color-lawyer) 20%, transparent)",
+                    }}
+                  >
                     Lawyer View
                   </span>
                 </div>
@@ -415,7 +510,12 @@ function AboutPage() {
                     <span className="font-bold text-foreground text-[11px]">
                       AI Legal Assistant
                     </span>
-                    <span className="text-[10px] text-indigo-600 font-semibold">KB Indexed</span>
+                    <span
+                      className="text-[10px] font-semibold"
+                      style={{ color: "var(--md-extended-color-lawyer)" }}
+                    >
+                      KB Indexed
+                    </span>
                   </div>
                   <div className="p-2 rounded bg-muted/60 text-muted-foreground text-[10px] space-y-1">
                     <div className="font-semibold text-foreground">Relevant Provision:</div>
@@ -428,7 +528,13 @@ function AboutPage() {
                   <span className="text-[11px] font-semibold text-foreground">
                     Case Status Updater
                   </span>
-                  <span className="rounded bg-indigo-100 text-indigo-800 px-2 py-0.5 text-[10px] font-medium">
+                  <span
+                    className="rounded px-2 py-0.5 text-[10px] font-medium"
+                    style={{
+                      backgroundColor: "var(--md-extended-color-lawyer-container)",
+                      color: "var(--md-extended-color-on-lawyer-container)",
+                    }}
+                  >
                     Drafting Pleadings
                   </span>
                 </div>
@@ -439,7 +545,14 @@ function AboutPage() {
           {activeRole === "admin" && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               <div className="lg:col-span-7 space-y-4">
-                <div className="inline-flex items-center gap-2 rounded-md bg-orange-500/10 px-3 py-1 text-xs font-semibold text-orange-600">
+                <div
+                  className="inline-flex items-center gap-2 rounded-md px-3 py-1 text-xs font-semibold"
+                  style={{
+                    backgroundColor:
+                      "color-mix(in srgb, var(--md-extended-color-admin) 10%, transparent)",
+                    color: "var(--md-extended-color-admin)",
+                  }}
+                >
                   <ShieldCheck className="h-4 w-4" />
                   <span>Super Admin Capabilities</span>
                 </div>
@@ -455,7 +568,7 @@ function AboutPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                   <div className="rounded-lg border border-border bg-background p-3.5">
                     <div className="font-semibold text-xs text-foreground flex items-center gap-1.5">
-                      <BookOpen className="h-3.5 w-3.5 text-orange-500" />
+                      <BookOpen className="h-3.5 w-3.5 text-[var(--md-extended-color-admin)]" />
                       <span>Knowledge Base Upload</span>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -464,7 +577,7 @@ function AboutPage() {
                   </div>
                   <div className="rounded-lg border border-border bg-background p-3.5">
                     <div className="font-semibold text-xs text-foreground flex items-center gap-1.5">
-                      <UserCheck className="h-3.5 w-3.5 text-orange-500" />
+                      <UserCheck className="h-3.5 w-3.5 text-[var(--md-extended-color-admin)]" />
                       <span>Lawyer Verification</span>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -473,7 +586,7 @@ function AboutPage() {
                   </div>
                   <div className="rounded-lg border border-border bg-background p-3.5">
                     <div className="font-semibold text-xs text-foreground flex items-center gap-1.5">
-                      <Layers className="h-3.5 w-3.5 text-orange-500" />
+                      <Layers className="h-3.5 w-3.5 text-[var(--md-extended-color-admin)]" />
                       <span>Case Record Override</span>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -482,7 +595,7 @@ function AboutPage() {
                   </div>
                   <div className="rounded-lg border border-border bg-background p-3.5">
                     <div className="font-semibold text-xs text-foreground flex items-center gap-1.5">
-                      <Zap className="h-3.5 w-3.5 text-orange-500" />
+                      <Zap className="h-3.5 w-3.5 text-[var(--md-extended-color-admin)]" />
                       <span>Platform Analytics</span>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -494,7 +607,11 @@ function AboutPage() {
                 <div className="pt-3">
                   <Link
                     to="/login"
-                    className="inline-flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-orange-700 transition-all"
+                    className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-semibold shadow-xs transition-all hover:opacity-90"
+                    style={{
+                      backgroundColor: "var(--md-extended-color-admin)",
+                      color: "var(--md-extended-color-on-admin)",
+                    }}
                   >
                     <span>Super Admin Login</span>
                     <ArrowRight className="h-3.5 w-3.5" />
@@ -502,10 +619,27 @@ function AboutPage() {
                 </div>
               </div>
 
-              <div className="lg:col-span-5 rounded-xl border border-orange-500/20 bg-orange-500/5 p-5 space-y-3">
-                <div className="flex items-center justify-between text-xs font-bold text-orange-700">
+              <div
+                className="lg:col-span-5 rounded-xl border p-5 space-y-3"
+                style={{
+                  borderColor:
+                    "color-mix(in srgb, var(--md-extended-color-admin) 20%, transparent)",
+                  backgroundColor:
+                    "color-mix(in srgb, var(--md-extended-color-admin) 5%, transparent)",
+                }}
+              >
+                <div
+                  className="flex items-center justify-between text-xs font-bold"
+                  style={{ color: "var(--md-extended-color-admin)" }}
+                >
                   <span>LIVE DEMO PREVIEW</span>
-                  <span className="rounded-full bg-orange-500/20 px-2 py-0.5 text-[10px]">
+                  <span
+                    className="rounded-full px-2 py-0.5 text-[10px]"
+                    style={{
+                      backgroundColor:
+                        "color-mix(in srgb, var(--md-extended-color-admin) 20%, transparent)",
+                    }}
+                  >
                     Admin View
                   </span>
                 </div>
@@ -514,7 +648,7 @@ function AboutPage() {
                     <span className="font-bold text-foreground text-[11px]">
                       Knowledge Base Status
                     </span>
-                    <span className="text-[10px] text-emerald-600 font-semibold">
+                    <span className="text-[10px] text-success font-semibold">
                       1,420 Sections Indexed
                     </span>
                   </div>
@@ -529,7 +663,13 @@ function AboutPage() {
                   <span className="text-[11px] font-semibold text-foreground">
                     Pending Lawyer Verification
                   </span>
-                  <span className="rounded bg-amber-100 text-amber-800 px-2 py-0.5 text-[10px] font-bold">
+                  <span
+                    className="rounded px-2 py-0.5 text-[10px] font-bold"
+                    style={{
+                      backgroundColor: "var(--md-extended-color-warning-container)",
+                      color: "var(--md-extended-color-on-warning-container)",
+                    }}
+                  >
                     2 Approvals Required
                   </span>
                 </div>
@@ -560,13 +700,14 @@ function AboutPage() {
               const IconComponent = s.icon;
               const isSelected = activeStep === s.step;
               return (
-                <button
+                <Card
                   key={s.step}
+                  variant="outlined"
                   onClick={() => setActiveStep(s.step)}
-                  className={`text-left rounded-xl border p-4 transition-all flex flex-col justify-between ${
+                  className={`text-left p-4 flex flex-col justify-between ${
                     isSelected
-                      ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/30"
-                      : "border-border bg-background hover:border-muted-foreground/30 hover:bg-muted/40"
+                      ? "border-primary! bg-primary/5 shadow-sm ring-1 ring-primary/30"
+                      : "hover:border-muted-foreground/30 hover:bg-muted/40"
                   }`}
                 >
                   <div>
@@ -587,7 +728,7 @@ function AboutPage() {
                     <span>{isSelected ? "Active Stage" : "Click to view"}</span>
                     <span>→</span>
                   </div>
-                </button>
+                </Card>
               );
             })}
           </div>
@@ -633,7 +774,7 @@ function AboutPage() {
                             key={idx}
                             className="flex items-center gap-2 rounded-lg bg-surface border border-border px-3 py-2"
                           >
-                            <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                            <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
                             <span>{detail}</span>
                           </div>
                         ))}
@@ -688,7 +829,7 @@ function AboutPage() {
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-xl border border-border bg-surface p-6 space-y-3 hover:border-primary/40 transition-all">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10 text-warning">
               <Sparkles className="h-5 w-5" />
             </div>
             <h4 className="text-base font-bold text-foreground">AI NLP Categorization</h4>
@@ -699,7 +840,14 @@ function AboutPage() {
           </div>
 
           <div className="rounded-xl border border-border bg-surface p-6 space-y-3 hover:border-primary/40 transition-all">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600">
+            <div
+              className="flex h-10 w-10 items-center justify-center rounded-lg"
+              style={{
+                backgroundColor:
+                  "color-mix(in srgb, var(--md-extended-color-citizen) 10%, transparent)",
+                color: "var(--md-extended-color-citizen)",
+              }}
+            >
               <MapPin className="h-5 w-5" />
             </div>
             <h4 className="text-base font-bold text-foreground">Geospatial Lawyer Index</h4>
@@ -710,7 +858,14 @@ function AboutPage() {
           </div>
 
           <div className="rounded-xl border border-border bg-surface p-6 space-y-3 hover:border-primary/40 transition-all">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600">
+            <div
+              className="flex h-10 w-10 items-center justify-center rounded-lg"
+              style={{
+                backgroundColor:
+                  "color-mix(in srgb, var(--md-extended-color-lawyer) 10%, transparent)",
+                color: "var(--md-extended-color-lawyer)",
+              }}
+            >
               <BookOpen className="h-5 w-5" />
             </div>
             <h4 className="text-base font-bold text-foreground">Knowledge Base Citation</h4>
@@ -721,7 +876,7 @@ function AboutPage() {
           </div>
 
           <div className="rounded-xl border border-border bg-surface p-6 space-y-3 hover:border-primary/40 transition-all">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--md-chart-7)]/10 text-[var(--md-chart-7)]">
               <ShieldCheck className="h-5 w-5" />
             </div>
             <h4 className="text-base font-bold text-foreground">Super Admin Governance</h4>

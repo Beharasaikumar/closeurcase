@@ -18,6 +18,7 @@ import {
   Users,
   Scale,
   MapPin,
+  CreditCard,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getNotifications, getProfilePhoto, subscribeToStore } from "@/data/appStore";
@@ -92,10 +93,10 @@ const CITIZEN_BOTTOM_NAV: {
     match: (p) => p.startsWith("/citizen/create-case"),
   },
   {
-    to: "/citizen/track-case",
-    label: "Track Case",
-    icon: Activity,
-    match: (p) => p.startsWith("/citizen/track-case"),
+    to: "/citizen/subscriptions",
+    label: "My Subscription",
+    icon: CreditCard,
+    match: (p) => p.startsWith("/citizen/subscriptions"),
   },
   {
     to: "/citizen/notifications",

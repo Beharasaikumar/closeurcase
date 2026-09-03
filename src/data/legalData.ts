@@ -118,8 +118,9 @@ export function adaptRawLawyer(l: RawLawyerItem, index: number): Lawyer {
       `BCI/${l.Address.State.slice(0, 2).toUpperCase()}/2021/${1000 + index}`,
     experienceYears: expYears,
     rating: ratingVal,
-    status: "Approved",
+    status: "Approved" as const,
     activeCases: (index % 5) + 1,
+    joinedAt: "2021-01-01",
   };
 }
 

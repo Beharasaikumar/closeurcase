@@ -74,8 +74,6 @@ export function PublicNav() {
         />
       </Link>
 
-  
-
       <button
         type="button"
         onMouseEnter={() => openNow("gov")}
@@ -91,7 +89,7 @@ export function PublicNav() {
         />
       </button>
 
-          <Link
+      <Link
         to="/"
         hash="about"
         className="rounded-lg px-3 py-2 text-xs font-semibold text-foreground transition-colors duration-150 hover:bg-muted hover:text-primary"
@@ -109,12 +107,12 @@ export function PublicNav() {
             : "pointer-events-none -translate-y-1 opacity-0"
         }`}
       >
-        <div className="overflow-hidden rounded-xl border border-border bg-white shadow-lg">
+        <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-lg">
           <div className="flex">
             <div className="w-52 shrink-0 border-r border-border py-2">
               {LAWYER_PRACTICE_AREAS.map((area, i) => (
                 <button
-                  key={area.name}
+                  key={area.category}
                   type="button"
                   onMouseEnter={() => setActiveAreaIndex(i)}
                   onFocus={() => setActiveAreaIndex(i)}
@@ -124,7 +122,7 @@ export function PublicNav() {
                       : "text-foreground hover:bg-muted"
                   }`}
                 >
-                  {area.name}
+                  {area.category}
                   <ChevronRight className="h-3.5 w-3.5 opacity-50" />
                 </button>
               ))}
@@ -132,15 +130,15 @@ export function PublicNav() {
 
             <div className="max-h-105 flex-1 overflow-y-auto p-5">
               <div className="grid grid-cols-2 gap-x-6 gap-y-5 lg:grid-cols-3">
-                {activeArea.specializations.map((spec) => (
-                  <div key={spec.name}>
-                    <h4 className="text-xs font-bold text-foreground">{spec.name}</h4>
+                {activeArea.case_types.map((spec) => (
+                  <div key={spec.case_type}>
+                    <h4 className="text-xs font-bold text-foreground">{spec.case_type}</h4>
                     <ul className="mt-1.5 space-y-1">
-                      {spec.legalServices.map((service) => (
+                      {spec.legal_services.map((service) => (
                         <li key={service}>
                           <Link
                             to="/citizen-login"
-                            search={{ area: activeArea.name, specialization: spec.name, service }}
+                            search={{ area: activeArea.category, specialization: spec.case_type, service }}
                             onClick={closeNow}
                             className="text-[11px] leading-relaxed text-muted-foreground transition-colors duration-150 hover:text-primary hover:underline"
                           >
@@ -162,7 +160,7 @@ export function PublicNav() {
             <Link
               to="/citizen-login"
               onClick={closeNow}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-white transition-colors duration-150 hover:bg-primary/90"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition-colors duration-150 hover:bg-primary/90"
             >
               File a Case
               <ArrowRight className="h-3.5 w-3.5" />
@@ -181,7 +179,7 @@ export function PublicNav() {
             : "pointer-events-none -translate-y-1 opacity-0"
         }`}
       >
-        <div className="overflow-hidden rounded-xl border border-border bg-white shadow-lg">
+        <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-lg">
           <div className="max-h-[70vh] overflow-y-auto p-5">
             <div className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3 xl:grid-cols-4">
               {GOVERNMENT_SERVICES.map((category) => (

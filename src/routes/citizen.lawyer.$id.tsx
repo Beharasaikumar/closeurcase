@@ -42,8 +42,6 @@ function CitizenLawyerDetail() {
       <PageHeader
         title="Lawyer Profile"
         description="Review credentials, practice areas, and courts before you choose."
-        onBack={() => navigate({ to: "/citizen/create-case" })}
-        backLabel="Back to Find a Lawyer"
       />
       <Card variant="elevated" className="p-4 sm:p-6 lg:p-8 w-full">
         <LawyerProfileCard lawyer={lawyer} />

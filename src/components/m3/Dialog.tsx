@@ -7,6 +7,9 @@ export interface DialogProps {
   onOpenChange: (open: boolean) => void;
   children: ReactNode;
   maxWidth?: string;
+  /** Vertical cap, same clamping treatment as `maxWidth`. Pass "100vh" for a
+   * near-fullscreen dialog (e.g. a toggleable document/image preview). */
+  maxHeight?: string;
   className?: string;
   style?: CSSProperties;
 }
@@ -21,6 +24,7 @@ export function Dialog({
   onOpenChange,
   children,
   maxWidth = "720px",
+  maxHeight = "88vh",
   className = "",
   style,
 }: DialogProps) {
@@ -104,12 +108,12 @@ export function Dialog({
         {
           "--md-dialog-container-width": `min(${maxWidth}, calc(100vw - 24px))`,
           "--md-dialog-container-max-width": `min(${maxWidth}, calc(100vw - 24px))`,
-          "--md-dialog-container-max-height": "min(88vh, 780px)",
+          "--md-dialog-container-max-height": `min(${maxHeight}, calc(100vh - 24px))`,
           "--md-dialog-container-color": "var(--md-sys-color-surface, #ffffff)",
           "--md-dialog-container-shape": "24px",
           width: `min(${maxWidth}, calc(100vw - 24px))`,
           maxWidth: `min(${maxWidth}, calc(100vw - 24px))`,
-          maxHeight: "min(88vh, 780px)",
+          maxHeight: `min(${maxHeight}, calc(100vh - 24px))`,
           ...style,
         } as CSSProperties
       }

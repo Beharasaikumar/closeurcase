@@ -104,6 +104,45 @@
   --md-extended-color-warning-container: #ffdcc3;
   --md-extended-color-on-warning-container: #2f1500;
 
+  /* Extended M3 roles for the app's per-audience brand accent (citizen =
+     green, lawyer = indigo, admin = orange), replacing what used to be raw
+     Tailwind emerald/indigo/orange classes scattered across the public
+     marketing routes. Citizen intentionally aliases the existing success
+     role rather than mint a near-duplicate green. Lawyer and admin are
+     genuinely new hand-picked colors (not pixel-sampled like the primary
+     navy — no reference asset for either), each built with the same
+     container/on-container structure as the rest of the scheme. Admin is
+     deliberately its own orange rather than an alias of warning/amber —
+     about.tsx uses both an amber "AI" accent and an orange "admin" accent
+     side by side, so collapsing them to one hue would make two distinct
+     concepts look identical. */
+  --md-extended-color-citizen: var(--md-extended-color-success);
+  --md-extended-color-on-citizen: var(--md-extended-color-on-success);
+  --md-extended-color-citizen-container: var(--md-extended-color-success-container);
+  --md-extended-color-on-citizen-container: var(--md-extended-color-on-success-container);
+  --md-extended-color-lawyer: #4355b9;
+  --md-extended-color-on-lawyer: #ffffff;
+  --md-extended-color-lawyer-container: #dee0ff;
+  --md-extended-color-on-lawyer-container: #000a72;
+  --md-extended-color-admin: #a3410a;
+  --md-extended-color-on-admin: #ffffff;
+  --md-extended-color-admin-container: #ffdbc7;
+  --md-extended-color-on-admin-container: #351200;
+
+  /* Fixed categorical palette for open-ended chart series (case categories,
+     registration trend lines) that don't map to a status enum — see
+     src/lib/statusColors.ts's CHART_PALETTE. Reuses existing role hues where
+     it reads fine (primary/tertiary/success/warning/lawyer) plus two new
+     chart-only hues for variety when a chart needs more than 6 series. */
+  --md-chart-1: var(--md-sys-color-primary);
+  --md-chart-2: var(--md-sys-color-tertiary);
+  --md-chart-3: var(--md-extended-color-success);
+  --md-chart-4: var(--md-extended-color-warning);
+  --md-chart-5: var(--md-sys-color-error);
+  --md-chart-6: var(--md-extended-color-lawyer);
+  --md-chart-7: #0a6e94;
+  --md-chart-8: #a6353f;
+
   /* M3 shape scale */
   --md-sys-shape-corner-none: 0px;
   --md-sys-shape-corner-extra-small: 4px;
@@ -182,6 +221,53 @@
     --md-outlined-select-text-field-label-text-size: 0.875rem;
     --md-outlined-select-text-field-leading-icon-size: 18px;
     --md-outlined-select-text-field-trailing-icon-size: 18px;
+    --md-menu-container-color: var(--color-surface, #ffffff);
+    --md-menu-container-shape: 12px;
+    --md-menu-container-elevation: 3;
+    --md-menu-max-height: 280px;
+    --md-outlined-select-menu-max-height: 280px;
+  }
+
+  md-menu {
+    --md-menu-container-color: var(--color-surface, #ffffff);
+    --md-menu-container-shape: 12px;
+    --md-menu-container-elevation: 3;
+    --md-menu-max-height: 280px;
+    background-color: var(--color-surface, #ffffff);
+    border-radius: 12px;
+    border: 1px solid var(--color-border, #e2e8f0);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+    max-height: 280px;
+  }
+
+  md-select-option,
+  md-menu-item {
+    --md-select-option-container-shape: 8px;
+    --md-select-option-label-text-font: "Montserrat", sans-serif;
+    --md-select-option-label-text-size: 0.8125rem;
+    --md-select-option-label-text-color: var(--color-foreground, #0f172a);
+    --md-select-option-selected-state-layer-color: var(--color-primary, #06213e);
+    --md-select-option-selected-state-layer-opacity: 0.12;
+    --md-select-option-hover-state-layer-color: var(--color-primary, #06213e);
+    --md-select-option-hover-state-layer-opacity: 0.06;
+    --md-menu-item-label-text-font: "Montserrat", sans-serif;
+    --md-menu-item-label-text-size: 0.8125rem;
+    --md-menu-item-label-text-color: var(--color-foreground, #0f172a);
+  }
+
+  select option {
+    background-color: var(--color-surface, #ffffff);
+    color: var(--color-foreground, #0f172a);
+  }
+
+  /* Auth/onboarding screens are not data-dense the way the dashboard is, and
+     the ~36px field above reads as cramped for a signup flow. Opt these pages
+     into a ~46px control — still well under M3's default 56px. Scoped to
+     .cuc-auth-form so no dashboard surface is affected. */
+  .cuc-auth-form md-outlined-text-field,
+  .cuc-auth-form md-outlined-select {
+    --md-outlined-field-top-space: 9px;
+    --md-outlined-field-bottom-space: 9px;
   }
 
   /* M3 chips (filter/assist/input/suggestion) default to a 32px-tall pill

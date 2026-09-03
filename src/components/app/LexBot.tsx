@@ -1,15 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import {
-  Bot,
-  X,
-  Send,
-  Minimize2,
-  Maximize2,
-  Scale,
-  ChevronRight,
-  RotateCcw,
-  Trash2,
-} from "lucide-react";
+import { Bot, X, Send, Minimize2, Maximize2, Scale, Trash2 } from "lucide-react";
+import { Fab, IconButton, Button, TextField, SuggestionChip } from "@/components/m3";
+import type { MdOutlinedTextField } from "@material/web/textfield/outlined-text-field.js";
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Legal Knowledge Base (sourced from Indian legal databases & government sites)
@@ -255,7 +247,7 @@ export function LexBot({
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<MdOutlinedTextField>(null);
 
   useEffect(() => {
     if (open) {
@@ -291,6 +283,16 @@ export function LexBot({
     sendMessage(input);
   };
 
+  // md-outlined-text-field's internal <input> lives in its own shadow root,
+  // so pressing Enter there doesn't trigger the light-DOM <form>'s implicit
+  // submission the way a plain native <input> would — submit explicitly.
+  const handleInputKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      sendMessage(input);
+    }
+  };
+
   const handleReset = () => {
     setMessages([WELCOME]);
     setInput("");
@@ -306,18 +308,20 @@ export function LexBot({
     <>
       {/* Floating trigger button (robot icon only, no text name) */}
       {!open && !hideTrigger && (
-        <button
-          onClick={() => setOpen(true)}
-          className={`fixed ${bottomPos} right-4 sm:right-6 z-50 flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl border border-primary/30 hover:bg-primary/90 transition-all hover:scale-110 active:scale-95 group`}
-          aria-label="Open Legal Bot"
-          title="Legal Bot"
-        >
-          <Bot className="h-6 w-6 stroke-[2.2] group-hover:rotate-12 transition-transform" />
-          <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 border-2 border-background" />
+        <div className={`fixed ${bottomPos} right-4 sm:right-6 z-50 group`}>
+          <Fab
+            icon={
+              <Bot className="h-6 w-6 stroke-[2.2] transition-transform group-hover:rotate-12" />
+            }
+            onClick={() => setOpen(true)}
+            ariaLabel="Open Legal Bot"
+            size="medium"
+          />
+          <span className="pointer-events-none absolute -top-0.5 -right-0.5 flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+            <span className="relative inline-flex h-3 w-3 rounded-full border-2 border-background bg-success" />
           </span>
-        </button>
+        </div>
       )}
 
       {/* Chat window */}
@@ -335,38 +339,61 @@ export function LexBot({
               <div>
                 <span className="text-sm font-bold text-white">Legal Bot</span>
                 <div className="flex items-center gap-1">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
                   <span className="text-[10px] text-white/70">Legal Intelligence · Online</span>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <button
+              <Button
+                variant="text"
+                icon={<Trash2 className="h-3.5 w-3.5" />}
                 onClick={handleReset}
-                title="Clear chat history"
-                className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-white/80 hover:bg-white/15 hover:text-white transition-colors cursor-pointer"
+                ariaLabel="Clear chat history"
+                className="h-auto! min-h-0! px-2! py-1! text-xs"
+                style={
+                  {
+                    "--md-text-button-label-text-color": "rgba(255,255,255,0.8)",
+                    "--md-text-button-with-icon-icon-color": "rgba(255,255,255,0.8)",
+                    "--md-text-button-hover-label-text-color": "#ffffff",
+                    "--md-text-button-hover-state-layer-color": "#ffffff",
+                  } as React.CSSProperties
+                }
               >
-                <Trash2 className="h-3.5 w-3.5" />
-                <span>Clear</span>
-              </button>
-              <button
+                Clear
+              </Button>
+              <IconButton
                 onClick={() => setExpanded((v) => !v)}
                 title={expanded ? "Compact" : "Expand"}
-                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-white/70 hover:bg-white/15 hover:text-white transition-colors"
+                style={
+                  {
+                    "--md-icon-button-icon-color": "rgba(255,255,255,0.7)",
+                    "--md-icon-button-hover-icon-color": "#ffffff",
+                    "--md-icon-button-hover-state-layer-color": "#ffffff",
+                    "--md-icon-button-icon-size": "14px",
+                  } as React.CSSProperties
+                }
               >
                 {expanded ? (
                   <Minimize2 className="h-3.5 w-3.5" />
                 ) : (
                   <Maximize2 className="h-3.5 w-3.5" />
                 )}
-              </button>
-              <button
+              </IconButton>
+              <IconButton
                 onClick={() => setOpen(false)}
                 title="Close"
-                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-white/70 hover:bg-white/15 hover:text-white transition-colors"
+                style={
+                  {
+                    "--md-icon-button-icon-color": "rgba(255,255,255,0.7)",
+                    "--md-icon-button-hover-icon-color": "#ffffff",
+                    "--md-icon-button-hover-state-layer-color": "#ffffff",
+                    "--md-icon-button-icon-size": "14px",
+                  } as React.CSSProperties
+                }
               >
                 <X className="h-3.5 w-3.5" />
-              </button>
+              </IconButton>
             </div>
           </div>
 
@@ -393,14 +420,7 @@ export function LexBot({
                 {msg.role === "bot" && msg.followUps && msg.followUps.length > 0 && (
                   <div className="mt-1.5 flex flex-wrap gap-1.5 max-w-[92%]">
                     {msg.followUps.map((q) => (
-                      <button
-                        key={q}
-                        onClick={() => sendMessage(q)}
-                        className="flex cursor-pointer items-center gap-1 rounded-full border border-primary/30 bg-primary/5 px-2.5 py-1 text-[10px] font-semibold text-primary hover:bg-primary/15 transition-colors"
-                      >
-                        <ChevronRight className="h-2.5 w-2.5 shrink-0" />
-                        {q}
-                      </button>
+                      <SuggestionChip key={q} label={q} onClick={() => sendMessage(q)} />
                     ))}
                   </div>
                 )}
@@ -437,14 +457,12 @@ export function LexBot({
                     .find((m) => m.role === "bot" && m.followUps && m.followUps.length > 0)
                     ?.followUps || SUGGESTED
                 ).map((q) => (
-                  <button
+                  <SuggestionChip
                     key={q}
+                    label={q}
                     onClick={() => sendMessage(q)}
-                    className="flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-primary/30 bg-primary/5 px-2.5 py-1 text-[10px] font-semibold text-primary hover:bg-primary/15 transition-colors whitespace-nowrap"
-                  >
-                    <ChevronRight className="h-2.5 w-2.5 shrink-0" />
-                    <span>{q}</span>
-                  </button>
+                    className="shrink-0 whitespace-nowrap"
+                  />
                 ))}
               </div>
             </div>
@@ -455,21 +473,23 @@ export function LexBot({
             onSubmit={handleSubmit}
             className="shrink-0 flex items-center gap-2 border-t border-border/70 bg-surface px-3 py-2.5"
           >
-            <input
+            <TextField
               ref={inputRef}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={setInput}
+              onKeyDown={handleInputKeyDown}
               placeholder="Ask a legal question..."
-              className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
               disabled={typing}
+              className="flex-1"
             />
-            <button
+            <IconButton
               type="submit"
+              variant="filled"
               disabled={!input.trim() || typing}
-              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              ariaLabel="Send"
             >
               <Send className="h-3.5 w-3.5" />
-            </button>
+            </IconButton>
           </form>
 
           {/* Footer */}

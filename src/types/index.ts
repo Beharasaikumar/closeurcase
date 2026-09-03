@@ -49,8 +49,10 @@ export interface Lawyer {
   id: string;
   name: string;
   email: string;
+  cities?: string[];
   phone: string;
   category: LegalCategory;
+  roleTitle?: string;
   city: string;
   /** Neighbourhood/locality within `city` (e.g. "Gachibowli"), used to narrow
    * down the "Find a Lawyer" browse list once a city is picked. */
