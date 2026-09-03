@@ -14,10 +14,12 @@ import {
   ArrowLeft,
   UploadCloud,
   Loader2,
+  Video,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import type { LegalCase } from "@/types";
 import { UserAvatar } from "@/components/app/UserAvatar";
+import { useVideoCall } from "@/features/video-call/VideoCallContext";
 
 /* ══════════════════════════════════════════════════════════
    TYPES
@@ -465,6 +467,7 @@ interface CaseChatProps {
 }
 
 export function CaseChat({ caseItem, role, onClose }: CaseChatProps) {
+  const { startCall } = useVideoCall();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [visible, setVisible] = useState(false);
@@ -552,6 +555,8 @@ export function CaseChat({ caseItem, role, onClose }: CaseChatProps) {
     role === "citizen"
       ? caseItem.lawyerName || "Assigned Lawyer"
       : caseItem.citizenName || "Client";
+  const canVideoCall =
+    role === "citizen" ? Boolean(caseItem.lawyerName) : Boolean(caseItem.citizenName);
 
   /* -- send text -- */
   const sendText = useCallback(() => {
@@ -708,7 +713,7 @@ export function CaseChat({ caseItem, role, onClose }: CaseChatProps) {
       >
         {/* ══ TOP HEADER BAR ══════════════════════════════════════════════ */}
         <div
-          className="flex shrink-0 items-center gap-3 bg-gradient-to-r from-primary to-primary/90 px-3 sm:px-5 z-30"
+          className="relative z-0 flex shrink-0 items-center gap-3 bg-gradient-to-r from-primary to-primary/90 px-3 sm:px-5"
           style={{ minHeight: "64px", paddingTop: "env(safe-area-inset-top)" }}
         >
           {/* Back */}
@@ -732,6 +737,21 @@ export function CaseChat({ caseItem, role, onClose }: CaseChatProps) {
               {caseItem.id} · {caseItem.category} · {caseItem.status}
             </div>
           </div>
+
+          <IconBtn
+            onClick={() => {
+              if (!canVideoCall) return;
+              startCall({ caseId: caseItem.id, withName: otherParty, role });
+            }}
+            title={canVideoCall ? `Video call ${otherParty}` : "No assigned contact to call"}
+            className={
+              canVideoCall
+                ? "text-primary-foreground hover:bg-primary-foreground/15"
+                : "cursor-not-allowed text-primary-foreground/40"
+            }
+          >
+            <Video className="h-5 w-5" />
+          </IconBtn>
         </div>
 
         {/* ══ CASE DETAILS — sits on top of the chat box ═══════════════════ */}

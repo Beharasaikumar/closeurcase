@@ -26,7 +26,9 @@ import { LexBot } from "@/components/app/LexBot";
 import { WhatsAppFloatingButton } from "@/components/app/WhatsAppButton";
 import { UserAvatar } from "@/components/app/UserAvatar";
 import { LocationIndicator } from "@/components/app/LocationIndicator";
+import { VideoCallsMenu } from "@/components/app/VideoCallsMenu";
 import { CitizenLanguageButtons } from "@/features/citizen/CitizenLanguageButtons";
+import { VideoCallProvider } from "@/features/video-call/VideoCallContext";
 import { clearCitizenSession } from "@/features/citizen/session";
 import { IconButton, Badge } from "@/components/m3";
 
@@ -255,269 +257,275 @@ export function DashboardLayout({
   const bottomNav = bottomNavForRole(role);
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background">
-      {/* ── Mobile Navigation Drawer (modal) ── */}
-      {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex">
-          {/* Scrim */}
-          <div
-            className="fixed inset-0 bg-[var(--md-sys-color-scrim)]/40 transition-opacity"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-          {/* Drawer */}
-          <div className="relative w-64 max-w-[80%] flex-col bg-[var(--md-sys-color-surface-container-low)] shadow-[var(--md-sys-elevation-level1)] flex animate-in slide-in-from-left-full duration-200">
-            <div className="flex h-16 shrink-0 items-center justify-between border-b border-[var(--md-sys-color-outline-variant)] px-5">
-              <Link
-                to="/"
-                className="flex items-center gap-2.5 tracking-tight"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <img src="/logo.png" alt="CloseUrCase Logo" className="h-9 w-9 object-contain" />
-                <span className="flex flex-col leading-tight">
-                  <span className="text-base font-bold tracking-tight text-foreground">
-                    CloseUrCase
-                  </span>
-                  <span className="text-[10px] font-medium tracking-wide text-muted-foreground">
-                    Just click for justice
-                  </span>
-                </span>
-              </Link>
-              <IconButton ariaLabel="Close menu" onClick={() => setMobileMenuOpen(false)}>
-                <X className="h-5 w-5" />
-              </IconButton>
-            </div>
-
-            <NavList
-              nav={nav}
-              pathname={pathname}
-              role={role}
-              onItemClick={() => setMobileMenuOpen(false)}
+    <VideoCallProvider>
+      <div className="flex h-screen w-full overflow-hidden bg-background">
+        {/* ── Mobile Navigation Drawer (modal) ── */}
+        {mobileMenuOpen && (
+          <div className="md:hidden fixed inset-0 z-50 flex">
+            {/* Scrim */}
+            <div
+              className="fixed inset-0 bg-[var(--md-sys-color-scrim)]/40 transition-opacity"
+              onClick={() => setMobileMenuOpen(false)}
             />
-
-            {(role === "lawyer" || role === "citizen") && (
-              <div className="shrink-0 border-t border-[var(--md-sys-color-outline-variant)] p-2">
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setBotMenuOpen(true);
-                  }}
-                  className="flex w-full cursor-pointer items-center gap-3 rounded-[var(--md-sys-shape-corner-full)] px-3.5 py-2.5 text-sm text-[var(--md-sys-color-on-surface-variant)] transition-colors hover:bg-[var(--md-sys-color-on-surface)]/8 hover:text-[var(--md-sys-color-on-surface)]"
+            {/* Drawer */}
+            <div className="relative w-64 max-w-[80%] flex-col bg-[var(--md-sys-color-surface-container-low)] shadow-[var(--md-sys-elevation-level1)] flex animate-in slide-in-from-left-full duration-200">
+              <div className="flex h-16 shrink-0 items-center justify-between border-b border-[var(--md-sys-color-outline-variant)] px-5">
+                <Link
+                  to="/"
+                  className="flex items-center gap-2.5 tracking-tight"
+                  onClick={() => setMobileMenuOpen(false)}
                 >
-                  <Bot className="h-[18px] w-[18px] shrink-0" />
-                  Legal Bot
-                </button>
+                  <img src="/logo.png" alt="CloseUrCase Logo" className="h-9 w-9 object-contain" />
+                  <span className="flex flex-col leading-tight">
+                    <span className="text-base font-bold tracking-tight text-foreground">
+                      CloseUrCase
+                    </span>
+                    <span className="text-[10px] font-medium tracking-wide text-muted-foreground">
+                      Just click for justice
+                    </span>
+                  </span>
+                </Link>
+                <IconButton ariaLabel="Close menu" onClick={() => setMobileMenuOpen(false)}>
+                  <X className="h-5 w-5" />
+                </IconButton>
               </div>
-            )}
-          </div>
-        </div>
-      )}
 
-      {/* ── Permanent Navigation Drawer (desktop) ── */}
-      <aside className="hidden w-56 flex-shrink-0 flex-col bg-[var(--md-sys-color-surface-container-low)] border-r border-[var(--md-sys-color-outline-variant)] md:flex h-screen sticky top-0">
-        {/* Logo */}
-        <div className="flex h-16 shrink-0 items-center border-b border-[var(--md-sys-color-outline-variant)] px-5">
-          <Link
-            to="/"
-            className="flex items-center gap-2.5 tracking-tight hover:opacity-90 transition-opacity"
-          >
-            <img src="/logo.png" alt="CloseUrCase Logo" className="h-9 w-9 object-contain" />
-            <span className="flex flex-col leading-tight">
-              <span className="text-base font-bold tracking-tight text-foreground">
-                CloseUrCase
-              </span>
-              <span className="text-[10px] font-medium tracking-wide text-muted-foreground">
-                Just click for justice
-              </span>
-            </span>
-          </Link>
-        </div>
+              <NavList
+                nav={nav}
+                pathname={pathname}
+                role={role}
+                onItemClick={() => setMobileMenuOpen(false)}
+              />
 
-        <NavList nav={nav} pathname={pathname} role={role} />
-
-        {(role === "lawyer" || role === "citizen") && (
-          <div className="shrink-0 border-t border-[var(--md-sys-color-outline-variant)] p-2">
-            <button
-              onClick={() => setBotMenuOpen(true)}
-              className="flex w-full cursor-pointer items-center gap-3 rounded-[var(--md-sys-shape-corner-full)] px-3.5 py-2.5 text-sm text-[var(--md-sys-color-on-surface-variant)] transition-colors hover:bg-[var(--md-sys-color-on-surface)]/8 hover:text-[var(--md-sys-color-on-surface)]"
-            >
-              <Bot className="h-[18px] w-[18px] shrink-0" />
-              Legal Bot
-            </button>
-          </div>
-        )}
-      </aside>
-
-      {/* ── Right column: top app bar + scrollable content ── */}
-      <div className="flex flex-1 flex-col min-w-0 h-screen">
-        {/* Top App Bar (M3 small top app bar) */}
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-[var(--md-sys-color-outline-variant)] bg-surface px-4 sm:px-6 sticky top-0 z-10">
-          {/* Mobile: hamburger only */}
-          <div className="flex items-center gap-1 md:hidden">
-            <IconButton ariaLabel="Open menu" onClick={() => setMobileMenuOpen(true)}>
-              <MenuIcon className="h-5 w-5" />
-            </IconButton>
-          </div>
-          {/* Desktop: location indicator on the left */}
-          <div className="hidden md:block">
-            {(role === "citizen" || role === "lawyer") && <LocationIndicator />}
-          </div>
-
-          {/* Right: bell + profile */}
-          <div className="flex items-center gap-1 sm:gap-2">
-            {role === "citizen" && <CitizenLanguageButtons size="sm" showLabel={false} />}
-
-            {/* Notification bell */}
-            <div className="relative">
-              <IconButton
-                ariaLabel="Notifications"
-                onClick={() => navigate({ to: `/${role}/notifications` as never })}
-              >
-                <Bell className="h-5 w-5" />
-              </IconButton>
-              {unreadCount > 0 && <Badge count={unreadCount} />}
-            </div>
-
-            {/* Profile menu — a custom M3-token-styled popover rather than md-menu, since
-                md-menu is built strictly for lists of md-menu-item and doesn't handle
-                mixed decorative content (the name/role header block) well. */}
-            <div className="relative">
-              <button
-                onClick={() => setProfileOpen((v) => !v)}
-                className="flex cursor-pointer items-center gap-2 rounded-[var(--md-sys-shape-corner-full)] px-2 py-1.5 text-sm transition-colors hover:bg-[var(--md-sys-color-on-surface)]/8"
-              >
-                <UserAvatar name={userName} photoUrl={photoUrl} size="sm" />
-                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-              </button>
-
-              {profileOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-40 cursor-pointer"
-                    onClick={() => setProfileOpen(false)}
-                  />
-                  <div className="absolute right-0 top-full z-50 mt-1 w-56 rounded-[var(--md-sys-shape-corner-medium)] bg-[var(--md-sys-color-surface-container)] shadow-[var(--md-sys-elevation-level2)]">
-                    <div className="flex items-center gap-2.5 border-b border-[var(--md-sys-color-outline-variant)] px-4 py-3">
-                      <UserAvatar name={userName} photoUrl={photoUrl} size="md" />
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-semibold text-foreground">
-                          {userName}
-                        </div>
-                        <div className="text-xs text-muted-foreground capitalize">{roleLabel}</div>
-                      </div>
-                    </div>
-                    <div className="p-1.5">
-                      <button
-                        onClick={() => {
-                          setProfileOpen(false);
-                          navigate({ to: `/${role}/profile` as never });
-                        }}
-                        className="flex w-full cursor-pointer items-center gap-2 rounded-[var(--md-sys-shape-corner-small)] px-3 py-2 text-sm text-foreground transition-colors hover:bg-[var(--md-sys-color-on-surface)]/8"
-                      >
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        My Profile
-                      </button>
-                      <button
-                        onClick={() => {
-                          setProfileOpen(false);
-                          if (role === "citizen") clearCitizenSession();
-                          navigate({ to: role === "citizen" ? "/citizen-login" : "/login" });
-                        }}
-                        className="flex w-full cursor-pointer items-center gap-2 rounded-[var(--md-sys-shape-corner-small)] px-3 py-2 text-sm text-[var(--md-sys-color-error)] transition-colors hover:bg-[var(--md-sys-color-error)]/8"
-                      >
-                        <LogOut className="h-4 w-4" />
-                        Sign out
-                      </button>
-                    </div>
-                  </div>
-                </>
+              {(role === "lawyer" || role === "citizen") && (
+                <div className="shrink-0 border-t border-[var(--md-sys-color-outline-variant)] p-2">
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setBotMenuOpen(true);
+                    }}
+                    className="flex w-full cursor-pointer items-center gap-3 rounded-[var(--md-sys-shape-corner-full)] px-3.5 py-2.5 text-sm text-[var(--md-sys-color-on-surface-variant)] transition-colors hover:bg-[var(--md-sys-color-on-surface)]/8 hover:text-[var(--md-sys-color-on-surface)]"
+                  >
+                    <Bot className="h-[18px] w-[18px] shrink-0" />
+                    Legal Bot
+                  </button>
+                </div>
               )}
             </div>
           </div>
-        </header>
-
-        {/* "Detecting location…" pop-up — anchored right after the header (and
-            the mobile location strip, when shown) so it never covers the
-            hamburger/bell/profile controls, regardless of which bar sits above it. */}
-        {showLocationToast && (
-          <div className="relative z-50 h-0">
-            <div className="pointer-events-none absolute inset-x-0 top-2 flex justify-center px-4">
-              <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
-                <MapPin className="h-4 w-4 shrink-0 animate-pulse text-primary" />
-                <span className="text-xs font-semibold text-foreground">Detecting location…</span>
-              </div>
-            </div>
-          </div>
         )}
 
-        {/* Scrollable main content (or, for fullBleed pages like chat, a strictly bounded box) */}
-        <main
-          className={
-            fullBleed
-              ? "flex-1 min-h-0 overflow-hidden"
-              : `flex-1 min-h-0 overflow-y-auto px-3 py-3 sm:px-6 sm:py-6 md:px-10 ${
-                  role === "citizen" ? "md:py-5" : "md:py-8"
-                } pb-24 md:pb-10`
-          }
-        >
-          {fullBleed ? (
-            children
-          ) : (
-            <div
-              className={`mx-auto w-full space-y-4 sm:space-y-6 ${role === "citizen" ? "max-w-6xl" : "max-w-none"}`}
+        {/* ── Permanent Navigation Drawer (desktop) ── */}
+        <aside className="hidden w-56 flex-shrink-0 flex-col bg-[var(--md-sys-color-surface-container-low)] border-r border-[var(--md-sys-color-outline-variant)] md:flex h-screen sticky top-0">
+          {/* Logo */}
+          <div className="flex h-16 shrink-0 items-center border-b border-[var(--md-sys-color-outline-variant)] px-5">
+            <Link
+              to="/"
+              className="flex items-center gap-2.5 tracking-tight hover:opacity-90 transition-opacity"
             >
-              {children}
+              <img src="/logo.png" alt="CloseUrCase Logo" className="h-9 w-9 object-contain" />
+              <span className="flex flex-col leading-tight">
+                <span className="text-base font-bold tracking-tight text-foreground">
+                  CloseUrCase
+                </span>
+                <span className="text-[10px] font-medium tracking-wide text-muted-foreground">
+                  Just click for justice
+                </span>
+              </span>
+            </Link>
+          </div>
+
+          <NavList nav={nav} pathname={pathname} role={role} />
+
+          {(role === "lawyer" || role === "citizen") && (
+            <div className="shrink-0 border-t border-[var(--md-sys-color-outline-variant)] p-2">
+              <button
+                onClick={() => setBotMenuOpen(true)}
+                className="flex w-full cursor-pointer items-center gap-3 rounded-[var(--md-sys-shape-corner-full)] px-3.5 py-2.5 text-sm text-[var(--md-sys-color-on-surface-variant)] transition-colors hover:bg-[var(--md-sys-color-on-surface)]/8 hover:text-[var(--md-sys-color-on-surface)]"
+              >
+                <Bot className="h-[18px] w-[18px] shrink-0" />
+                Legal Bot
+              </button>
             </div>
           )}
-        </main>
-      </div>
+        </aside>
 
-      {/* ── Mobile Navigation Bar (bottom tab bar) — every role gets one. ── */}
-      {!fullBleed && (
-        <nav className="fixed inset-x-0 bottom-0 z-40 flex items-stretch bg-[var(--md-sys-color-surface-container)] border-t border-[var(--md-sys-color-outline-variant)] md:hidden">
-          {bottomNav.map((item) => {
-            const active = item.match(pathname);
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className="flex flex-1 flex-col items-center gap-0.5 px-0.5 py-2 text-center text-[10px] font-semibold leading-tight"
+        {/* ── Right column: top app bar + scrollable content ── */}
+        <div className="flex flex-1 flex-col min-w-0 h-screen">
+          {/* Top App Bar (M3 small top app bar) */}
+          <header className="flex h-16 shrink-0 items-center justify-between border-b border-[var(--md-sys-color-outline-variant)] bg-surface px-4 sm:px-6 sticky top-0 z-40">
+            {/* Mobile: hamburger only */}
+            <div className="flex items-center gap-1 md:hidden">
+              <IconButton ariaLabel="Open menu" onClick={() => setMobileMenuOpen(true)}>
+                <MenuIcon className="h-5 w-5" />
+              </IconButton>
+            </div>
+            {/* Desktop: location indicator on the left */}
+            <div className="hidden md:block">
+              {(role === "citizen" || role === "lawyer") && <LocationIndicator />}
+            </div>
+
+            {/* Right: video calls + bell + profile */}
+            <div className="flex items-center gap-1 sm:gap-2">
+              {role === "citizen" && <CitizenLanguageButtons size="sm" showLabel={false} />}
+
+              {(role === "citizen" || role === "lawyer") && <VideoCallsMenu role={role} />}
+
+              {/* Notification bell */}
+              <div className="relative">
+                <IconButton
+                  ariaLabel="Notifications"
+                  onClick={() => navigate({ to: `/${role}/notifications` as never })}
+                >
+                  <Bell className="h-5 w-5" />
+                </IconButton>
+                {unreadCount > 0 && <Badge count={unreadCount} />}
+              </div>
+
+              {/* Profile menu — a custom M3-token-styled popover rather than md-menu, since
+                md-menu is built strictly for lists of md-menu-item and doesn't handle
+                mixed decorative content (the name/role header block) well. */}
+              <div className="relative">
+                <button
+                  onClick={() => setProfileOpen((v) => !v)}
+                  className="flex cursor-pointer items-center gap-2 rounded-[var(--md-sys-shape-corner-full)] px-2 py-1.5 text-sm transition-colors hover:bg-[var(--md-sys-color-on-surface)]/8"
+                >
+                  <UserAvatar name={userName} photoUrl={photoUrl} size="sm" />
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+
+                {profileOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40 cursor-pointer"
+                      onClick={() => setProfileOpen(false)}
+                    />
+                    <div className="absolute right-0 top-full z-50 mt-1 w-56 rounded-[var(--md-sys-shape-corner-medium)] bg-[var(--md-sys-color-surface-container)] shadow-[var(--md-sys-elevation-level2)]">
+                      <div className="flex items-center gap-2.5 border-b border-[var(--md-sys-color-outline-variant)] px-4 py-3">
+                        <UserAvatar name={userName} photoUrl={photoUrl} size="md" />
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-semibold text-foreground">
+                            {userName}
+                          </div>
+                          <div className="text-xs text-muted-foreground capitalize">
+                            {roleLabel}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-1.5">
+                        <button
+                          onClick={() => {
+                            setProfileOpen(false);
+                            navigate({ to: `/${role}/profile` as never });
+                          }}
+                          className="flex w-full cursor-pointer items-center gap-2 rounded-[var(--md-sys-shape-corner-small)] px-3 py-2 text-sm text-foreground transition-colors hover:bg-[var(--md-sys-color-on-surface)]/8"
+                        >
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          My Profile
+                        </button>
+                        <button
+                          onClick={() => {
+                            setProfileOpen(false);
+                            if (role === "citizen") clearCitizenSession();
+                            navigate({ to: role === "citizen" ? "/citizen-login" : "/login" });
+                          }}
+                          className="flex w-full cursor-pointer items-center gap-2 rounded-[var(--md-sys-shape-corner-small)] px-3 py-2 text-sm text-[var(--md-sys-color-error)] transition-colors hover:bg-[var(--md-sys-color-error)]/8"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          Sign out
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </header>
+
+          {/* "Detecting location…" pop-up — anchored right after the header (and
+            the mobile location strip, when shown) so it never covers the
+            hamburger/bell/profile controls, regardless of which bar sits above it. */}
+          {showLocationToast && (
+            <div className="relative z-50 h-0">
+              <div className="pointer-events-none absolute inset-x-0 top-2 flex justify-center px-4">
+                <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
+                  <MapPin className="h-4 w-4 shrink-0 animate-pulse text-primary" />
+                  <span className="text-xs font-semibold text-foreground">Detecting location…</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Scrollable main content (or, for fullBleed pages like chat, a strictly bounded box) */}
+          <main
+            className={
+              fullBleed
+                ? "flex-1 min-h-0 overflow-hidden"
+                : `flex-1 min-h-0 overflow-y-auto px-3 py-3 sm:px-6 sm:py-6 md:px-10 ${
+                    role === "citizen" ? "md:py-5" : "md:py-8"
+                  } pb-24 md:pb-10`
+            }
+          >
+            {fullBleed ? (
+              children
+            ) : (
+              <div
+                className={`mx-auto w-full space-y-4 sm:space-y-6 ${role === "citizen" ? "max-w-6xl" : "max-w-none"}`}
               >
-                <span
-                  className={`flex h-8 w-14 items-center justify-center rounded-[var(--md-sys-shape-corner-full)] transition-colors ${
-                    active ? "bg-[var(--md-sys-color-secondary-container)]" : ""
-                  }`}
-                >
-                  <Icon
-                    className={`h-5 w-5 ${active ? "text-[var(--md-sys-color-on-secondary-container)]" : "text-[var(--md-sys-color-on-surface-variant)]"}`}
-                  />
-                </span>
-                <span
-                  className={
-                    active
-                      ? "text-[var(--md-sys-color-on-surface)]"
-                      : "text-[var(--md-sys-color-on-surface-variant)]"
-                  }
-                >
-                  {item.label}
-                </span>
-              </Link>
-            );
-          })}
-        </nav>
-      )}
+                {children}
+              </div>
+            )}
+          </main>
+        </div>
 
-      {/* Floating widgets — except fullBleed pages like chat, where they'd overlap
+        {/* ── Mobile Navigation Bar (bottom tab bar) — every role gets one. ── */}
+        {!fullBleed && (
+          <nav className="fixed inset-x-0 bottom-0 z-40 flex items-stretch bg-[var(--md-sys-color-surface-container)] border-t border-[var(--md-sys-color-outline-variant)] md:hidden">
+            {bottomNav.map((item) => {
+              const active = item.match(pathname);
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className="flex flex-1 flex-col items-center gap-0.5 px-0.5 py-2 text-center text-[10px] font-semibold leading-tight"
+                >
+                  <span
+                    className={`flex h-8 w-14 items-center justify-center rounded-[var(--md-sys-shape-corner-full)] transition-colors ${
+                      active ? "bg-[var(--md-sys-color-secondary-container)]" : ""
+                    }`}
+                  >
+                    <Icon
+                      className={`h-5 w-5 ${active ? "text-[var(--md-sys-color-on-secondary-container)]" : "text-[var(--md-sys-color-on-surface-variant)]"}`}
+                    />
+                  </span>
+                  <span
+                    className={
+                      active
+                        ? "text-[var(--md-sys-color-on-surface)]"
+                        : "text-[var(--md-sys-color-on-surface-variant)]"
+                    }
+                  >
+                    {item.label}
+                  </span>
+                </Link>
+              );
+            })}
+          </nav>
+        )}
+
+        {/* Floating widgets — except fullBleed pages like chat, where they'd overlap
           the chat's own input/send button. Lawyer and citizen get WhatsApp in the
           floating slot and Legal Bot moves into the sidebar/hamburger menu instead;
           admin keeps the floating bot trigger, raised to clear its bottom tab bar. */}
-      {!fullBleed && (role === "lawyer" || role === "citizen") && (
-        <>
-          <WhatsAppFloatingButton position="right" raised />
-          <LexBot open={botMenuOpen} onOpenChange={setBotMenuOpen} hideTrigger />
-        </>
-      )}
-      {!fullBleed && role === "admin" && <LexBot raised />}
-    </div>
+        {!fullBleed && (role === "lawyer" || role === "citizen") && (
+          <>
+            <WhatsAppFloatingButton position="right" raised />
+            <LexBot open={botMenuOpen} onOpenChange={setBotMenuOpen} hideTrigger />
+          </>
+        )}
+        {!fullBleed && role === "admin" && <LexBot raised />}
+      </div>
+    </VideoCallProvider>
   );
 }

@@ -298,6 +298,23 @@ export interface AppNotification {
   role?: UserRole | "all";
 }
 
+export type VideoCallStatus = "completed" | "missed" | "cancelled";
+
+/** A past video consultation between a citizen and a lawyer. */
+export interface VideoCall {
+  id: string;
+  caseId: string;
+  /** Display name of the other party on the call. */
+  withName: string;
+  /** ISO timestamp of when the call started. */
+  at: string;
+  /** Present for completed calls. */
+  durationSeconds?: number;
+  status: VideoCallStatus;
+  /** Which dashboard this call appears on. */
+  role: UserRole;
+}
+
 export interface KnowledgeItem {
   id: string;
   title: string;

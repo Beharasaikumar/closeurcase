@@ -7,6 +7,7 @@ import type {
   LegalCase,
   LegalCategory,
   Subscription,
+  VideoCall,
 } from "@/types";
 
 export const categories: LegalCategory[] = [
@@ -1333,6 +1334,72 @@ export const notifications: AppNotification[] = [
     at: "2025-11-13 09:45",
     read: false,
     role: "admin",
+  },
+];
+
+const hoursAgo = (hours: number) => new Date(Date.now() - hours * 3600_000).toISOString();
+
+export const videoCalls: VideoCall[] = [
+  {
+    id: "vc_l1",
+    caseId: "CS-34253",
+    withName: "Sai Teja Reddy",
+    at: hoursAgo(2),
+    durationSeconds: 24 * 60,
+    status: "completed",
+    role: "lawyer",
+  },
+  {
+    id: "vc_l2",
+    caseId: "CS-61847",
+    withName: "Lakshmi Prasanna",
+    at: hoursAgo(20),
+    status: "missed",
+    role: "lawyer",
+  },
+  {
+    id: "vc_l3",
+    caseId: "CS-78902",
+    withName: "Divya Sri Chowdary",
+    at: hoursAgo(48),
+    durationSeconds: 18 * 60,
+    status: "completed",
+    role: "lawyer",
+  },
+  {
+    id: "vc_l4",
+    caseId: "CS-34253",
+    withName: "Sai Teja Reddy",
+    at: hoursAgo(96),
+    durationSeconds: 12 * 60,
+    status: "completed",
+    role: "lawyer",
+  },
+  {
+    id: "vc_c1",
+    caseId: "CS-34253",
+    withName: "Swathi Reddy",
+    at: hoursAgo(2),
+    durationSeconds: 24 * 60,
+    status: "completed",
+    role: "citizen",
+  },
+  {
+    id: "vc_c2",
+    caseId: "CS-34253",
+    withName: "Swathi Reddy",
+    at: hoursAgo(28),
+    status: "missed",
+    role: "citizen",
+  },
+  {
+    id: "vc_c3",
+    caseId: "CS-34253",
+    withName: "Swathi Reddy",
+    at: hoursAgo(96),
+    durationSeconds: 12 * 60,
+    status: "completed",
+    role: "citizen",
   },
 ];
 

@@ -134,7 +134,7 @@ export function Hero() {
             </Link>
             <Link
               to="/lawyer-register"
-              className="group inline-flex shrink-0 items-center justify-center gap-1.5 self-center rounded-full border border-[#d4af37]/40 bg-white/[0.03] px-5 py-2.5 text-xs font-semibold text-[#e8d5a3] backdrop-blur-sm transition-all hover:border-[#d4af37] hover:bg-[#d4af37]/10 hover:text-white active:scale-[0.98]"
+              className="group inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-[#d4af37]/40 bg-white/[0.03] px-5 py-2.5 text-xs font-semibold text-[#e8d5a3] backdrop-blur-sm transition-all hover:border-[#d4af37] hover:bg-[#d4af37]/10 hover:text-white active:scale-[0.98] sm:w-auto sm:shrink-0"
             >
               <LogIn className="h-3.5 w-3.5 shrink-0 transition-transform group-hover:translate-x-0.5" />
               Register as Lawyer

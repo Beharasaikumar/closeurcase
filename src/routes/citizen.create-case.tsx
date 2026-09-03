@@ -731,61 +731,6 @@ export function FindLawyerWizard() {
                           }}
                         />
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          variant="outlined"
-                          icon={<ImageIcon className="h-3.5 w-3.5" />}
-                          onClick={() => imageInputRef.current?.click()}
-                          className="!h-8 !px-3 !text-xs"
-                        >
-                          Add Photos
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          icon={<Paperclip className="h-3.5 w-3.5" />}
-                          onClick={() => docInputRef.current?.click()}
-                          className="!h-8 !px-3 !text-xs"
-                        >
-                          Add Document
-                        </Button>
-                        <Button
-                          variant={isRecording ? "filled" : "outlined"}
-                          icon={
-                            isRecording ? (
-                              <Square className="h-3 w-3 fill-current" />
-                            ) : (
-                              <Mic className="h-3.5 w-3.5" />
-                            )
-                          }
-                          onClick={handleRecordVoiceNote}
-                          className="!h-8 !px-3 !text-xs"
-                        >
-                          {isRecording ? "Tap to stop…" : "Voice Note"}
-                        </Button>
-                        <input
-                          ref={imageInputRef}
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          className="hidden"
-                          onChange={(e) => {
-                            const sel = Array.from(e.target.files ?? []);
-                            setImages((prev) => [...prev, ...sel]);
-                            e.target.value = "";
-                          }}
-                        />
-                        <input
-                          ref={docInputRef}
-                          type="file"
-                          multiple
-                          className="hidden"
-                          onChange={(e) => {
-                            const sel = Array.from(e.target.files ?? []);
-                            setDocuments((prev) => [...prev, ...sel]);
-                            e.target.value = "";
-                          }}
-                        />
-                      </div>
 
                       {voiceError && <p className="text-[11px] text-destructive">{voiceError}</p>}
                       {isRecording && (
@@ -793,7 +738,6 @@ export function FindLawyerWizard() {
                           Listening… speak now, then tap the button again to stop.
                         </p>
                       )}
-                      {voiceError && <p className="text-[11px] text-destructive">{voiceError}</p>}
 
                       {(images.length > 0 || documents.length > 0) && (
                         <ul className="space-y-1.5">

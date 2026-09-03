@@ -11,6 +11,7 @@ import type {
   LegalCase,
   Subscription,
   UserRole,
+  VideoCall,
 } from "@/types";
 import {
   categories as seedCategories,
@@ -19,12 +20,14 @@ import {
   cases as seedCases,
   subscriptions as seedSubscriptions,
   notifications as seedNotifications,
+  videoCalls as seedVideoCalls,
   knowledgeBase as seedKnowledgeBase,
 } from "./mock";
 
 const LAWYERS_KEY = "cuc_lawyers_v8";
 const CITIZENS_KEY = "cuc_citizens_v3";
 const NOTIFICATIONS_KEY = "cuc_notifications_v2";
+const VIDEO_CALLS_KEY = "cuc_video_calls_v1";
 const KB_KEY = "cuc_kb_v3";
 const LAWYER_DOCS_KEY = "cuc_lawyer_docs_v1";
 const PROFILE_PHOTOS_KEY = "cuc_profile_photos_v1";
@@ -444,6 +447,33 @@ export function markAllNotificationsRead() {
   const current = getNotifications();
   const updated = current.map((n) => ({ ...n, read: true }));
   saveNotifications(updated);
+}
+
+export function getRecentVideoCalls(role: UserRole): VideoCall[] {
+  const all = load<VideoCall[]>(VIDEO_CALLS_KEY, seedVideoCalls);
+  return all
+    .filter((call) => call.role === role)
+    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+}
+
+export function addVideoCall(entry: {
+  caseId: string;
+  withName: string;
+  role: UserRole;
+  status: VideoCall["status"];
+  durationSeconds?: number;
+}) {
+  const current = load<VideoCall[]>(VIDEO_CALLS_KEY, seedVideoCalls);
+  const call: VideoCall = {
+    id: `vc_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    caseId: entry.caseId,
+    withName: entry.withName,
+    at: new Date().toISOString(),
+    durationSeconds: entry.durationSeconds,
+    status: entry.status,
+    role: entry.role,
+  };
+  save(VIDEO_CALLS_KEY, [call, ...current]);
 }
 
 export function deleteNotification(id: string) {
