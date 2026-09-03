@@ -30,7 +30,6 @@ import { addLawyer } from "@/data/appStore";
 import { readFileAsDataUrl } from "@/lib/files";
 import type { LegalCategory, LawyerAward, LawyerPracticeArea } from "@/types";
 import { Button, IconButton, TextField, Select, Checkbox, InputChip } from "@/components/m3";
-import { Button, IconButton, TextField, Select, Checkbox, InputChip } from "@/components/m3";
 
 const MAX_ID_PROOF_BYTES = 5 * 1024 * 1024;
 
@@ -352,9 +351,7 @@ function LawyerRegister() {
             verification is underway.
           </div>
           <Button variant="outlined" onClick={() => navigate({ to: "/login" })} className="w-full">
-          <Button variant="outlined" onClick={() => navigate({ to: "/login" })} className="w-full">
             Back to Sign in
-          </Button>
           </Button>
         </div>
       </AuthLayout>
@@ -586,13 +583,10 @@ function LawyerRegister() {
               type="button"
               variant="filled"
               icon={<Plus className="h-3.5 w-3.5" />}
-              variant="filled"
-              icon={<Plus className="h-3.5 w-3.5" />}
               onClick={handleAddPracticeEntries}
               className="w-full shadow-xs"
             >
               Add to Practice Areas
-            </Button>
             </Button>
 
             {practiceError && (
@@ -826,7 +820,6 @@ function LawyerRegister() {
             <Button
               type="button"
               variant="filled"
-              trailingIcon
               icon={<ChevronRight className="h-4 w-4" />}
               onClick={goNext}
             >
@@ -892,24 +885,13 @@ function TagDropdownField({
         supportingText={placeholder}
         className="w-full"
       />
-    <div>
-      <Select
-        label={label}
-        value={selectedVal}
-        onChange={handleSelect}
-        options={availableOptions.map((opt) => ({ value: opt, label: opt }))}
-        supportingText={placeholder}
-        className="w-full"
-      />
       {values.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
           {values.map((v, i) => (
             <InputChip key={`${v}-${i}`} label={v} onRemove={() => onRemove(i)} />
-            <InputChip key={`${v}-${i}`} label={v} onRemove={() => onRemove(i)} />
           ))}
         </div>
       )}
-    </div>
     </div>
   );
 }
@@ -954,9 +936,7 @@ function CourtsDropdownField({
           />
           {searchFilter && (
             <Button type="button" variant="outlined" onClick={() => setSearchFilter("")}>
-            <Button type="button" variant="outlined" onClick={() => setSearchFilter("")}>
               Clear
-            </Button>
             </Button>
           )}
         </div>
@@ -965,13 +945,9 @@ function CourtsDropdownField({
           label="Select court to add"
           value={selectedCourt}
           onChange={(val) => {
-          onChange={(val) => {
             setSelectedCourt(val);
             if (val) handleAddCourt(val);
           }}
-          options={filteredCourts.map((c) => ({ value: c, label: c }))}
-          supportingText={
-            filteredCourts.length === 0
           options={filteredCourts.map((c) => ({ value: c, label: c }))}
           supportingText={
             filteredCourts.length === 0
@@ -986,12 +962,7 @@ function CourtsDropdownField({
         <div className="mt-2 flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
           {values.map((v, i) => (
             <InputChip
-            <InputChip
               key={`${v}-${i}`}
-              label={v}
-              icon={<Scale className="h-3 w-3" />}
-              onRemove={() => onRemove(i)}
-            />
               label={v}
               icon={<Scale className="h-3 w-3" />}
               onRemove={() => onRemove(i)}
@@ -999,7 +970,6 @@ function CourtsDropdownField({
           ))}
         </div>
       )}
-    </div>
     </div>
   );
 }

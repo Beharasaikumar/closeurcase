@@ -18,8 +18,7 @@ export function Select({
   errorText,
   supportingText,
   className,
-  style,
-  style,
+  style
 }: {
   label?: string;
   value: string;
@@ -34,12 +33,12 @@ export function Select({
   /** Escape hatch for one-off shape/size overrides, same pattern as Button/TextField. */
   style?: CSSProperties;
 }) {
-  const selectRef = useRef<HTMLElement | null>(null);
+  const selectRef = useRef<any>(null);
 
   useEffect(() => {
     function handleScroll() {
-      if (selectRef.current && (selectRef.current as unknown as { open?: boolean }).open) {
-        (selectRef.current as unknown as { open?: boolean }).open = false;
+      if (selectRef.current && selectRef.current.open) {
+        selectRef.current.open = false;
       }
     }
     window.addEventListener("scroll", handleScroll, { capture: true, passive: true });

@@ -21,7 +21,6 @@ export function CitizenLoginButton({
       <Link
         to="/citizen-login"
         className={cn(FILLED_LINK_BUTTON_CITIZEN_CLASS, "whitespace-nowrap", className)}
-        className={cn(FILLED_LINK_BUTTON_CITIZEN_CLASS, "whitespace-nowrap", className)}
       >
         <Phone className="h-4 w-4 shrink-0" aria-hidden />
         {label}
@@ -33,7 +32,6 @@ export function CitizenLoginButton({
     <Link
       to="/citizen-login"
       title={subtitle}
-      className={cn(FILLED_LINK_BUTTON_CITIZEN_CLASS, className)}
       className={cn(FILLED_LINK_BUTTON_CITIZEN_CLASS, className)}
     >
       <Phone className="h-4 w-4 shrink-0" aria-hidden />

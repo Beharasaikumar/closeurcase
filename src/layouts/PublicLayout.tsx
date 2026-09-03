@@ -161,15 +161,11 @@ export function PublicLayout({ children }: { children: ReactNode }) {
             </div>
 
             <IconButton
-            <IconButton
               onClick={() => setIsMobileMenuOpen((v) => !v)}
-              className="md:hidden"
-              ariaLabel="Toggle menu"
               className="md:hidden"
               ariaLabel="Toggle menu"
             >
               {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </IconButton>
             </IconButton>
           </div>
         </div>
@@ -198,9 +194,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
         <div className="flex items-center justify-between border-b border-border px-4 py-4">
           <span className="text-sm font-bold text-foreground">Menu</span>
           <IconButton onClick={closeMobileMenu} ariaLabel="Close menu">
-          <IconButton onClick={closeMobileMenu} ariaLabel="Close menu">
             <X className="h-5 w-5" />
-          </IconButton>
           </IconButton>
         </div>
 
@@ -355,9 +349,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                 })}
               </div>
             </div>
-          </div>
 
-          <Link
           <Link
             to="/"
             hash="about"
@@ -396,11 +388,6 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               <span>CloseUrCase</span>
             </Link>
             <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
-              <Link
-                to="/citizen-login"
-                className="font-semibold hover:underline"
-                style={{ color: "var(--md-extended-color-citizen)" }}
-              >
               <Link
                 to="/citizen-login"
                 className="font-semibold hover:underline"

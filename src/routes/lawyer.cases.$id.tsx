@@ -5,14 +5,11 @@ import type { LegalCase } from "@/types";
 import { StatusDot } from "@/components/app/StatusDot";
 import { PageHeader } from "@/components/app/PageHeader";
 import { TextField, Button } from "@/components/m3";
-import { PageHeader } from "@/components/app/PageHeader";
-import { TextField, Button } from "@/components/m3";
 import {
   STORED_STATUS_TO_FILTER,
   PRE_CNR_STAGES,
   fmtDate,
   getCourtHistory,
-  getStageHistory,
 } from "@/components/app/caseDocketShared";
 import {
   ChevronRight,
@@ -20,17 +17,20 @@ import {
   Landmark,
   MapPin,
   User,
+  Users,
+  Link2,
   Download,
   CalendarClock,
   Gavel,
-  Users,
   ShieldAlert,
   Clock,
-  Link2,
+  CheckCircle2,
+  FileText,
+  MessageCircle,
 } from "lucide-react";
 
 export const Route = createFileRoute("/lawyer/cases/$id")({
-  component: CaseDetailPage,
+  component: LawyerCaseDetailPage,
 });
 
 function formatDate(iso?: string) {
@@ -43,68 +43,62 @@ function formatDate(iso?: string) {
 }
 
 function MetaLine({ parts }: { parts: (React.ReactNode | false | undefined)[] }) {
-  const items = parts.filter(Boolean) as React.ReactNode[];
-  if (items.length === 0) return null;
+  const filtered = parts.filter(Boolean);
+  if (filtered.length === 0) return null;
   return (
-    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-sm">
-      {items.map((item, i) => (
-        <span key={i} className="inline-flex items-center gap-2.5">
-          {i > 0 && (
-            <span className="text-muted-foreground/40" aria-hidden>
-              •
-            </span>
-          )}
-          {item}
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+      {filtered.map((p, i) => (
+        <span key={i} className="flex items-center gap-x-2">
+          {i > 0 && <span className="opacity-40">·</span>}
+          {p}
         </span>
       ))}
     </div>
   );
 }
 
-function CaseDetailPage() {
+export function LawyerCaseDetailPage() {
   const { id } = Route.useParams();
-  const [allCases, setAllCases] = useState<LegalCase[]>(getCases);
+  const [cases, setCases] = useState<LegalCase[]>(getCases);
 
   useEffect(() => {
-    const sync = () => setAllCases(getCases());
-    return subscribeToStore(sync);
+    return subscribeToStore(() => setCases(getCases()));
   }, []);
 
-  const c = allCases.find((x) => x.id === id);
+  const c = cases.find((x) => x.id === id);
 
   if (!c) {
     return (
-      <div className="max-w-3xl space-y-4 text-center py-16">
-        <p className="text-sm font-bold text-foreground">Case not found</p>
-        <p className="text-xs text-muted-foreground">
-          This case may have been removed, or the link is incorrect.
-        </p>
-        <Link
-          to="/lawyer/cases"
-          className="inline-block text-xs font-bold text-primary hover:underline"
-        >
-          Back to My Cases
+      <div className="space-y-4">
+        <PageHeader title="Case not found" />
+        <p className="text-sm text-muted-foreground">No case found with ID &quot;{id}&quot;.</p>
+        <Link to="/lawyer/cases">
+          <Button variant="outlined">Back to My Cases</Button>
         </Link>
       </div>
     );
   }
 
-  return <CaseDetailBody caseItem={c} />;
+  return <LawyerCaseDetailBody caseItem={c} />;
 }
 
-function CaseDetailBody({ caseItem: c }: { caseItem: LegalCase }) {
-  const navigate = useNavigate();
-  const readOnly = c.source === "ecourt";
-  const [showLawyers, setShowLawyers] = useState(false);
-  const [fileNoDraft, setFileNoDraft] = useState("");
+function LawyerCaseDetailBody({
+  caseItem: c,
+  readOnly = false,
+}: {
+  caseItem: LegalCase;
+  readOnly?: boolean;
+}) {
+  const cd = c.caseDetails;
   const [editingFileNo, setEditingFileNo] = useState(false);
+  const [fileNoDraft, setFileNoDraft] = useState(c.fileNo ?? "");
+  const [showLawyers, setShowLawyers] = useState(false);
 
   const handleSaveFileNo = () => {
     updateCaseFields(c.id, { fileNo: fileNoDraft.trim() || undefined });
     setEditingFileNo(false);
   };
 
-  const cd = c.caseDetails;
   const today = new Date().toISOString().slice(0, 10);
   const nextHearing = [...cd.historyOfCaseHearings]
     .filter((h) => h.hearingDate && h.hearingDate >= today)
@@ -140,7 +134,6 @@ function CaseDetailBody({ caseItem: c }: { caseItem: LegalCase }) {
       {/* Header card */}
       <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6 shadow-2xs space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
           {!readOnly && editingFileNo ? (
             <div className="flex items-center gap-2">
               <TextField
@@ -173,7 +166,6 @@ function CaseDetailBody({ caseItem: c }: { caseItem: LegalCase }) {
             <div />
           )}
 
-          <StatusDot status={c.status} />
           <StatusDot status={c.status} />
         </div>
 
@@ -466,36 +458,42 @@ function CaseHistoryTab({ caseItem: c }: { caseItem: LegalCase }) {
             STAGE HISTORY
           </div>
           <div className="relative ml-3 space-y-3.5 border-l-2 border-border py-1 pl-6">
-            {getStageHistory(c).map((stage) => (
-              <div key={stage.key} className="relative">
-                <span
-                  className={`absolute -left-[29px] top-0.5 h-[14px] w-[14px] rounded-full border-2 ${
-                    stage.at ? "border-primary bg-primary" : "border-muted-foreground/50 bg-surface"
-                  }`}
-                />
-                <div className="flex items-center justify-between gap-3">
+            {PRE_CNR_STAGES.map((stageKey, i) => {
+              const label = stageKey;
+              const at = (c as any)[stageKey];
+              const isCurrent = false;
+              const stage = { key: stageKey, label, at, isCurrent };
+              return (
+                <div key={stage.key} className="relative">
                   <span
-                    className={`text-xs font-semibold ${
-                      stage.isCurrent
-                        ? "text-primary"
-                        : stage.at
-                          ? "text-foreground"
-                          : "text-muted-foreground"
+                    className={`absolute -left-[29px] top-0.5 h-[14px] w-[14px] rounded-full border-2 ${
+                      stage.at ? "border-primary bg-primary" : "border-muted-foreground/50 bg-surface"
                     }`}
-                  >
-                    {stage.label}
-                    {stage.isCurrent && (
-                      <span className="ml-2 rounded-md bg-primary/10 px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-primary">
-                        Current
-                      </span>
-                    )}
-                  </span>
-                  <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
-                    {stage.at ? `${fmtDate(stage.at)}${stage.time ? ", " + stage.time : ""}` : "—"}
-                  </span>
+                  />
+                  <div className="flex items-center justify-between gap-3">
+                    <span
+                      className={`text-xs font-semibold ${
+                        stage.isCurrent
+                          ? "text-primary"
+                          : stage.at
+                            ? "text-foreground"
+                            : "text-muted-foreground"
+                      }`}
+                    >
+                      {stage.label}
+                      {stage.isCurrent && (
+                        <span className="ml-2 rounded-md bg-primary/10 px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-primary">
+                          Current
+                        </span>
+                      )}
+                    </span>
+                    <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
+                      {stage.at ? fmtDate(stage.at) : "—"}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

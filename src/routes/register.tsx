@@ -5,7 +5,6 @@ import { PermissionsGate } from "@/components/app/PermissionsGate";
 import { usePermissionsGate } from "@/features/permissions/usePermissionsGate";
 import { Scale } from "lucide-react";
 import { Card } from "@/components/m3";
-import { Card } from "@/components/m3";
 
 export const Route = createFileRoute("/register")({
   head: () => ({ meta: [{ title: "Join CloseUrCase" }] }),
@@ -43,16 +42,7 @@ function Register() {
           variant="outlined"
           onClick={() => navigate({ to: "/lawyer-register" })}
           className="flex w-full items-center gap-3 p-4 text-left hover:border-[var(--md-sys-color-primary)]"
-          className="flex w-full items-center gap-3 p-4 text-left hover:border-[var(--md-sys-color-primary)]"
         >
-          <span
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
-            style={{
-              backgroundColor:
-                "color-mix(in srgb, var(--md-extended-color-lawyer) 15%, transparent)",
-              color: "var(--md-extended-color-lawyer)",
-            }}
-          >
           <span
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
             style={{
@@ -69,7 +59,6 @@ function Register() {
               Bar ID verification required
             </span>
           </span>
-        </Card>
         </Card>
       </div>
     </AuthLayout>

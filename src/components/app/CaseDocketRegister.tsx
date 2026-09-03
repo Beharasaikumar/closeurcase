@@ -27,42 +27,11 @@ import {
   DialogTitle,
   DialogContent,
 } from "@/components/m3";
-import {
-  Search,
-  ChevronDown,
-  ChevronUp,
-  Check,
-  X,
-  Bell,
-  User,
-  Landmark,
-  Calendar,
-  FileText,
-  Eye,
-  Paperclip,
-  Image as ImageIcon,
-  Download,
-  Maximize2,
-  Minimize2,
-} from "lucide-react";
-import {
-  ChipSet,
-  FilterChip,
-  TextField,
-  IconButton,
-  Dialog,
-  DialogHeader,
-  DialogTitle,
-  DialogContent,
-} from "@/components/m3";
 import { FilterPanelButton, type FilterSection } from "@/components/app/FilterPanelButton";
 import { ExpandableFilterChips } from "@/components/app/ExpandableFilterChips";
 import { DocumentPreviewBody } from "@/components/app/DocumentPreview";
 import { PageHeader } from "@/components/app/PageHeader";
-import { DocumentPreviewBody } from "@/components/app/DocumentPreview";
-import { PageHeader } from "@/components/app/PageHeader";
 import { getCases, subscribeToStore, updateCaseStatus } from "@/data/appStore";
-import type { LegalCase, CaseDocument } from "@/types";
 import type { LegalCase, CaseDocument } from "@/types";
 import { CasesTable, caseTypeOf } from "@/components/app/CasesTable";
 import {
@@ -243,19 +212,6 @@ export function CaseDocketRegister({
           }
         />
       )}
-    <div className="mx-auto max-w-[1180px] space-y-6 pb-20">
-      {/* Lawyer's cases page renders its own PageHeader (CasesListView.tsx),
-       * shared across its Assigned/Imported tabs — only citizen needs one here. */}
-      {!isLawyer && (
-        <PageHeader
-          title={upcomingOnly ? "Upcoming Hearings" : "My Cases"}
-          description={
-            upcomingOnly
-              ? "All of your cases with a hearing date coming up."
-              : "Track every case you've filed and its current status."
-          }
-        />
-      )}
 
       {/* Toolbar: Search + Hearing Date Range + Filter Chips */}
       <div className="space-y-3">
@@ -371,8 +327,6 @@ function PendingRequestsInbox({
         borderColor: "color-mix(in srgb, var(--md-extended-color-warning) 45%, transparent)",
         backgroundColor:
           "color-mix(in srgb, var(--md-extended-color-warning) 5%, var(--md-sys-color-surface))",
-        backgroundColor:
-          "color-mix(in srgb, var(--md-extended-color-warning) 5%, var(--md-sys-color-surface))",
       }}
     >
       {/* Header */}
@@ -388,15 +342,10 @@ function PendingRequestsInbox({
               backgroundColor:
                 "color-mix(in srgb, var(--md-extended-color-warning) 18%, transparent)",
             }}
-            style={{
-              backgroundColor:
-                "color-mix(in srgb, var(--md-extended-color-warning) 18%, transparent)",
-            }}
           >
             <Bell className="h-3.5 w-3.5" style={{ color: "var(--md-extended-color-warning)" }} />
           </div>
           <div className="text-left">
-            <span className="text-sm font-bold text-foreground">Pending Requests</span>
             <span className="text-sm font-bold text-foreground">Pending Requests</span>
             <span
               className="ml-2 inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold text-white"
@@ -424,21 +373,8 @@ function PendingRequestsInbox({
             borderColor: "color-mix(in srgb, var(--md-extended-color-warning) 35%, transparent)",
           }}
         >
-        <div
-          className="border-t border-dashed px-3 pt-3 pb-4 sm:px-5 sm:pb-5"
-          style={{
-            borderColor: "color-mix(in srgb, var(--md-extended-color-warning) 35%, transparent)",
-          }}
-        >
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             {cases.map((c) => (
-              <PendingRequestCard
-                key={c.id}
-                c={c}
-                onApprove={onApprove}
-                onReject={onReject}
-                onViewAttachments={() => setAttachmentsCase(c)}
-              />
               <PendingRequestCard
                 key={c.id}
                 c={c}
@@ -759,19 +695,16 @@ function PendingRequestCard({
   onApprove,
   onReject,
   onViewAttachments,
-  onViewAttachments,
 }: {
   c: LegalCase;
   onApprove: (c: LegalCase) => void;
   onReject: (c: LegalCase) => void;
-  onViewAttachments: (c: LegalCase) => void;
   onViewAttachments: (c: LegalCase) => void;
 }) {
   const entry = getNextEntry(c);
 
   return (
     <div
-      className="flex h-full flex-col gap-3 rounded-xl border bg-white p-3.5 shadow-xs sm:p-4"
       className="flex h-full flex-col gap-3 rounded-xl border bg-white p-3.5 shadow-xs sm:p-4"
       style={{
         borderColor: "color-mix(in srgb, var(--md-extended-color-warning) 30%, transparent)",
@@ -786,8 +719,6 @@ function PendingRequestCard({
           <span
             className="shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold"
             style={{
-              backgroundColor:
-                "color-mix(in srgb, var(--md-extended-color-warning) 15%, transparent)",
               backgroundColor:
                 "color-mix(in srgb, var(--md-extended-color-warning) 15%, transparent)",
               color: "var(--md-extended-color-warning)",
@@ -850,29 +781,7 @@ function PendingRequestCard({
           variant="tonal"
           title="Decline case"
           ariaLabel={`Decline case ${c.id}`}
-      {/* Standard icon-button footer — View/Attachments/Decline/Accept, same
-       * order and styling as every other card grid in the app. */}
-      <div className="mt-auto flex flex-wrap items-center justify-end gap-1.5 border-t border-border/60 pt-2">
-        <IconButton
-          variant="tonal"
-          title="View attachments"
-          ariaLabel={`View attachments for case ${c.id}`}
-          onClick={() => onViewAttachments(c)}
-        >
-          <Paperclip className="h-4 w-4" />
-        </IconButton>
-        <IconButton
-          variant="tonal"
-          title="Decline case"
-          ariaLabel={`Decline case ${c.id}`}
           onClick={() => onReject(c)}
-        >
-          <X className="h-4 w-4 text-[var(--md-sys-color-error)]" />
-        </IconButton>
-        <IconButton
-          variant="tonal"
-          title="Accept case"
-          ariaLabel={`Accept case ${c.id}`}
         >
           <X className="h-4 w-4 text-[var(--md-sys-color-error)]" />
         </IconButton>
@@ -882,8 +791,6 @@ function PendingRequestCard({
           ariaLabel={`Accept case ${c.id}`}
           onClick={() => onApprove(c)}
         >
-          <Check className="h-4 w-4 text-[var(--md-extended-color-success)]" />
-        </IconButton>
           <Check className="h-4 w-4 text-[var(--md-extended-color-success)]" />
         </IconButton>
       </div>

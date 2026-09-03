@@ -1,5 +1,4 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   ChevronRight,
@@ -15,8 +14,6 @@ import {
   Link2,
 } from "lucide-react";
 import { getCases, subscribeToStore } from "@/data/appStore";
-import { Button } from "@/components/m3";
-import { PageHeader } from "@/components/app/PageHeader";
 import { Button } from "@/components/m3";
 import { PageHeader } from "@/components/app/PageHeader";
 import type { LegalCase } from "@/types";
@@ -43,18 +40,14 @@ function formatDate(iso?: string) {
 }
 
 function MetaLine({ parts }: { parts: (React.ReactNode | false | undefined)[] }) {
-  const items = parts.filter(Boolean) as React.ReactNode[];
-  if (items.length === 0) return null;
+  const filtered = parts.filter(Boolean);
+  if (filtered.length === 0) return null;
   return (
-    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-sm">
-      {items.map((item, i) => (
-        <span key={i} className="inline-flex items-center gap-2.5">
-          {i > 0 && (
-            <span className="text-muted-foreground/40" aria-hidden>
-              •
-            </span>
-          )}
-          {item}
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+      {filtered.map((p, i) => (
+        <span key={i} className="flex items-center gap-x-2">
+          {i > 0 && <span className="opacity-40">·</span>}
+          {p}
         </span>
       ))}
     </div>
@@ -72,30 +65,23 @@ function StatTile({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-function CitizenCaseDetailPage() {
+export function CitizenCaseDetailPage() {
   const { id } = Route.useParams();
-  const [allCases, setAllCases] = useState<LegalCase[]>(getCases);
+  const [cases, setCases] = useState<LegalCase[]>(getCases);
 
   useEffect(() => {
-    const sync = () => setAllCases(getCases());
-    sync();
-    return subscribeToStore(sync);
+    return subscribeToStore(() => setCases(getCases()));
   }, []);
 
-  const c = allCases.find((x) => x.id === id);
+  const c = cases.find((x) => x.id === id);
 
   if (!c) {
     return (
-      <div className="max-w-3xl space-y-4 py-16 text-center">
-        <p className="text-sm font-bold text-foreground">Case not found</p>
-        <p className="text-xs text-muted-foreground">
-          This case may have been removed, or the link is incorrect.
-        </p>
-        <Link
-          to="/citizen/my-cases"
-          className="inline-block text-xs font-bold text-primary hover:underline"
-        >
-          Back to My Cases
+      <div className="space-y-4">
+        <PageHeader title="Case not found" />
+        <p className="text-sm text-muted-foreground">No case found with ID &quot;{id}&quot;.</p>
+        <Link to="/citizen/my-cases">
+          <Button variant="outlined">Back to My Cases</Button>
         </Link>
       </div>
     );
@@ -105,7 +91,6 @@ function CitizenCaseDetailPage() {
 }
 
 function CitizenCaseDetailBody({ caseItem: c }: { caseItem: LegalCase }) {
-  const navigate = useNavigate();
   const navigate = useNavigate();
   const [showLawyers, setShowLawyers] = useState(false);
   const cd = c.caseDetails;
@@ -150,8 +135,6 @@ function CitizenCaseDetailBody({ caseItem: c }: { caseItem: LegalCase }) {
 
       {/* Header card */}
       <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6 shadow-2xs space-y-4">
-        <div className="flex flex-wrap items-center gap-2 border-b border-border pb-4">
-          <StatusBadge status={c.status} />
         <div className="flex flex-wrap items-center gap-2 border-b border-border pb-4">
           <StatusBadge status={c.status} />
         </div>

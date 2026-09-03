@@ -5,7 +5,6 @@ import { PermissionsGate } from "@/components/app/PermissionsGate";
 import { usePermissionsGate } from "@/features/permissions/usePermissionsGate";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { TextField, IconButton, Button } from "@/components/m3";
-import { TextField, IconButton, Button } from "@/components/m3";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Lawyer & Admin sign in — CloseUrCase" }] }),
@@ -73,40 +72,8 @@ export function Login() {
           leadingIcon={<Mail className="h-4 w-4" />}
           className="w-full"
         />
-        <TextField
-          label="Email address"
-          type="email"
-          required
-          value={email}
-          onChange={setEmail}
-          placeholder="you@example.com"
-          leadingIcon={<Mail className="h-4 w-4" />}
-          className="w-full"
-        />
 
         <div className="space-y-1.5">
-          <TextField
-            label="Password"
-            type={showPassword ? "text" : "password"}
-            required
-            value={password}
-            onChange={setPassword}
-            placeholder="••••••••"
-            leadingIcon={<Lock className="h-4 w-4" />}
-            trailingIcon={
-              <IconButton
-                ariaLabel={showPassword ? "Hide password" : "Show password"}
-                onClick={() => setShowPassword((v) => !v)}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </IconButton>
-            }
-            className="w-full"
-          />
-          <div className="flex justify-end">
-            <Button variant="text" className="h-auto! min-h-0! px-0! text-xs">
-              Forgot password?
-            </Button>
           <TextField
             label="Password"
             type={showPassword ? "text" : "password"}
@@ -134,7 +101,6 @@ export function Login() {
 
         <Button type="submit" variant="filled" className="-mt-3 w-full">
           Sign in
-        </Button>
         </Button>
       </form>
     </AuthLayout>
