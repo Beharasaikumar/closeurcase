@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { Button } from "@/components/m3";
+import { Button } from "@/components/m3";
 import {
   DEVICE_PERMISSIONS,
   getPermissionHint,
@@ -166,9 +167,11 @@ function StatusBadge({ state }: { state: DevicePermissionState }) {
       return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
     case "granted":
       return <CheckCircle2 className="h-4 w-4 text-success" aria-label="Allowed" />;
+      return <CheckCircle2 className="h-4 w-4 text-success" aria-label="Allowed" />;
     case "denied":
       return <XCircle className="h-4 w-4 text-destructive" aria-label="Denied" />;
     case "unavailable":
+      return <AlertTriangle className="h-4 w-4 text-warning" aria-label="Turned off" />;
       return <AlertTriangle className="h-4 w-4 text-warning" aria-label="Turned off" />;
     case "unsupported":
       return <span className="text-[10px] font-semibold uppercase text-muted-foreground">N/A</span>;

@@ -19,6 +19,7 @@ export function Select({
   supportingText,
   className,
   style,
+  style,
 }: {
   label?: string;
   value: string;

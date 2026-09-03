@@ -5,6 +5,8 @@ import type { LegalCase } from "@/types";
 import { StatusDot } from "@/components/app/StatusDot";
 import { PageHeader } from "@/components/app/PageHeader";
 import { TextField, Button } from "@/components/m3";
+import { PageHeader } from "@/components/app/PageHeader";
+import { TextField, Button } from "@/components/m3";
 import {
   STORED_STATUS_TO_FILTER,
   PRE_CNR_STAGES,
@@ -138,6 +140,7 @@ function CaseDetailBody({ caseItem: c }: { caseItem: LegalCase }) {
       {/* Header card */}
       <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6 shadow-2xs space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
           {!readOnly && editingFileNo ? (
             <div className="flex items-center gap-2">
               <TextField
@@ -170,6 +173,7 @@ function CaseDetailBody({ caseItem: c }: { caseItem: LegalCase }) {
             <div />
           )}
 
+          <StatusDot status={c.status} />
           <StatusDot status={c.status} />
         </div>
 

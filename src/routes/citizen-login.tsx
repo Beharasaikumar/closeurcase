@@ -174,6 +174,7 @@ export function CitizenLogin() {
             <Button type="submit" variant="filled" disabled={!phoneValid} className="w-full">
               {translate("continueBtn")}
             </Button>
+            </Button>
           </form>
         )}
 
@@ -182,8 +183,13 @@ export function CitizenLogin() {
             <Button
               variant="text"
               icon={<ArrowLeft className="h-4 w-4" />}
+            <Button
+              variant="text"
+              icon={<ArrowLeft className="h-4 w-4" />}
               onClick={() => setStep("phone")}
             >
+              {translate("changeNumber")}
+            </Button>
               {translate("changeNumber")}
             </Button>
 
@@ -209,13 +215,16 @@ export function CitizenLogin() {
             )}
 
             <Button
+            <Button
               type="button"
+              variant="filled"
               variant="filled"
               onClick={verifyOtp}
               disabled={otp.length !== 4}
               className="w-full"
             >
               {translate("verifyContinue")}
+            </Button>
             </Button>
           </div>
         )}

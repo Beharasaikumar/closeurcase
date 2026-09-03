@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   ChevronRight,
@@ -14,6 +15,8 @@ import {
   Link2,
 } from "lucide-react";
 import { getCases, subscribeToStore } from "@/data/appStore";
+import { Button } from "@/components/m3";
+import { PageHeader } from "@/components/app/PageHeader";
 import { Button } from "@/components/m3";
 import { PageHeader } from "@/components/app/PageHeader";
 import type { LegalCase } from "@/types";
@@ -103,6 +106,7 @@ function CitizenCaseDetailPage() {
 
 function CitizenCaseDetailBody({ caseItem: c }: { caseItem: LegalCase }) {
   const navigate = useNavigate();
+  const navigate = useNavigate();
   const [showLawyers, setShowLawyers] = useState(false);
   const cd = c.caseDetails;
 
@@ -146,6 +150,8 @@ function CitizenCaseDetailBody({ caseItem: c }: { caseItem: LegalCase }) {
 
       {/* Header card */}
       <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6 shadow-2xs space-y-4">
+        <div className="flex flex-wrap items-center gap-2 border-b border-border pb-4">
+          <StatusBadge status={c.status} />
         <div className="flex flex-wrap items-center gap-2 border-b border-border pb-4">
           <StatusBadge status={c.status} />
         </div>
