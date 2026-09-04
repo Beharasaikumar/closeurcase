@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { AuthLayout } from "@/layouts/AuthLayout";
-import { Phone, ArrowLeft, ChevronRight, Tag } from "lucide-react";
+import { Phone, ArrowLeft, ChevronRight, Tag, User } from "lucide-react";
 import { OtpInput, TextField, Button } from "@/components/m3";
 import { FormStepper } from "@/components/app/FormStepper";
 import type { FormStep } from "@/components/app/FormStepper";
@@ -10,6 +10,8 @@ import { usePermissionsGate } from "@/features/permissions/usePermissionsGate";
 import { setCitizenSession } from "@/features/citizen/session";
 import { CitizenLanguageButtons } from "@/features/citizen/CitizenLanguageButtons";
 import { useCitizenLanguage } from "@/features/citizen/i18n/CitizenLanguageContext";
+import { getCitizens, updateCitizenProfile } from "@/data/appStore";
+import { sanitizeName, sanitizePhone, validateName, validatePhone } from "@/lib/validations";
 
 interface SearchParams {
   area?: string;
@@ -38,7 +40,7 @@ const STATIC_OTP = "0000";
  * `Step` union so the rest of this file's phone/otp branching is untouched. */
 const STEP_IDS: Record<Step, number> = { phone: 1, otp: 2 };
 const LOGIN_STEPS: FormStep[] = [
-  { id: 1, label: "Mobile number" },
+  { id: 1, label: "Your details" },
   { id: 2, label: "Verify OTP" },
 ];
 
@@ -53,7 +55,11 @@ export function CitizenLogin() {
 
   const [step, setStep] = useState<Step>("phone");
 
+  const [fullName, setFullName] = useState("");
+  const [fullNameTouched, setFullNameTouched] = useState(false);
+
   const [phone, setPhone] = useState("");
+  const [phoneTouched, setPhoneTouched] = useState(false);
 
   const [otp, setOtp] = useState("");
 
@@ -61,12 +67,16 @@ export function CitizenLogin() {
 
   const phoneDigits = phone.replace(/\D/g, "");
 
-  const phoneValid = phoneDigits.length === 10;
+  const nameRes = validateName(fullName);
+  const phoneRes = validatePhone(phone);
+  const isFormValid = nameRes.isValid && phoneRes.isValid;
 
   const submitPhone = (e: React.FormEvent) => {
     e.preventDefault();
+    setFullNameTouched(true);
+    setPhoneTouched(true);
 
-    if (!phoneValid) return;
+    if (!isFormValid) return;
 
     setStep("otp");
 
@@ -84,7 +94,27 @@ export function CitizenLogin() {
 
     setOtpError("");
 
-    setCitizenSession({ phone: phoneDigits, authenticated: true, casePath: "new" });
+    const nameToSave = fullName.trim();
+
+    // Link full name to citizen session
+    setCitizenSession({
+      phone: phoneDigits,
+      fullName: nameToSave,
+      authenticated: true,
+      casePath: "new",
+    });
+
+    // Link full name directly to the citizen profile in appStore
+    const citizens = getCitizens();
+    const matchedCitizen =
+      citizens.find((c) => c.phone.replace(/\D/g, "").includes(phoneDigits)) || citizens[0];
+
+    if (matchedCitizen && nameToSave) {
+      updateCitizenProfile(matchedCitizen.id, {
+        name: nameToSave,
+        phone: `+91 ${phoneDigits}`,
+      });
+    }
 
     navigate({ to: "/citizen" });
   };
@@ -157,21 +187,50 @@ export function CitizenLogin() {
         <CitizenLanguageButtons size="sm" showLabel={false} className="max-w-fit" />
 
         {step === "phone" && (
-          <form onKeyDown={handleFormEnterKey} onSubmit={submitPhone} className="space-y-5">
-            <TextField
-              label={translate("mobileNumber")}
-              type="tel"
-              required
-              value={phone}
-              onChange={(v) => setPhone(v.replace(/\D/g, "").slice(0, 10))}
-              placeholder="10-digit number"
-              leadingIcon={<Phone className="h-4 w-4" />}
-              prefixText="+91"
-              maxLength={10}
-              className="w-full"
-            />
+          <form onKeyDown={handleFormEnterKey} onSubmit={submitPhone} className="space-y-4">
+            <div className="space-y-1">
+              <TextField
+                label="Full Name (Letters Only)"
+                type="text"
+                required
+                value={fullName}
+                onChange={(v) => {
+                  setFullName(sanitizeName(v));
+                  setFullNameTouched(true);
+                }}
+                placeholder="Enter your full name"
+                leadingIcon={<User className="h-4 w-4" />}
+                error={fullNameTouched && !nameRes.isValid}
+                className="w-full"
+              />
+              {fullNameTouched && !nameRes.isValid && (
+                <p className="text-[11px] font-medium text-destructive">{nameRes.error}</p>
+              )}
+            </div>
 
-            <Button type="submit" variant="filled" disabled={!phoneValid} className="w-full">
+            <div className="space-y-1">
+              <TextField
+                label={translate("mobileNumber")}
+                type="tel"
+                required
+                value={phone}
+                onChange={(v) => {
+                  setPhone(sanitizePhone(v));
+                  setPhoneTouched(true);
+                }}
+                placeholder="10-digit number"
+                leadingIcon={<Phone className="h-4 w-4" />}
+                prefixText="+91"
+                maxLength={10}
+                error={phoneTouched && !phoneRes.isValid}
+                className="w-full"
+              />
+              {phoneTouched && !phoneRes.isValid && (
+                <p className="text-[11px] font-medium text-destructive">{phoneRes.error}</p>
+              )}
+            </div>
+
+            <Button type="submit" variant="filled" disabled={!isFormValid} className="w-full">
               {translate("continueBtn")}
             </Button>
           </form>

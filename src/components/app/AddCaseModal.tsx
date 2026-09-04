@@ -10,6 +10,7 @@ import {
   Select,
   Button,
 } from "@/components/m3";
+import { sanitizeName, sanitizeCNR, validateName, validateCNR } from "@/lib/validations";
 import { getCitizens, addCase } from "@/data/appStore";
 import { categories } from "@/data/mock";
 import type { CaseStatus, LegalCase } from "@/types";
@@ -59,6 +60,14 @@ export function AddCaseModal({
   const [status, setStatus] = useState<CaseStatus>(editingCase?.status ?? "Submitted");
   const [city, setCity] = useState(editingCase?.city ?? "");
 
+  const [titleTouched, setTitleTouched] = useState(false);
+  const [clientNameTouched, setClientNameTouched] = useState(false);
+  const [cnrTouched, setCnrTouched] = useState(false);
+
+  const titleRes = validateName(title);
+  const clientNameRes = validateName(clientName);
+  const cnrRes = cnrNumber ? validateCNR(cnrNumber) : { isValid: true };
+
   function reset() {
     setTitle("");
     setClientName("");
@@ -70,11 +79,18 @@ export function AddCaseModal({
     setStage("");
     setStatus("Submitted");
     setCity("");
+    setTitleTouched(false);
+    setClientNameTouched(false);
+    setCnrTouched(false);
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim() || !clientName.trim()) return;
+    setTitleTouched(true);
+    setClientNameTouched(true);
+    if (cnrNumber) setCnrTouched(true);
+
+    if (!titleRes.isValid || !clientNameRes.isValid || !cnrRes.isValid) return;
 
     const now = new Date();
     const today = now.toISOString().slice(0, 10);
@@ -177,13 +193,24 @@ export function AddCaseModal({
 
       <DialogContent>
         <form id="add-case-form" onSubmit={handleSubmit} className="space-y-4">
-          <TextField
-            label="Case Title / Parties"
-            value={title}
-            onChange={setTitle}
-            placeholder="e.g. Ramesh Kumar vs State Bank of Hyderabad"
-            required
-          />
+          <div>
+            <TextField
+              label="Case Title / Parties (Letters Only)"
+              value={title}
+              onChange={(v) => {
+                setTitle(sanitizeName(v));
+                setTitleTouched(true);
+              }}
+              placeholder="e.g. Ramesh Kumar vs State Bank of Hyderabad"
+              required
+              error={titleTouched && !titleRes.isValid}
+            />
+            {titleTouched && !titleRes.isValid && (
+              <p className="mt-1 text-[11px] font-medium text-destructive">
+                {titleRes.error}
+              </p>
+            )}
+          </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {/* Kept as a native input (not the M3 TextField) specifically to preserve the
@@ -191,14 +218,21 @@ export function AddCaseModal({
                 support the `list` attribute. */}
             <label className="block">
               <span className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-foreground">
-                Client Name<span className="ml-0.5 text-destructive">*</span>
+                Petitioner Name<span className="ml-0.5 text-destructive">*</span>
               </span>
               <input
-                className={nativeInputCls}
+                className={`${nativeInputCls} ${
+                  clientNameTouched && !clientNameRes.isValid
+                    ? "border-destructive bg-destructive/5"
+                    : ""
+                }`}
                 list="client-suggestions"
                 value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                placeholder="Who filed this case"
+                onChange={(e) => {
+                  setClientName(sanitizeName(e.target.value));
+                  setClientNameTouched(true);
+                }}
+                placeholder="Who filed this case (letters only)"
                 required
               />
               <datalist id="client-suggestions">
@@ -206,6 +240,11 @@ export function AddCaseModal({
                   <option key={c.id} value={c.name} />
                 ))}
               </datalist>
+              {clientNameTouched && !clientNameRes.isValid && (
+                <p className="mt-1 text-[11px] font-medium text-destructive">
+                  {clientNameRes.error}
+                </p>
+              )}
             </label>
             <Select
               label="Category"
@@ -229,13 +268,24 @@ export function AddCaseModal({
               onChange={setCaseNumber}
               placeholder="e.g. OS/4/2025"
             />
-            <TextField
-              label="CNR Number"
-              value={cnrNumber}
-              onChange={setCnrNumber}
-              placeholder="Optional"
-              className="font-mono"
-            />
+            <div>
+              <TextField
+                label="CNR Number (16 Alphanumeric Characters)"
+                value={cnrNumber}
+                onChange={(v) => {
+                  setCnrNumber(sanitizeCNR(v));
+                  setCnrTouched(true);
+                }}
+                placeholder="e.g. TSHC010011342025"
+                className="font-mono uppercase"
+                error={cnrTouched && Boolean(cnrNumber && !cnrRes.isValid)}
+              />
+              {cnrTouched && cnrNumber && !cnrRes.isValid && (
+                <p className="mt-1 text-[11px] font-medium text-destructive">
+                  {cnrRes.error}
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

@@ -5,6 +5,7 @@ export type CitizenLanguage = "en" | "hi" | "te";
 export interface CitizenSession {
   authenticated: boolean;
   phone: string;
+  fullName?: string;
   casePath: CitizenCasePath;
   language: CitizenLanguage;
 }

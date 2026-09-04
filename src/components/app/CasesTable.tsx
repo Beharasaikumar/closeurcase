@@ -12,6 +12,10 @@ import {
   Maximize2,
   Minimize2,
   ChevronRight,
+  CalendarClock,
+  Landmark,
+  User,
+  Hash,
 } from "lucide-react";
 import { Button, IconButton } from "@/components/m3";
 import {
@@ -21,7 +25,8 @@ import {
   updateCaseStatus,
   subscribeToStore,
 } from "@/data/appStore";
-import { MAX_ATTACHMENT_BYTES, formatFileSize, readFileAsDataUrl } from "@/lib/files";
+import { MAX_ATTACHMENT_BYTES, formatFileSize, readFileAsDataUrl, openDocumentInNewTab } from "@/lib/files";
+import { sanitizeName, sanitizeCNR, validateName, validateCNR } from "@/lib/validations";
 import { searchCourtCases } from "@/data/courtCasesFixture";
 import { CardPagination } from "@/components/app/CardPagination";
 import { DocumentPreviewBody } from "@/components/app/DocumentPreview";
@@ -39,6 +44,7 @@ import {
   getCourtHistory,
   getNextEntry,
   getStageHistory,
+  formatCaseVsTitle,
   type CourtHistoryRow,
 } from "@/components/app/caseDocketShared";
 
@@ -101,8 +107,10 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
   const [previewFullScreen, setPreviewFullScreen] = useState(false);
 
   const [partyNames, setPartyNames] = useState("");
+  const [partyNameError, setPartyNameError] = useState("");
   const [caseNo, setCaseNo] = useState("");
   const [cnr, setCnr] = useState("");
+  const [cnrError, setCnrError] = useState("");
   const [caseStatus, setCaseStatus] = useState("Submitted");
   const [journey, setJourney] = useState<CourtHistoryRow[]>([]);
   const [cnrImportResult, setCnrImportResult] = useState<CnrImportResult>(null);
@@ -126,8 +134,10 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
   function handleOpenModal(c: LegalCase) {
     setEditingCase(c);
     setPartyNames(c.title || "");
+    setPartyNameError("");
     setCaseNo(c.caseDetails.caseNumber || "");
     setCnr(c.caseDetails.cnr || "");
+    setCnrError("");
     setCaseStatus(c.status || "Submitted");
     setJourney(getCourtHistory(c));
     setCnrImportResult(null);
@@ -137,6 +147,7 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
 
   function handleCnrChange(value: string) {
     setCnr(value);
+    setCnrError("");
     setCnrImportResult(null);
   }
 
@@ -210,10 +221,21 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
   }
 
   function handleSaveCase() {
-    if (!partyNames.trim() && !caseNo.trim()) {
-      alert("Please enter at least party names or a case number.");
+    const nameCheck = validateName(partyNames);
+    if (!nameCheck.isValid) {
+      setPartyNameError(nameCheck.error || "Party name is required.");
       return;
     }
+    setPartyNameError("");
+
+    if (caseStatus === "CNR Generated") {
+      const cnrCheck = validateCNR(cnr);
+      if (!cnrCheck.isValid) {
+        setCnrError(cnrCheck.error || "CNR number is required.");
+        return;
+      }
+    }
+    setCnrError("");
 
     const today = todayISO();
     const historyOfCaseHearings = journey.map(({ id: _id, ...h }) => h);
@@ -333,109 +355,177 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
           <p className="mt-1">Try a different search or filter.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {pageCases.map((c) => {
             const entry = getNextEntry(c);
             const isPendingDecision = isLawyer && c.status === "Submitted";
+            const attachmentCount = c.files?.files?.length ?? 0;
+            const formattedTitle = formatCaseVsTitle(c);
+            const titleVsParts = formattedTitle.split(/\s+vs\s+/i);
+
             return (
               <div
                 key={c.id}
-                className={`flex h-full min-h-58 flex-col rounded-xl border p-3.5 shadow-2xs transition-all hover:shadow-sm sm:p-4 ${
-                  isPendingDecision ? "" : "border-border bg-surface hover:border-primary/40"
-                }`}
-                style={
+                className={`group relative flex h-full min-h-64 flex-col justify-between overflow-hidden rounded-2xl border p-4.5 shadow-2xs transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:p-5 ${
                   isPendingDecision
-                    ? {
-                        borderColor:
-                          "color-mix(in srgb, var(--md-extended-color-warning) 35%, transparent)",
-                        backgroundColor:
-                          "color-mix(in srgb, var(--md-extended-color-warning) 7%, transparent)",
-                      }
-                    : undefined
-                }
+                    ? "border-amber-500/40 bg-gradient-to-b from-amber-500/[0.06] via-surface to-surface hover:border-amber-500/70 hover:shadow-amber-500/10"
+                    : "border-border/70 bg-gradient-to-b from-surface via-surface/98 to-surface/90 hover:border-primary/45 hover:shadow-primary/5"
+                }`}
               >
-                <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-                  <div className="min-w-0 space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="line-clamp-2 text-sm font-bold text-foreground leading-snug sm:text-[15px]">
-                        {c.title || "Untitled Matter"}
+                {/* Top Subtle Gradient Accent Line on Hover */}
+                <div
+                  className={`absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r transition-opacity duration-300 ${
+                    isPendingDecision
+                      ? "from-transparent via-amber-500 to-transparent opacity-90"
+                      : "from-transparent via-primary/60 to-transparent opacity-0 group-hover:opacity-100"
+                  }`}
+                />
+
+                <div className="space-y-3.5">
+                  {/* Title & Badges Header */}
+                  <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="line-clamp-2 text-base font-bold text-foreground leading-snug tracking-tight transition-colors group-hover:text-primary">
+                        {titleVsParts.length === 2 ? (
+                          <>
+                            <span>{titleVsParts[0]}</span>
+                            <span className="mx-1.5 inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-primary align-middle">
+                              VS
+                            </span>
+                            <span className="text-foreground/90">{titleVsParts[1]}</span>
+                          </>
+                        ) : (
+                          formattedTitle
+                        )}
                       </h3>
+                    </div>
+                    <div className="flex shrink-0 flex-wrap items-center gap-1.5 self-start sm:self-auto">
                       <CaseTypeBadge caseItem={c} />
-                    </div>
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
-                      <span className="font-mono font-semibold text-primary">{c.id}</span>
-                      <span aria-hidden>•</span>
-                      <span className="font-mono font-semibold text-foreground/80">
-                        CASE NO - {c.caseDetails.caseNumber || "N/A"}
-                      </span>
-                      {c.caseDetails.courtName && (
-                        <>
-                          <span aria-hidden>•</span>
-                          <span>{c.caseDetails.courtName}</span>
-                        </>
-                      )}
-                    </div>
-                    <div
-                      className={`font-mono text-[11px] ${
-                        c.caseDetails.cnr ? "text-muted-foreground" : "text-muted-foreground/50"
-                      }`}
-                    >
-                      CNR No - {c.caseDetails.cnr || "N/A"}
+                      <StatusBadge status={c.status} />
                     </div>
                   </div>
 
-                  <div className="flex shrink-0 flex-row items-center justify-between gap-3 sm:flex-col sm:items-end sm:justify-start">
-                    <StatusBadge status={c.status} />
-                    {entry && (
-                      <div className="text-right">
-                        <div className="text-[11px] font-medium text-foreground">
-                          {fmtDate(entry.hearingDate ?? entry.businessOnDate)}
-                        </div>
-                        {entry.purposeOfListing && (
-                          <div className="text-[10px] text-muted-foreground">
-                            {entry.purposeOfListing}
-                          </div>
-                        )}
-                      </div>
+                  {/* Metadata Chips Grid */}
+                  <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                    <span className="inline-flex items-center gap-1 rounded-lg border border-primary/20 bg-primary/10 px-2.5 py-1 font-mono text-[11px] font-bold text-primary shadow-2xs">
+                      <Hash className="h-3 w-3" />
+                      {c.id}
+                    </span>
+                    {c.caseDetails.caseNumber && (
+                      <span className="inline-flex items-center gap-1 rounded-lg border border-border/50 bg-background/80 px-2.5 py-1 font-mono text-[11px] font-medium text-foreground/90 shadow-2xs">
+                        <FileText className="h-3 w-3 text-muted-foreground" />
+                        CASE: {c.caseDetails.caseNumber}
+                      </span>
+                    )}
+                    {c.caseDetails.courtName && (
+                      <span
+                        className="inline-flex max-w-[220px] items-center gap-1 truncate rounded-lg border border-border/50 bg-background/80 px-2.5 py-1 text-[11px] text-muted-foreground shadow-2xs sm:max-w-xs"
+                        title={c.caseDetails.courtName}
+                      >
+                        <Landmark className="h-3 w-3 shrink-0 text-primary/70" />
+                        <span className="truncate">{c.caseDetails.courtName}</span>
+                      </span>
+                    )}
+                    <span className="inline-flex items-center gap-1 rounded-lg border border-border/50 bg-background/80 px-2.5 py-1 font-mono text-[11px] text-muted-foreground shadow-2xs">
+                      CNR:{" "}
+                      <span
+                        className={
+                          c.caseDetails.cnr
+                            ? "font-bold text-foreground"
+                            : "font-normal text-muted-foreground/60"
+                        }
+                      >
+                        {c.caseDetails.cnr || "N/A"}
+                      </span>
+                    </span>
+                    {c.citizenName && (
+                      <span className="inline-flex items-center gap-1.5 rounded-lg border border-border/50 bg-background/80 px-2.5 py-1 text-[11px] text-muted-foreground shadow-2xs">
+                        <User className="h-3 w-3 text-primary/70" />
+                        Client: <span className="font-semibold text-foreground">{c.citizenName}</span>
+                      </span>
                     )}
                   </div>
+
+                  {/* Next Hearing Strip */}
+                  {entry && (
+                    <div className="relative overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/[0.04] to-transparent p-3 text-xs text-foreground shadow-2xs">
+                      <div className="absolute top-0 left-0 bottom-0 w-1 bg-primary" />
+                      <div className="flex items-start gap-2.5 pl-1">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                          <CalendarClock className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center justify-between gap-1">
+                            <span className="font-bold text-foreground text-[12px]">
+                              Next Hearing: {fmtDate(entry.hearingDate ?? entry.businessOnDate)}
+                            </span>
+                          </div>
+                          {entry.purposeOfListing && (
+                            <p className="mt-0.5 line-clamp-1 text-[11px] font-medium text-muted-foreground">
+                              {entry.purposeOfListing}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                <div className="mt-auto flex items-center justify-end gap-1.5 border-t border-border/60 pt-2">
-                  {isLawyer && c.status === "Submitted" ? (
-                    <>
+                {/* Card Footer Action Bar */}
+                <div className="mt-4 flex items-center justify-between gap-2 border-t border-border/50 pt-3">
+                  <div className="text-[11px] text-muted-foreground">
+                    {attachmentCount > 0 ? (
+                      <span className="inline-flex items-center gap-1 font-semibold text-primary">
+                        <Paperclip className="h-3 w-3" /> {attachmentCount} attachment
+                        {attachmentCount > 1 ? "s" : ""}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground/50 font-medium">No attachments</span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    {isPendingDecision ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleApprove(c)}
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--md-extended-color-success)]/15 px-3 py-1.5 text-xs font-bold text-[var(--md-extended-color-success)] hover:bg-[var(--md-extended-color-success)]/25 transition-all duration-150 cursor-pointer shadow-2xs"
+                          title="Approve case"
+                        >
+                          <Check className="h-3.5 w-3.5" />
+                          <span>Approve</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleReject(c)}
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--md-sys-color-error)]/15 px-3 py-1.5 text-xs font-bold text-[var(--md-sys-color-error)] hover:bg-[var(--md-sys-color-error)]/25 transition-all duration-150 cursor-pointer shadow-2xs"
+                          title="Reject case"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                          <span>Decline</span>
+                        </button>
+                      </>
+                    ) : (
                       <IconButton
                         variant="tonal"
-                        title="Approve case"
-                        onClick={() => handleApprove(c)}
+                        title={isLawyer ? "Edit case" : "View case details"}
+                        ariaLabel={isLawyer ? `Edit case ${c.id}` : `View details for case ${c.id}`}
+                        onClick={() => handleOpenModal(c)}
                       >
-                        <Check className="h-4 w-4 text-[var(--md-extended-color-success)]" />
+                        {isLawyer ? <Pencil className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </IconButton>
-                      <IconButton
-                        variant="tonal"
-                        title="Reject case"
-                        onClick={() => handleReject(c)}
-                      >
-                        <X className="h-4 w-4 text-[var(--md-sys-color-error)]" />
-                      </IconButton>
-                    </>
-                  ) : (
+                    )}
                     <IconButton
                       variant="tonal"
-                      title={isLawyer ? "Edit case" : "View case details"}
-                      onClick={() => handleOpenModal(c)}
+                      title={`Attachments${attachmentCount > 0 ? ` (${attachmentCount})` : ""}`}
+                      ariaLabel={`Manage attachments for case ${c.id}`}
+                      onClick={() => setAttachmentsCaseId(c.id)}
                     >
-                      {isLawyer ? <Pencil className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      <Paperclip className="h-4 w-4" />
                     </IconButton>
-                  )}
-                  <IconButton
-                    variant="tonal"
-                    title={`Attachments${c.files.files.length > 0 ? ` (${c.files.files.length})` : ""}`}
-                    onClick={() => setAttachmentsCaseId(c.id)}
-                  >
-                    <Paperclip className="h-4 w-4" />
-                  </IconButton>
-                  {(isLawyer || c.lawyerName) && <ChatButton caseItem={c} role={role} />}
+                    {(isLawyer || c.lawyerName) && <ChatButton caseItem={c} role={role} />}
+                  </div>
                 </div>
               </div>
             );
@@ -478,7 +568,7 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
             <div className="flex items-start justify-between gap-4 p-6 pb-2">
               <div>
                 <h2 className="text-2xl font-normal text-foreground leading-snug">
-                  {partyNames || "Untitled Matter"}
+                  {formatCaseVsTitle(partyNames || editingCase)}
                 </h2>
                 <div className="font-mono text-xs text-primary mt-1 font-medium">
                   {cnr ? `CNR ${cnr}` : caseNo || "—"}
@@ -506,14 +596,24 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="sm:col-span-2 flex flex-col gap-1">
                       <label className="text-[11px] font-semibold text-muted-foreground">
-                        Party Names
+                        Party Names (Letters Only) <span className="text-destructive">*</span>
                       </label>
                       <input
                         value={partyNames}
-                        onChange={(e) => setPartyNames(e.target.value)}
+                        onChange={(e) => {
+                          setPartyNames(sanitizeName(e.target.value));
+                          setPartyNameError("");
+                        }}
                         placeholder="e.g. Y L N R Vs. NSF"
-                        className="h-11 rounded-lg border border-border bg-card px-3.5 text-sm text-foreground outline-hidden focus:border-primary focus:ring-1 focus:ring-primary"
+                        className={`h-11 rounded-lg border px-3.5 text-sm text-foreground outline-hidden focus:border-primary focus:ring-1 focus:ring-primary ${
+                          partyNameError ? "border-destructive bg-destructive/5" : "border-border bg-card"
+                        }`}
                       />
+                      {partyNameError && (
+                        <p className="text-[10.5px] font-medium text-destructive">
+                          {partyNameError}
+                        </p>
+                      )}
                     </div>
 
                     <div className="sm:col-span-2 flex flex-col gap-1">
@@ -538,27 +638,44 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
 
                     {caseStatus === "CNR Generated" && (
                       <div className="sm:col-span-2 flex flex-col gap-1">
-                        <label className="text-[11px] font-semibold text-muted-foreground">
-                          CNR No.
-                        </label>
+                        <div className="flex items-center justify-between">
+                          <label className="text-[11px] font-semibold text-muted-foreground">
+                            CNR No. (16 Alphanumeric Characters) <span className="text-destructive">*</span>
+                          </label>
+                          <span className="font-mono text-[10px] text-muted-foreground">
+                            {cnr.length} / 16
+                          </span>
+                        </div>
                         <div className="flex flex-col gap-2 sm:flex-row">
                           <input
                             value={cnr}
-                            onChange={(e) => handleCnrChange(e.target.value)}
-                            placeholder="e.g. TSNI08..."
-                            className="h-11 flex-1 rounded-lg border border-border bg-card px-3.5 text-sm text-foreground outline-hidden focus:border-primary focus:ring-1 focus:ring-primary"
+                            onChange={(e) => handleCnrChange(sanitizeCNR(e.target.value))}
+                            placeholder="e.g. TSHC010011342025"
+                            maxLength={16}
+                            className={`h-11 flex-1 rounded-lg border px-3.5 text-sm text-foreground font-mono outline-hidden focus:border-primary focus:ring-1 focus:ring-primary uppercase ${
+                              cnrError ? "border-destructive bg-destructive/5" : "border-border bg-card"
+                            }`}
                           />
                           <div className="flex shrink-0 gap-2">
                             <Button
                               variant="tonal"
                               icon={<Download className="h-4 w-4" />}
                               onClick={handleImportCnr}
-                              disabled={!cnr.trim()}
+                              disabled={cnr.length !== 16}
                             >
                               Import
                             </Button>
                           </div>
                         </div>
+                        {cnrError ? (
+                          <p className="text-[10.5px] font-medium text-destructive">
+                            {cnrError}
+                          </p>
+                        ) : cnr && cnr.length !== 16 ? (
+                          <p className="text-[10.5px] font-medium text-amber-600 dark:text-amber-400">
+                            CNR number must be exactly 16 characters (e.g., TSHC010011342025).
+                          </p>
+                        ) : null}
                       </div>
                     )}
                   </div>
@@ -570,7 +687,7 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
                           Party Names
                         </span>
                         <div className="text-base font-semibold text-foreground mt-0.5">
-                          {partyNames || "—"}
+                          {formatCaseVsTitle(partyNames || editingCase)}
                         </div>
                       </div>
                       <div>
@@ -1013,17 +1130,23 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
                   {previewDoc.name}
                 </span>
               </div>
-              <div className="flex shrink-0 items-center gap-1">
-                <IconButton
-                  ariaLabel={previewFullScreen ? "Exit full screen" : "Full screen"}
-                  onClick={() => setPreviewFullScreen((v) => !v)}
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    openDocumentInNewTab({
+                      title: previewDoc.name,
+                      fileName: previewDoc.name,
+                      fileDataUrl: previewDoc.fileDataUrl,
+                      fileMimeType: previewDoc.fileMimeType,
+                    })
+                  }
+                  className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 hover:bg-primary/20 px-3 py-1.5 text-xs font-bold text-primary transition-all cursor-pointer shadow-2xs"
+                  title="Full Screen (Open document in new tab)"
                 >
-                  {previewFullScreen ? (
-                    <Minimize2 className="h-4 w-4" />
-                  ) : (
-                    <Maximize2 className="h-4 w-4" />
-                  )}
-                </IconButton>
+                  <Maximize2 className="h-3.5 w-3.5" />
+                  <span>Full Screen</span>
+                </button>
                 <IconButton ariaLabel="Close preview" onClick={() => setPreviewDoc(null)}>
                   <X className="h-4 w-4" />
                 </IconButton>

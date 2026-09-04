@@ -6,6 +6,7 @@ import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 import { UserAvatar } from "@/components/app/UserAvatar";
 import { LawyerProfileCard } from "@/components/app/LawyerProfileCard";
 import { DocumentPreviewBody } from "@/components/app/DocumentPreview";
+import { openDocumentInNewTab } from "@/lib/files";
 import { FilterPanelButton, type FilterSection } from "@/components/app/FilterPanelButton";
 import { getLawyers, updateLawyerStatus, subscribeToStore } from "@/data/appStore";
 import { lawyerStatusColor } from "@/lib/statusColors";
@@ -245,13 +246,13 @@ export function LawyersPage() {
       />
 
       {/* SEARCH BAR & FILTER CONTROL CARD */}
-      <div className="flex justify-between items-center gap-3 rounded-2xl border border-border bg-surface p-4 shadow-2xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-2xl border border-border/80 bg-surface p-2.5 sm:p-3 shadow-2xs">
         <TextField
           value={search}
           onChange={setSearch}
-          placeholder="Search by name, phone, email, location, Bar ID…"
-          leadingIcon={<Search className="h-4 w-4" />}
-          className="w-full sm:max-w-xs"
+          placeholder="Search by name, phone, email, city, Bar ID..."
+          leadingIcon={<Search className="h-4 w-4 text-muted-foreground" />}
+          className="w-full sm:w-80 md:w-96 min-w-0 flex-1"
         />
         <FilterPanelButton sections={filterSections} selected={filters} onChange={setFilters} />
       </div>
@@ -446,17 +447,22 @@ export function LawyersPage() {
                   {attachmentsLawyer.idProofFileName || "ID Proof Document"}
                 </span>
               </div>
-              <div className="flex shrink-0 items-center gap-1">
-                <IconButton
-                  ariaLabel={previewFullScreen ? "Exit full screen" : "Full screen"}
-                  onClick={() => setPreviewFullScreen((v) => !v)}
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    openDocumentInNewTab({
+                      title: attachmentsLawyer.idProofFileName || "ID Proof Document",
+                      fileName: attachmentsLawyer.idProofFileName || "ID Proof Document",
+                      fileDataUrl: attachmentsLawyer.idProofUrl,
+                    })
+                  }
+                  className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 hover:bg-primary/20 px-3 py-1.5 text-xs font-bold text-primary transition-all cursor-pointer shadow-2xs"
+                  title="Full Screen (Open document in new tab)"
                 >
-                  {previewFullScreen ? (
-                    <Minimize2 className="h-4 w-4" />
-                  ) : (
-                    <Maximize2 className="h-4 w-4" />
-                  )}
-                </IconButton>
+                  <Maximize2 className="h-3.5 w-3.5" />
+                  <span>Full Screen</span>
+                </button>
                 <IconButton ariaLabel="Close preview" onClick={() => setPreviewOpen(false)}>
                   <X className="h-4 w-4" />
                 </IconButton>

@@ -1,6 +1,47 @@
 import type { LegalCase, HistoryOfHearing } from "@/types";
 
 /**
+ * Formats a case title or party names to ensure " vs " is displayed between Petitioner and Respondent
+ * instead of a hyphen (" - ", " — ", " – ").
+ */
+export function formatCaseVsTitle(
+  caseOrTitle?: LegalCase | string | null,
+  petitioners?: string[],
+  respondents?: string[]
+): string {
+  if (!caseOrTitle && (!petitioners || petitioners.length === 0)) {
+    return "Untitled Matter";
+  }
+
+  if (typeof caseOrTitle === "object" && caseOrTitle !== null) {
+    const c = caseOrTitle;
+    const p = c.caseDetails?.petitioners?.[0] || c.citizenName;
+    const r = c.caseDetails?.respondents?.[0];
+    if (p && r && p.trim() && r.trim()) {
+      return `${p.trim()} vs ${r.trim()}`;
+    }
+    return formatCaseVsTitle(c.title);
+  }
+
+  if (petitioners && petitioners.length > 0 && respondents && respondents.length > 0) {
+    if (petitioners[0]?.trim() && respondents[0]?.trim()) {
+      return `${petitioners[0].trim()} vs ${respondents[0].trim()}`;
+    }
+  }
+
+  let title = (typeof caseOrTitle === "string" ? caseOrTitle : "").trim();
+  if (!title) return "Untitled Matter";
+
+  // Replace hyphen separators between party names with " vs "
+  title = title.replace(/\s+[\-\—\–]\s+/g, " vs ");
+  // Normalize case-insensitive variations like " Vs ", " Vs. ", " V. ", " v " to " vs "
+  title = title.replace(/\s+[vV][sS]?\.?\s+/g, " vs ");
+
+  return title;
+}
+
+
+/**
  * Shared constants/helpers used by both CaseDocketRegister (search/filter
  * toolbar) and CasesTable (the actual table + edit/view dialog) — kept in
  * their own module so those two components can import from each other's

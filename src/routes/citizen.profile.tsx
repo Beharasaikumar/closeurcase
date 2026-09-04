@@ -1,24 +1,32 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/app/PageHeader";
 import { ProfileForm, type ProfileFormFields } from "@/components/app/ProfileForm";
-import { getCitizens, updateCitizenProfile } from "@/data/appStore";
+import { getCitizens, updateCitizenProfile, subscribeToStore } from "@/data/appStore";
+import { getCitizenSession, setCitizenSession } from "@/features/citizen/session";
 
 export const Route = createFileRoute("/citizen/profile")({
   component: CitizenProfilePage,
 });
 
-// No real per-session citizen identity exists in this mock app (see
-// CLAUDE.md — citizen "auth" only writes a session object, not a full
-// profile) — fall back to the first seeded citizen record, matching the
-// demo record this page has always shown.
 function CitizenProfilePage() {
-  const citizen = useMemo(() => getCitizens()[0], []);
+  const [citizens, setCitizens] = useState(getCitizens);
+
+  useEffect(() => {
+    const sync = () => setCitizens(getCitizens());
+    return subscribeToStore(sync);
+  }, []);
+
+  const session = getCitizenSession();
+  const citizen = citizens[0];
 
   if (!citizen) return null;
 
+  const currentName = session.fullName || citizen.name;
+
   function handleSave(fields: ProfileFormFields) {
     updateCitizenProfile(citizen.id, fields);
+    setCitizenSession({ fullName: fields.name });
   }
 
   return (
@@ -31,10 +39,11 @@ function CitizenProfilePage() {
       <ProfileForm
         role="citizen"
         defaults={{
-          name: citizen.name,
+          name: currentName,
           email: citizen.email,
           phone: citizen.phone,
           city: citizen.city,
+          currentLocation: citizen.currentLocation || "Visakhapatnam, Andhra Pradesh",
           aadhar: "",
         }}
         wide

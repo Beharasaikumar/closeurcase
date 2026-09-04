@@ -30,6 +30,7 @@ import {
 import { FilterPanelButton, type FilterSection } from "@/components/app/FilterPanelButton";
 import { ExpandableFilterChips } from "@/components/app/ExpandableFilterChips";
 import { DocumentPreviewBody } from "@/components/app/DocumentPreview";
+import { openDocumentInNewTab } from "@/lib/files";
 import { PageHeader } from "@/components/app/PageHeader";
 import { getCases, subscribeToStore, updateCaseStatus } from "@/data/appStore";
 import type { LegalCase, CaseDocument } from "@/types";
@@ -42,6 +43,7 @@ import {
   nextHearingSortKey,
   fmtDate,
   todayISO,
+  formatCaseVsTitle,
 } from "@/components/app/caseDocketShared";
 
 function countBy<T extends string>(rows: LegalCase[], pick: (c: LegalCase) => T) {
@@ -215,14 +217,14 @@ export function CaseDocketRegister({
 
       {/* Toolbar: Search + Hearing Date Range + Filter Chips */}
       <div className="space-y-3">
-        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-          <div className="flex w-full items-center gap-2 sm:w-auto">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-2xl border border-border/80 bg-surface p-2.5 sm:p-3 shadow-2xs">
+          <div className="flex w-full items-center gap-2 sm:w-auto sm:flex-1 sm:max-w-lg min-w-0">
             <TextField
               value={searchTerm}
               onChange={setSearchTerm}
-              placeholder="Search by party name, case no. or CNR…"
+              placeholder="Search by party name, case no. or CNR..."
               leadingIcon={<Search className="h-4 w-4 text-muted-foreground" />}
-              className="min-w-0 flex-1 sm:w-80"
+              className="w-full sm:w-80 md:w-96 min-w-0 flex-1"
             />
             {isLawyer && (
               <FilterPanelButton
@@ -233,8 +235,8 @@ export function CaseDocketRegister({
             )}
           </div>
 
-          <div className="flex w-full flex-wrap items-end gap-2 sm:w-auto">
-            <label className="flex items-center gap-1">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto shrink-0">
+            <label className="flex items-center gap-1.5">
               <span className="text-[11px] font-semibold text-muted-foreground">Hearing</span>
               <input
                 type="date"
@@ -243,7 +245,7 @@ export function CaseDocketRegister({
                 className={NATIVE_DATE_INPUT_CLS}
               />
             </label>
-            <label className="flex items-center gap-1">
+            <label className="flex items-center gap-1.5">
               <span className="text-[11px] font-semibold text-muted-foreground">To</span>
               <input
                 type="date"
@@ -257,7 +259,7 @@ export function CaseDocketRegister({
 
         {isLawyer && clientOptions.length > 0 && (
           <ExpandableFilterChips
-            label="Client Name"
+            label="Petitioner Name"
             options={["All", ...clientOptions]}
             selected={clientFilter}
             onSelect={setClientFilter}
@@ -504,17 +506,23 @@ function PendingRequestsInbox({
                   {previewDoc.name}
                 </span>
               </div>
-              <div className="flex shrink-0 items-center gap-1">
-                <IconButton
-                  ariaLabel={previewFullScreen ? "Exit full screen" : "Full screen"}
-                  onClick={() => setPreviewFullScreen((v) => !v)}
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    openDocumentInNewTab({
+                      title: previewDoc.name,
+                      fileName: previewDoc.name,
+                      fileDataUrl: previewDoc.fileDataUrl,
+                      fileMimeType: previewDoc.fileMimeType,
+                    })
+                  }
+                  className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 hover:bg-primary/20 px-3 py-1.5 text-xs font-bold text-primary transition-all cursor-pointer shadow-2xs"
+                  title="Full Screen (Open document in new tab)"
                 >
-                  {previewFullScreen ? (
-                    <Minimize2 className="h-4 w-4" />
-                  ) : (
-                    <Maximize2 className="h-4 w-4" />
-                  )}
-                </IconButton>
+                  <Maximize2 className="h-3.5 w-3.5" />
+                  <span>Full Screen</span>
+                </button>
                 <IconButton ariaLabel="Close preview" onClick={() => setPreviewDoc(null)}>
                   <X className="h-4 w-4" />
                 </IconButton>
@@ -654,17 +662,23 @@ function PendingRequestsInbox({
                   {previewDoc.name}
                 </span>
               </div>
-              <div className="flex shrink-0 items-center gap-1">
-                <IconButton
-                  ariaLabel={previewFullScreen ? "Exit full screen" : "Full screen"}
-                  onClick={() => setPreviewFullScreen((v) => !v)}
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    openDocumentInNewTab({
+                      title: previewDoc.name,
+                      fileName: previewDoc.name,
+                      fileDataUrl: previewDoc.fileDataUrl,
+                      fileMimeType: previewDoc.fileMimeType,
+                    })
+                  }
+                  className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 hover:bg-primary/20 px-3 py-1.5 text-xs font-bold text-primary transition-all cursor-pointer shadow-2xs"
+                  title="Full Screen (Open document in new tab)"
                 >
-                  {previewFullScreen ? (
-                    <Minimize2 className="h-4 w-4" />
-                  ) : (
-                    <Maximize2 className="h-4 w-4" />
-                  )}
-                </IconButton>
+                  <Maximize2 className="h-3.5 w-3.5" />
+                  <span>Full Screen</span>
+                </button>
                 <IconButton ariaLabel="Close preview" onClick={() => setPreviewDoc(null)}>
                   <X className="h-4 w-4" />
                 </IconButton>
@@ -714,7 +728,7 @@ function PendingRequestCard({
       <div className="min-w-0 space-y-1">
         <div className="flex flex-wrap items-center gap-2">
           <h3 className="line-clamp-2 text-sm font-bold text-foreground leading-snug">
-            {c.title || "Untitled Matter"}
+            {formatCaseVsTitle(c)}
           </h3>
           <span
             className="shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold"

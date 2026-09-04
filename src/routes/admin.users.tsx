@@ -153,13 +153,13 @@ function UsersPage() {
         description="View registered citizen users, inspect contact details, and toggle account access."
       />
 
-      <div className="flex justify-between items-center gap-3 rounded-2xl border border-border bg-surface p-4 shadow-2xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-2xl border border-border/80 bg-surface p-2.5 sm:p-3 shadow-2xs">
         <TextField
           value={q}
           onChange={setQ}
-          placeholder="Search by name, email, phone, location…"
-          leadingIcon={<Search className="h-4 w-4" />}
-          className="w-full sm:max-w-xs"
+          placeholder="Search by name, email, phone, city..."
+          leadingIcon={<Search className="h-4 w-4 text-muted-foreground" />}
+          className="w-full sm:w-80 md:w-96 min-w-0 flex-1"
         />
         <FilterPanelButton sections={filterSections} selected={filters} onChange={setFilters} />
       </div>

@@ -29,6 +29,7 @@ export interface Citizen {
   email: string;
   phone: string;
   city: string;
+  currentLocation?: string;
   joinedAt: string;
   lastLoginAt: string;
   status: "Active" | "Inactive";
@@ -54,6 +55,7 @@ export interface Lawyer {
   category: LegalCategory;
   roleTitle?: string;
   city: string;
+  currentLocation?: string;
   /** Neighbourhood/locality within `city` (e.g. "Gachibowli"), used to narrow
    * down the "Find a Lawyer" browse list once a city is picked. */
   area?: string;
@@ -80,6 +82,8 @@ export interface Lawyer {
   courts?: string[];
   awards?: LawyerAward[];
   ratingCount?: number;
+  consultationFee?: number;
+  availabilityStatus?: "Active" | "Inactive";
 }
 
 export type SubscriptionPlanId = "monthly" | "yearly";
@@ -276,10 +280,12 @@ export interface LegalCase {
   updatedAt: string;
   /** Platform status-change log (Pending by Lawyer → Accepted → …). */
   timeline: TimelineEvent[];
-  fileNo?: string;
   source?: "manual" | "ecourt";
   isEmergency?: boolean;
   emergencyReason?: string;
+  practiceArea?: string;
+  specialization?: string;
+  legalService?: string;
 
   // eCourts-shaped nested data — mirrors case_structure.json exactly.
   caseDetails: CaseDetails;

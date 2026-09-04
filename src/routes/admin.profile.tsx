@@ -31,21 +31,25 @@ function AdminProfilePage() {
         wide
         onSave={handleSave}
         extraField={() => (
-          <div className="rounded-lg border border-primary/20 bg-primary/5 p-3.5 space-y-2">
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
-              <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
-              <span className="text-xs font-bold text-foreground uppercase tracking-wide">
-                Access Level
-              </span>
-              <span className="ml-auto whitespace-nowrap text-[10px] font-semibold text-muted-foreground bg-muted rounded-full px-2 py-0.5">
+          <div className="space-y-4 rounded-2xl border border-border/80 bg-surface/95 p-5 shadow-2xs sm:p-6">
+            <div className="flex items-center justify-between border-b border-border/60 pb-3">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-4.5 w-4.5 text-primary shrink-0" />
+                <h3 className="text-sm font-bold text-foreground uppercase tracking-wide">
+                  Admin Authorization & Security
+                </h3>
+              </div>
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold text-primary">
                 Highest Privilege
               </span>
             </div>
-            <p className="text-xs font-bold text-foreground">Super Admin</p>
-            <p className="text-[10px] text-muted-foreground leading-relaxed">
-              Full platform access — Lawyer verification, user management, case oversight, and
-              knowledge base control.
-            </p>
+
+            <div className="space-y-2">
+              <p className="text-sm font-bold text-foreground">Super Administrator Access</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Full platform access — Lawyer verification, user management, case oversight, and knowledge base control.
+              </p>
+            </div>
           </div>
         )}
       />

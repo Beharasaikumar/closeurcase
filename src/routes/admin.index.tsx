@@ -164,14 +164,14 @@ function DailyRegistrationsChart({ data }: { data: DailyRegPoint[] }) {
   const [showCitizens, setShowCitizens] = useState(true);
   const [showLawyers, setShowLawyers] = useState(true);
 
-  const height = 240;
-  const width = Math.max(600, data.length * 90);
-  const padding = { top: 24, right: 30, bottom: 36, left: 36 };
-  const plotW = width - padding.left - padding.right;
-  const plotH = height - padding.top - padding.bottom;
+  const viewBoxW = 1000;
+  const viewBoxH = 240;
+  const padding = { top: 25, right: 35, bottom: 35, left: 45 };
+  const plotW = viewBoxW - padding.left - padding.right;
+  const plotH = viewBoxH - padding.top - padding.bottom;
 
   const rawMax = Math.max(1, ...data.map((d) => Math.max(d.citizens, d.lawyers)));
-  const maxVal = Math.ceil(rawMax * 1.2) || 4;
+  const maxVal = Math.ceil(rawMax * 1.25) || 4;
 
   const xFor = (i: number) =>
     padding.left + (data.length <= 1 ? plotW / 2 : (i / (data.length - 1)) * plotW);
@@ -187,7 +187,7 @@ function DailyRegistrationsChart({ data }: { data: DailyRegPoint[] }) {
 
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const mouseX = ((e.clientX - rect.left) / rect.width) * width;
+    const mouseX = ((e.clientX - rect.left) / rect.width) * viewBoxW;
     let closestIdx = 0;
     let minDiff = Infinity;
     data.forEach((_, i) => {
@@ -203,63 +203,79 @@ function DailyRegistrationsChart({ data }: { data: DailyRegPoint[] }) {
   const activePoint = hoverIndex !== null ? data[hoverIndex] : null;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4 w-full">
       {/* Legend & Toggle Controls */}
-      <div className="flex items-center justify-between gap-3 text-xs font-semibold px-1">
-        <div className="text-muted-foreground text-[11px]">
+      <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-semibold px-1">
+        <div className="text-muted-foreground text-[11px] flex items-center gap-2">
           {activePoint ? (
-            <span>
-              Hovering: <strong className="text-foreground">{activePoint.label}</strong>
+            <span className="inline-flex items-center gap-2 rounded-lg bg-primary/10 px-2.5 py-1 text-primary font-bold">
+              <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+              {activePoint.label} ({activePoint.citizens} Citizens, {activePoint.lawyers} Lawyers)
             </span>
           ) : (
-            <span>Hover over a dot to inspect that day's new registrations</span>
+            <span className="text-muted-foreground">Hover over any data node to inspect daily metrics</span>
           )}
         </div>
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={() => setShowCitizens((v) => !v || !showLawyers)}
-            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold border transition-all cursor-pointer ${
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold border transition-all cursor-pointer shadow-2xs ${
               showCitizens
-                ? "border-blue-500/40 bg-blue-50 text-blue-700 shadow-2xs"
-                : "border-border bg-muted/40 text-muted-foreground opacity-50"
+                ? "border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                : "border-border/60 bg-muted/40 text-muted-foreground opacity-50"
             }`}
           >
-            <span className="h-2 w-2 rounded-full bg-blue-500" />
-            Citizens
+            <span className="h-2.5 w-2.5 rounded-full bg-blue-500 shadow-xs" />
+            Citizens ({data.reduce((a, b) => a + b.citizens, 0)})
           </button>
           <button
+            type="button"
             onClick={() => setShowLawyers((v) => !v || !showCitizens)}
-            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold border transition-all cursor-pointer ${
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold border transition-all cursor-pointer shadow-2xs ${
               showLawyers
-                ? "border-rose-500/40 bg-rose-50 text-rose-700 shadow-2xs"
-                : "border-border bg-muted/40 text-muted-foreground opacity-50"
+                ? "border-rose-500/40 bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                : "border-border/60 bg-muted/40 text-muted-foreground opacity-50"
             }`}
           >
-            <span className="h-2 w-2 rounded-full bg-rose-500" />
-            Lawyers
+            <span className="h-2.5 w-2.5 rounded-full bg-rose-500 shadow-xs" />
+            Lawyers ({data.reduce((a, b) => a + b.lawyers, 0)})
           </button>
         </div>
       </div>
 
-      {/* SVG Chart */}
-      <div className="relative overflow-x-auto rounded-xl border border-border/60 bg-background/50 p-2">
+      {/* SVG Chart Container */}
+      <div className="relative w-full rounded-2xl border border-border/80 bg-gradient-to-b from-surface via-background/60 to-surface/80 p-3 sm:p-4 shadow-sm">
         <svg
-          width={width}
-          height={height}
-          viewBox={`0 0 ${width} ${height}`}
-          className="min-w-full cursor-crosshair select-none"
+          viewBox={`0 0 ${viewBoxW} ${viewBoxH}`}
+          className="w-full h-auto min-h-[220px] sm:min-h-[250px] cursor-crosshair select-none overflow-visible"
           onMouseMove={handleMouseMove}
           onMouseLeave={() => setHoverIndex(null)}
         >
           <defs>
+            {/* Citizen Blue Fill Gradient */}
             <linearGradient id="citizenGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.35" />
+              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.4" />
+              <stop offset="50%" stopColor="#3b82f6" stopOpacity="0.15" />
               <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
             </linearGradient>
+
+            {/* Lawyer Rose Fill Gradient */}
             <linearGradient id="lawyerGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#f43f5e" stopOpacity="0.3" />
+              <stop offset="0%" stopColor="#f43f5e" stopOpacity="0.35" />
+              <stop offset="50%" stopColor="#f43f5e" stopOpacity="0.1" />
               <stop offset="100%" stopColor="#f43f5e" stopOpacity="0.0" />
             </linearGradient>
+
+            {/* Glow Filters for Lines */}
+            <filter id="glow-blue" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+            <filter id="glow-rose" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
           </defs>
 
           {/* Horizontal Gridlines & Y-axis labels */}
@@ -271,18 +287,19 @@ function DailyRegistrationsChart({ data }: { data: DailyRegPoint[] }) {
                 <line
                   x1={padding.left}
                   y1={y}
-                  x2={width - padding.right}
+                  x2={viewBoxW - padding.right}
                   y2={y}
                   stroke="var(--color-border)"
-                  strokeDasharray="4 4"
-                  strokeOpacity="0.6"
+                  strokeDasharray="6 6"
+                  strokeOpacity="0.5"
                 />
                 <text
-                  x={padding.left - 8}
-                  y={y + 3}
+                  x={padding.left - 10}
+                  y={y + 4}
                   textAnchor="end"
-                  fontSize="10"
+                  fontSize="11"
                   fontFamily="mono"
+                  fontWeight="600"
                   fill="var(--color-muted-foreground)"
                 >
                   {val}
@@ -299,21 +316,26 @@ function DailyRegistrationsChart({ data }: { data: DailyRegPoint[] }) {
                 d={getBezierPath(citizenPoints)}
                 fill="none"
                 stroke="#3b82f6"
-                strokeWidth="2.5"
+                strokeWidth="3.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                filter="url(#glow-blue)"
               />
               {citizenPoints.map((p, i) => (
-                <circle
-                  key={i}
-                  cx={p.x}
-                  cy={p.y}
-                  r={hoverIndex === i ? 5.5 : 4}
-                  fill="#3b82f6"
-                  stroke="#ffffff"
-                  strokeWidth="2"
-                  className="transition-all"
-                />
+                <g key={i}>
+                  {hoverIndex === i && (
+                    <circle cx={p.x} cy={p.y} r="10" fill="#3b82f6" fillOpacity="0.25" />
+                  )}
+                  <circle
+                    cx={p.x}
+                    cy={p.y}
+                    r={hoverIndex === i ? 6 : 4.5}
+                    fill="#3b82f6"
+                    stroke="#ffffff"
+                    strokeWidth="2.5"
+                    className="transition-all cursor-pointer"
+                  />
+                </g>
               ))}
             </g>
           )}
@@ -326,21 +348,26 @@ function DailyRegistrationsChart({ data }: { data: DailyRegPoint[] }) {
                 d={getBezierPath(lawyerPoints)}
                 fill="none"
                 stroke="#f43f5e"
-                strokeWidth="2.5"
+                strokeWidth="3.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                filter="url(#glow-rose)"
               />
               {lawyerPoints.map((p, i) => (
-                <circle
-                  key={i}
-                  cx={p.x}
-                  cy={p.y}
-                  r={hoverIndex === i ? 5.5 : 4}
-                  fill="#f43f5e"
-                  stroke="#ffffff"
-                  strokeWidth="2"
-                  className="transition-all"
-                />
+                <g key={i}>
+                  {hoverIndex === i && (
+                    <circle cx={p.x} cy={p.y} r="10" fill="#f43f5e" fillOpacity="0.25" />
+                  )}
+                  <circle
+                    cx={p.x}
+                    cy={p.y}
+                    r={hoverIndex === i ? 6 : 4.5}
+                    fill="#f43f5e"
+                    stroke="#ffffff"
+                    strokeWidth="2.5"
+                    className="transition-all cursor-pointer"
+                  />
+                </g>
               ))}
             </g>
           )}
@@ -353,10 +380,10 @@ function DailyRegistrationsChart({ data }: { data: DailyRegPoint[] }) {
               <g key={d.date}>
                 <text
                   x={x}
-                  y={height - 10}
+                  y={viewBoxH - 8}
                   textAnchor="middle"
-                  fontSize="10"
-                  fontWeight={isHovered ? "700" : "500"}
+                  fontSize="11"
+                  fontWeight={isHovered ? "800" : "600"}
                   fill={isHovered ? "var(--color-foreground)" : "var(--color-muted-foreground)"}
                   className="transition-colors"
                 >
@@ -374,9 +401,9 @@ function DailyRegistrationsChart({ data }: { data: DailyRegPoint[] }) {
               x2={xFor(hoverIndex)}
               y2={bottomY}
               stroke="var(--color-primary)"
-              strokeWidth="1.5"
-              strokeDasharray="3 3"
-              strokeOpacity="0.8"
+              strokeWidth="2"
+              strokeDasharray="4 4"
+              strokeOpacity="0.75"
               className="pointer-events-none"
             />
           )}
@@ -385,31 +412,31 @@ function DailyRegistrationsChart({ data }: { data: DailyRegPoint[] }) {
         {/* Floating Tooltip Card on Hover */}
         {hoverIndex !== null && activePoint && (
           <div
-            className="pointer-events-none absolute z-30 transform -translate-x-1/2 rounded-xl border border-border bg-surface/95 p-3 shadow-lg backdrop-blur-md transition-all duration-150 text-xs space-y-1.5 min-w-37.5"
+            className="pointer-events-none absolute z-30 transform -translate-x-1/2 rounded-2xl border border-primary/30 bg-surface/95 p-3.5 shadow-xl backdrop-blur-xl transition-all duration-150 text-xs space-y-2 min-w-44"
             style={{
-              left: `${(xFor(hoverIndex) / width) * 100}%`,
+              left: `${(xFor(hoverIndex) / viewBoxW) * 100}%`,
               top: "12px",
             }}
           >
-            <div className="border-b border-border pb-1 text-[11px] font-bold text-foreground flex items-center justify-between">
+            <div className="border-b border-border/60 pb-1.5 text-xs font-extrabold text-foreground flex items-center justify-between gap-2">
               <span>{activePoint.label}</span>
-              <span className="text-[10px] text-muted-foreground font-normal">
-                New Registrations
+              <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                Registration Metric
               </span>
             </div>
             {showCitizens && (
-              <div className="flex items-center justify-between gap-3 text-blue-700">
-                <span className="flex items-center gap-1.5 font-medium">
-                  <span className="h-2 w-2 rounded-full bg-blue-500" />
+              <div className="flex items-center justify-between gap-3 text-blue-600 dark:text-blue-400">
+                <span className="flex items-center gap-1.5 font-bold">
+                  <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
                   Citizens:
                 </span>
                 <span className="font-bold font-mono text-sm">{activePoint.citizens}</span>
               </div>
             )}
             {showLawyers && (
-              <div className="flex items-center justify-between gap-3 text-rose-700">
-                <span className="flex items-center gap-1.5 font-medium">
-                  <span className="h-2 w-2 rounded-full bg-rose-500" />
+              <div className="flex items-center justify-between gap-3 text-rose-600 dark:text-rose-400">
+                <span className="flex items-center gap-1.5 font-bold">
+                  <span className="h-2.5 w-2.5 rounded-full bg-rose-500" />
                   Lawyers:
                 </span>
                 <span className="font-bold font-mono text-sm">{activePoint.lawyers}</span>

@@ -125,7 +125,7 @@ export function ExpandableFilterChips({
               onClick={() => onSelect(opt)}
               // Material's filter chip only ellipsizes once its own box is
               // width-constrained — without this, a long label (e.g. a full
-              // client name) renders at full width instead of truncating.
+              // Petitioner Name) renders at full width instead of truncating.
               style={{ maxWidth: "min(220px, 60vw)" }}
             />
           ))}

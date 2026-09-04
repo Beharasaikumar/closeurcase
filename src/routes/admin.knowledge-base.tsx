@@ -219,53 +219,49 @@ export function KnowledgeBasePage() {
       )}
 
       {/* SEARCH BAR, SORT & UPLOAD BUTTON */}
-      <div className="rounded-2xl border border-border bg-surface p-3 sm:p-4 shadow-2xs space-y-2.5 sm:space-y-0">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-          {/* Mobile Row 1: Search input + Upload button side by side */}
-          <div className="flex items-center gap-2 w-full sm:w-auto sm:flex-1 sm:max-w-sm">
-            <TextField
-              value={search}
-              onChange={setSearch}
-              placeholder="Search acts, judgements, domains…"
-              leadingIcon={<Search className="h-4 w-4" />}
-              className="flex-1 min-w-0"
-            />
-            <IconButton
-              variant="filled"
-              onClick={() => {
-                setUploadError("");
-                setShowUploadModal(true);
-              }}
-              ariaLabel="Upload document"
-              className="shrink-0 sm:hidden"
-            >
-              <Plus className="h-4 w-4" />
-            </IconButton>
-          </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-2xl border border-border/80 bg-surface p-2.5 sm:p-3 shadow-2xs">
+        <div className="flex items-center gap-2 w-full sm:w-80 md:w-96 min-w-0 flex-1">
+          <TextField
+            value={search}
+            onChange={setSearch}
+            placeholder="Search acts, judgements, domains..."
+            leadingIcon={<Search className="h-4 w-4 text-muted-foreground" />}
+            className="w-full min-w-0 flex-1"
+          />
+          <IconButton
+            variant="filled"
+            onClick={() => {
+              setUploadError("");
+              setShowUploadModal(true);
+            }}
+            ariaLabel="Upload document"
+            className="shrink-0 sm:hidden"
+          >
+            <Plus className="h-4 w-4" />
+          </IconButton>
+        </div>
 
-          {/* Desktop & Mobile Sort + Desktop Upload */}
-          <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
-            <Select
-              label="Sort"
-              value={sortOrder}
-              onChange={(v) => setSortOrder(v as SortOrder)}
-              options={[
-                { value: "newest", label: "Newest First" },
-                { value: "oldest", label: "Oldest First" },
-              ]}
-              className="flex-1 sm:w-44"
-            />
-            <Button
-              icon={<Plus className="h-4 w-4" />}
-              onClick={() => {
-                setUploadError("");
-                setShowUploadModal(true);
-              }}
-              className="hidden sm:inline-flex shrink-0"
-            >
-              Upload Document
-            </Button>
-          </div>
+        <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+          <Select
+            label="Sort"
+            value={sortOrder}
+            onChange={(v) => setSortOrder(v as SortOrder)}
+            options={[
+              { value: "newest", label: "Newest First" },
+              { value: "oldest", label: "Oldest First" },
+            ]}
+            className="flex-1 sm:w-44"
+          />
+          <Button
+            icon={<Plus className="h-4 w-4" />}
+            onClick={() => {
+              setUploadError("");
+              setShowUploadModal(true);
+            }}
+            className="hidden sm:inline-flex shrink-0"
+          >
+            Upload Document
+          </Button>
         </div>
       </div>
 

@@ -24,7 +24,7 @@ import {
   knowledgeBase as seedKnowledgeBase,
 } from "./mock";
 
-const LAWYERS_KEY = "cuc_lawyers_v8";
+const LAWYERS_KEY = "cuc_lawyers_v9";
 const CITIZENS_KEY = "cuc_citizens_v3";
 const NOTIFICATIONS_KEY = "cuc_notifications_v2";
 const VIDEO_CALLS_KEY = "cuc_video_calls_v1";
@@ -354,10 +354,7 @@ export function updateLawyerStatus(id: string, status: Lawyer["status"]) {
   saveLawyers(updated);
 }
 
-export function updateLawyerProfile(
-  id: string,
-  fields: Partial<Pick<Lawyer, "name" | "email" | "phone" | "city" | "practiceAreas">>,
-) {
+export function updateLawyerProfile(id: string, fields: Partial<Lawyer>) {
   const current = getLawyers();
   const updated = current.map((l) => (l.id === id ? { ...l, ...fields } : l));
   saveLawyers(updated);
@@ -380,7 +377,7 @@ export function updateCitizenStatus(id: string, status: Citizen["status"]) {
 
 export function updateCitizenProfile(
   id: string,
-  fields: Partial<Pick<Citizen, "name" | "email" | "phone" | "city">>,
+  fields: Partial<Pick<Citizen, "name" | "email" | "phone" | "city" | "currentLocation">>,
 ) {
   const current = getCitizens();
   const updated = current.map((c) => (c.id === id ? { ...c, ...fields } : c));

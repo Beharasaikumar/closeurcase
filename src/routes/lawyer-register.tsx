@@ -25,6 +25,7 @@ import type { FormStep } from "@/components/app/FormStepper";
 import { PermissionsGate } from "@/components/app/PermissionsGate";
 import { usePermissionsGate } from "@/features/permissions/usePermissionsGate";
 import { LAWYER_PRACTICE_AREAS } from "@/components/app/lawyerPracticeAreas";
+import { sanitizeName, sanitizePhone, validateName, validatePhone, validateEmail } from "@/lib/validations";
 import { INDIAN_COURTS, INDIAN_CITIES, INDIAN_LANGUAGES } from "@/data/courts";
 import { addLawyer } from "@/data/appStore";
 import { readFileAsDataUrl } from "@/lib/files";
@@ -123,13 +124,20 @@ function LawyerRegister() {
   }
 
   const [name, setName] = useState("");
+  const [nameTouched, setNameTouched] = useState(false);
   const [cities, setCities] = useState<string[]>([]);
   const [email, setEmail] = useState("");
+  const [emailTouched, setEmailTouched] = useState(false);
   const [phone, setPhone] = useState("");
+  const [phoneTouched, setPhoneTouched] = useState(false);
   const [barId, setBarId] = useState("");
   const [address, setAddress] = useState("");
   const [experienceYears, setExperienceYears] = useState(5);
   const [bio, setBio] = useState("");
+
+  const nameRes = validateName(name);
+  const emailRes = validateEmail(email);
+  const phoneRes = validatePhone(phone);
 
   // 3-Tier Practice Category Selection State
   const [selectedPracticeArea, setSelectedPracticeArea] = useState<string>("");
@@ -282,6 +290,18 @@ function LawyerRegister() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setNameTouched(true);
+    setEmailTouched(true);
+    setPhoneTouched(true);
+
+    if (!nameRes.isValid) {
+      setStep(1);
+      return;
+    }
+    if (!emailRes.isValid || !phoneRes.isValid) {
+      setStep(3);
+      return;
+    }
     const primaryPractice = selectedPracticeEntries[0]?.practiceArea || "Civil Law";
     const category = mapPracticeAreaToCategory(primaryPractice);
     const specializations = Array.from(
@@ -484,14 +504,23 @@ function LawyerRegister() {
           </div>
 
           {/* Full Name */}
-          <TextField
-            label={isFirm ? "Organisation Name" : "Full name"}
-            required
-            value={name}
-            onChange={setName}
-            placeholder={isFirm ? "M/s. Reddy & Associates" : "Adv. Swathi Reddy"}
-            className="w-full"
-          />
+          <div className="space-y-1">
+            <TextField
+              label={isFirm ? "Organisation Name" : "Full name (Letters Only)"}
+              required
+              value={name}
+              onChange={(v) => {
+                setName(sanitizeName(v));
+                setNameTouched(true);
+              }}
+              placeholder={isFirm ? "M/s. Reddy & Associates" : "Adv. Swathi Reddy"}
+              error={nameTouched && !nameRes.isValid}
+              className="w-full"
+            />
+            {nameTouched && !nameRes.isValid && (
+              <p className="text-[11px] font-medium text-destructive">{nameRes.error}</p>
+            )}
+          </div>
 
           {/* Service Cities */}
           <TagDropdownField
@@ -636,26 +665,45 @@ function LawyerRegister() {
 
         <Step n={3} current={step}>
           <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 *:min-w-0">
-            <TextField
-              label="Email"
-              type="email"
-              required
-              value={email}
-              onChange={setEmail}
-              placeholder="swathi@law.com"
-              className="w-full"
-            />
-            <TextField
-              label="Phone"
-              type="tel"
-              required
-              value={phone}
-              onChange={(v) => setPhone(v.replace(/\D/g, "").slice(0, 10))}
-              placeholder="98100 12345"
-              prefixText="+91"
-              maxLength={10}
-              className="w-full"
-            />
+            <div className="space-y-1">
+              <TextField
+                label="Email"
+                type="email"
+                required
+                value={email}
+                onChange={(v) => {
+                  setEmail(v);
+                  setEmailTouched(true);
+                }}
+                placeholder="swathi@law.com"
+                error={emailTouched && !emailRes.isValid}
+                className="w-full"
+              />
+              {emailTouched && !emailRes.isValid && (
+                <p className="text-[11px] font-medium text-destructive">{emailRes.error}</p>
+              )}
+            </div>
+
+            <div className="space-y-1">
+              <TextField
+                label="Phone (10 Digits)"
+                type="tel"
+                required
+                value={phone}
+                onChange={(v) => {
+                  setPhone(sanitizePhone(v));
+                  setPhoneTouched(true);
+                }}
+                placeholder="98100 12345"
+                prefixText="+91"
+                maxLength={10}
+                error={phoneTouched && !phoneRes.isValid}
+                className="w-full"
+              />
+              {phoneTouched && !phoneRes.isValid && (
+                <p className="text-[11px] font-medium text-destructive">{phoneRes.error}</p>
+              )}
+            </div>
           </div>
 
           <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 *:min-w-0">

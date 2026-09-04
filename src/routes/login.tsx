@@ -6,6 +6,8 @@ import { usePermissionsGate } from "@/features/permissions/usePermissionsGate";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { TextField, IconButton, Button } from "@/components/m3";
 
+import { validateEmail } from "@/lib/validations";
+
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Lawyer & Admin sign in — CloseUrCase" }] }),
   component: Login,
@@ -14,10 +16,12 @@ export const Route = createFileRoute("/login")({
 export function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("lawyer@CloseUrCase.app");
+  const [emailTouched, setEmailTouched] = useState(false);
   const [password, setPassword] = useState("••••••••");
   const [showPassword, setShowPassword] = useState(false);
   const [permissionsAcknowledged, acknowledgePermissions] = usePermissionsGate();
 
+  const emailRes = validateEmail(email);
   const getRole = (e: string) => (e.includes("admin") ? "admin" : "lawyer");
 
   const handleFormEnterKey = (e: React.KeyboardEvent<HTMLElement>) => {
@@ -58,20 +62,31 @@ export function Login() {
         onKeyDown={handleFormEnterKey}
         onSubmit={(e) => {
           e.preventDefault();
+          setEmailTouched(true);
+          if (!emailRes.isValid) return;
           const role = getRole(email);
           navigate({ to: role === "lawyer" ? "/lawyer" : "/admin" });
         }}
       >
-        <TextField
-          label="Email address"
-          type="email"
-          required
-          value={email}
-          onChange={setEmail}
-          placeholder="you@example.com"
-          leadingIcon={<Mail className="h-4 w-4" />}
-          className="w-full"
-        />
+        <div className="space-y-1">
+          <TextField
+            label="Email address"
+            type="email"
+            required
+            value={email}
+            onChange={(v) => {
+              setEmail(v);
+              setEmailTouched(true);
+            }}
+            placeholder="you@example.com"
+            leadingIcon={<Mail className="h-4 w-4" />}
+            error={emailTouched && !emailRes.isValid}
+            className="w-full"
+          />
+          {emailTouched && !emailRes.isValid && (
+            <p className="text-[11px] font-medium text-destructive">{emailRes.error}</p>
+          )}
+        </div>
 
         <div className="space-y-1.5">
           <TextField

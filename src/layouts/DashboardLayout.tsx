@@ -19,6 +19,7 @@ import {
   Scale,
   MapPin,
   CreditCard,
+  IndianRupee,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getNotifications, getProfilePhoto, subscribeToStore } from "@/data/appStore";
@@ -53,6 +54,12 @@ const LAWYER_BOTTOM_NAV: {
     label: "My Cases",
     icon: Folder,
     match: (p) => p.startsWith("/lawyer/cases"),
+  },
+  {
+    to: "/lawyer/revenue",
+    label: "Revenue",
+    icon: IndianRupee,
+    match: (p) => p.startsWith("/lawyer/revenue"),
   },
   {
     to: "/lawyer/ai-assistant",

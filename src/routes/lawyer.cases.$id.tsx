@@ -12,6 +12,7 @@ import {
   getCourtHistory,
 } from "@/components/app/caseDocketShared";
 import {
+  ArrowLeft,
   ChevronRight,
   Printer,
   Landmark,
@@ -90,14 +91,7 @@ function LawyerCaseDetailBody({
   readOnly?: boolean;
 }) {
   const cd = c.caseDetails;
-  const [editingFileNo, setEditingFileNo] = useState(false);
-  const [fileNoDraft, setFileNoDraft] = useState(c.fileNo ?? "");
   const [showLawyers, setShowLawyers] = useState(false);
-
-  const handleSaveFileNo = () => {
-    updateCaseFields(c.id, { fileNo: fileNoDraft.trim() || undefined });
-    setEditingFileNo(false);
-  };
 
   const today = new Date().toISOString().slice(0, 10);
   const nextHearing = [...cd.historyOfCaseHearings]
@@ -119,76 +113,42 @@ function LawyerCaseDetailBody({
         }
       />
 
-      {/* Breadcrumb */}
-      <div className="flex min-w-0 items-center gap-1.5 -mt-3 text-xs text-muted-foreground">
+      {/* Back Button */}
+      <div className="-mt-3">
         <Link
           to="/lawyer/cases"
-          className="shrink-0 font-semibold hover:text-foreground hover:underline"
+          className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border/80 bg-surface px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted transition-all shadow-2xs"
         >
-          My Cases
+          <ArrowLeft className="h-3.5 w-3.5 text-primary" />
+          <span>Back to My Cases</span>
         </Link>
-        <ChevronRight className="h-3 w-3 shrink-0" />
-        <span className="truncate max-w-[240px] sm:max-w-md">{c.title}</span>
       </div>
 
       {/* Header card */}
       <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6 shadow-2xs space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
-          {!readOnly && editingFileNo ? (
-            <div className="flex items-center gap-2">
-              <TextField
-                label="File No."
-                value={fileNoDraft}
-                onChange={setFileNoDraft}
-                autoFocus
-                className="w-40"
-              />
-              <Button onClick={handleSaveFileNo}>Save</Button>
-            </div>
-          ) : c.fileNo || !readOnly ? (
-            <div className="flex items-center gap-1.5 text-xs">
-              <span className="font-bold text-muted-foreground">File No.</span>
-              {c.fileNo ? (
-                <span className="font-semibold text-foreground">{c.fileNo}</span>
-              ) : (
-                <button
-                  onClick={() => {
-                    setFileNoDraft("");
-                    setEditingFileNo(true);
-                  }}
-                  className="cursor-pointer font-bold text-primary hover:underline"
-                >
-                  + Add
-                </button>
-              )}
-            </div>
-          ) : (
-            <div />
-          )}
-
-          <StatusDot status={c.status} />
-        </div>
-
         {/* Case facts */}
         <div className="space-y-2.5 border-b border-border pb-4">
-          <MetaLine
-            parts={[
-              cd.caseNumber && (
-                <span className="font-mono font-bold text-foreground">{cd.caseNumber}</span>
-              ),
-              cd.courtName && (
-                <span className="inline-flex items-center gap-1.5 text-foreground/90">
-                  <Landmark className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  {cd.courtName}
-                </span>
-              ),
-              c.lawyerName && (
-                <span className="text-foreground/90">
-                  Lawyer: <span className="font-semibold text-foreground">{c.lawyerName}</span>
-                </span>
-              ),
-            ]}
-          />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <MetaLine
+              parts={[
+                cd.caseNumber && (
+                  <span className="font-mono font-bold text-foreground">{cd.caseNumber}</span>
+                ),
+                cd.courtName && (
+                  <span className="inline-flex items-center gap-1.5 text-foreground/90">
+                    <Landmark className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    {cd.courtName}
+                  </span>
+                ),
+                c.lawyerName && (
+                  <span className="text-foreground/90">
+                    Lawyer: <span className="font-semibold text-foreground">{c.lawyerName}</span>
+                  </span>
+                ),
+              ]}
+            />
+            <StatusDot status={c.status} />
+          </div>
 
           <MetaLine
             parts={[

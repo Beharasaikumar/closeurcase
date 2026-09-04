@@ -4,6 +4,7 @@ import { LayoutGrid, Search, Folder, User, Bell, CreditCard } from "lucide-react
 import { DashboardLayout } from "@/layouts/DashboardLayout";
 import { useCitizenLanguage } from "@/features/citizen/i18n/CitizenLanguageContext";
 import { getCitizenSession } from "@/features/citizen/session";
+import { getCitizens } from "@/data/appStore";
 
 export const Route = createFileRoute("/citizen")({
   beforeLoad: () => {
@@ -19,9 +20,9 @@ export const Route = createFileRoute("/citizen")({
 
 function CitizenLayout() {
   const { translate } = useCitizenLanguage();
-  // Demo citizen profile: Sai Teja Reddy (u_001) — must match /citizen/profile's
-  // name so the avatar (derived from this name) stays consistent app-wide.
-  const userName = "Sai Teja Reddy";
+  const session = getCitizenSession();
+  const firstCitizen = getCitizens()[0];
+  const userName = session.fullName || firstCitizen?.name || "Sai Teja Reddy";
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isChatRoute = /^\/citizen\/chat\//.test(pathname);
   // The Find a Lawyer wizard manages its own fixed header/footer + internal

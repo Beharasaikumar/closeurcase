@@ -20,7 +20,7 @@ export function CasesListView() {
   const [search, setSearch] = useState("");
   const [clientFilter, setClientFilter] = useState<string>("All");
   // Universal filter panel for Respondent — matches the admin Users page's
-  // multi-select-with-counts filter pattern. Client Name stays untouched.
+  // multi-select-with-counts filter pattern. Petitioner Name stays untouched.
   const [respondentFilters, setRespondentFilters] = useState<string[]>([]);
   const [importOpen, setImportOpen] = useState(false);
   const [page, setPage] = useState(1);
@@ -120,35 +120,14 @@ export function CasesListView() {
               one row up top (left), the button sits at the far right of that same row,
               chips underneath. All pieces live in one flex-wrap row so `order` can
               rearrange them per breakpoint without rendering the search field twice. */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-4">
-            <Button
-              icon={<Download className="h-4 w-4" />}
-              onClick={() => setImportOpen(true)}
-              className="order-1 w-full sm:order-2 sm:ml-auto sm:w-auto"
-            >
-              Import for eCourts
-            </Button>
-
-            {/* Client Name filter */}
-            {clients.length > 0 && (
-              <div className="order-2 w-full sm:order-3">
-                <ExpandableFilterChips
-                  label="Client Name"
-                  options={["All", ...clients]}
-                  selected={clientFilter}
-                  onSelect={setClientFilter}
-                />
-              </div>
-            )}
-
-            {/* Search + Filter (Respondent) — side by side; search shrinks to make room */}
-            <div className="order-3 flex w-full items-center gap-2 sm:order-1 sm:w-auto">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-2xl border border-border/80 bg-surface p-2.5 sm:p-3 shadow-2xs">
+            <div className="flex w-full items-center gap-2 sm:w-auto sm:flex-1 sm:max-w-lg min-w-0">
               <TextField
                 value={search}
                 onChange={setSearch}
-                placeholder="Party, Court, Case number…"
-                leadingIcon={<Search className="h-4 w-4" />}
-                className="min-w-0 flex-1 sm:w-80"
+                placeholder="Search party name, court, case no..."
+                leadingIcon={<Search className="h-4 w-4 text-muted-foreground" />}
+                className="w-full sm:w-80 md:w-96 min-w-0 flex-1"
               />
               {respondents.length > 0 && (
                 <FilterPanelButton
@@ -158,7 +137,25 @@ export function CasesListView() {
                 />
               )}
             </div>
+
+            <Button
+              icon={<Download className="h-4 w-4" />}
+              onClick={() => setImportOpen(true)}
+              className="w-full sm:w-auto shrink-0"
+            >
+              Import from eCourts
+            </Button>
           </div>
+
+          {/* Petitioner Name filter */}
+          {clients.length > 0 && (
+            <ExpandableFilterChips
+              label="Petitioner Name"
+              options={["All", ...clients]}
+              selected={clientFilter}
+              onSelect={setClientFilter}
+            />
+          )}
 
           {/* Cases List */}
           {filtered.length === 0 ? (

@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Star,
   XCircle,
+  IndianRupee,
 } from "lucide-react";
 import { UserAvatar } from "./UserAvatar";
 import type { Lawyer } from "@/types";
@@ -105,6 +106,12 @@ export function LawyerProfileCard({
         />
         <InfoRow icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={lawyer.email} />
         <InfoRow icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={lawyer.phone} />
+        <InfoRow
+          icon={<IndianRupee className="h-3.5 w-3.5" />}
+          label="Consultation Fee"
+          value={`₹${lawyer.consultationFee ?? 1500}`}
+          mono
+        />
         {lawyer.officeAddress && (
           <InfoRow
             icon={<MapPin className="h-3.5 w-3.5" />}

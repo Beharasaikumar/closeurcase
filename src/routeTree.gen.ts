@@ -26,6 +26,7 @@ import { Route as AdminLawyersRouteImport } from './routes/admin.lawyers'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminProfileRouteImport } from './routes/admin.profile'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminRevenueRouteImport } from './routes/admin.revenue'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as CitizenIndexRouteImport } from './routes/citizen.index'
@@ -43,6 +44,7 @@ import { Route as LawyerKnowledgeBaseRouteImport } from './routes/lawyer.knowled
 import { Route as LawyerNotificationsRouteImport } from './routes/lawyer.notifications'
 import { Route as LawyerProfileRouteImport } from './routes/lawyer.profile'
 import { Route as LawyerQaAssistantRouteImport } from './routes/lawyer.qa-assistant'
+import { Route as LawyerRevenueRouteImport } from './routes/lawyer.revenue'
 import { Route as LawyerSettingsRouteImport } from './routes/lawyer.settings'
 import { Route as LawyerSummarizerRouteImport } from './routes/lawyer.summarizer'
 import { Route as CitizenCasesIdRouteImport } from './routes/citizen.cases.$id'
@@ -137,6 +139,11 @@ const AdminReportsRoute = AdminReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminRevenueRoute = AdminRevenueRouteImport.update({
+  id: '/revenue',
+  path: '/revenue',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -222,6 +229,11 @@ const LawyerQaAssistantRoute = LawyerQaAssistantRouteImport.update({
   path: '/qa-assistant',
   getParentRoute: () => LawyerRoute,
 } as any)
+const LawyerRevenueRoute = LawyerRevenueRouteImport.update({
+  id: '/revenue',
+  path: '/revenue',
+  getParentRoute: () => LawyerRoute,
+} as any)
 const LawyerSettingsRoute = LawyerSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -280,6 +292,7 @@ export interface FileRoutesByFullPath {
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/revenue': typeof AdminRevenueRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/citizen/create-case': typeof CitizenCreateCaseRoute
@@ -295,6 +308,7 @@ export interface FileRoutesByFullPath {
   '/lawyer/notifications': typeof LawyerNotificationsRoute
   '/lawyer/profile': typeof LawyerProfileRoute
   '/lawyer/qa-assistant': typeof LawyerQaAssistantRoute
+  '/lawyer/revenue': typeof LawyerRevenueRoute
   '/lawyer/settings': typeof LawyerSettingsRoute
   '/lawyer/summarizer': typeof LawyerSummarizerRoute
   '/admin/': typeof AdminIndexRoute
@@ -321,6 +335,7 @@ export interface FileRoutesByTo {
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/revenue': typeof AdminRevenueRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/citizen/create-case': typeof CitizenCreateCaseRoute
@@ -335,6 +350,7 @@ export interface FileRoutesByTo {
   '/lawyer/notifications': typeof LawyerNotificationsRoute
   '/lawyer/profile': typeof LawyerProfileRoute
   '/lawyer/qa-assistant': typeof LawyerQaAssistantRoute
+  '/lawyer/revenue': typeof LawyerRevenueRoute
   '/lawyer/settings': typeof LawyerSettingsRoute
   '/lawyer/summarizer': typeof LawyerSummarizerRoute
   '/admin': typeof AdminIndexRoute
@@ -365,6 +381,7 @@ export interface FileRoutesById {
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/revenue': typeof AdminRevenueRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/citizen/create-case': typeof CitizenCreateCaseRoute
@@ -380,6 +397,7 @@ export interface FileRoutesById {
   '/lawyer/notifications': typeof LawyerNotificationsRoute
   '/lawyer/profile': typeof LawyerProfileRoute
   '/lawyer/qa-assistant': typeof LawyerQaAssistantRoute
+  '/lawyer/revenue': typeof LawyerRevenueRoute
   '/lawyer/settings': typeof LawyerSettingsRoute
   '/lawyer/summarizer': typeof LawyerSummarizerRoute
   '/admin/': typeof AdminIndexRoute
@@ -411,6 +429,7 @@ export interface FileRouteTypes {
     | '/admin/notifications'
     | '/admin/profile'
     | '/admin/reports'
+    | '/admin/revenue'
     | '/admin/settings'
     | '/admin/users'
     | '/citizen/create-case'
@@ -426,6 +445,7 @@ export interface FileRouteTypes {
     | '/lawyer/notifications'
     | '/lawyer/profile'
     | '/lawyer/qa-assistant'
+    | '/lawyer/revenue'
     | '/lawyer/settings'
     | '/lawyer/summarizer'
     | '/admin/'
@@ -452,6 +472,7 @@ export interface FileRouteTypes {
     | '/admin/notifications'
     | '/admin/profile'
     | '/admin/reports'
+    | '/admin/revenue'
     | '/admin/settings'
     | '/admin/users'
     | '/citizen/create-case'
@@ -466,6 +487,7 @@ export interface FileRouteTypes {
     | '/lawyer/notifications'
     | '/lawyer/profile'
     | '/lawyer/qa-assistant'
+    | '/lawyer/revenue'
     | '/lawyer/settings'
     | '/lawyer/summarizer'
     | '/admin'
@@ -495,6 +517,7 @@ export interface FileRouteTypes {
     | '/admin/notifications'
     | '/admin/profile'
     | '/admin/reports'
+    | '/admin/revenue'
     | '/admin/settings'
     | '/admin/users'
     | '/citizen/create-case'
@@ -510,6 +533,7 @@ export interface FileRouteTypes {
     | '/lawyer/notifications'
     | '/lawyer/profile'
     | '/lawyer/qa-assistant'
+    | '/lawyer/revenue'
     | '/lawyer/settings'
     | '/lawyer/summarizer'
     | '/admin/'
@@ -657,6 +681,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminReportsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/revenue': {
+      id: '/admin/revenue'
+      path: '/revenue'
+      fullPath: '/admin/revenue'
+      preLoaderRoute: typeof AdminRevenueRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/settings': {
       id: '/admin/settings'
       path: '/settings'
@@ -776,6 +807,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LawyerQaAssistantRouteImport
       parentRoute: typeof LawyerRoute
     }
+    '/lawyer/revenue': {
+      id: '/lawyer/revenue'
+      path: '/revenue'
+      fullPath: '/lawyer/revenue'
+      preLoaderRoute: typeof LawyerRevenueRouteImport
+      parentRoute: typeof LawyerRoute
+    }
     '/lawyer/settings': {
       id: '/lawyer/settings'
       path: '/settings'
@@ -842,6 +880,7 @@ interface AdminRouteChildren {
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminProfileRoute: typeof AdminProfileRoute
   AdminReportsRoute: typeof AdminReportsRoute
+  AdminRevenueRoute: typeof AdminRevenueRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -854,6 +893,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminProfileRoute: AdminProfileRoute,
   AdminReportsRoute: AdminReportsRoute,
+  AdminRevenueRoute: AdminRevenueRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
@@ -913,6 +953,7 @@ interface LawyerRouteChildren {
   LawyerNotificationsRoute: typeof LawyerNotificationsRoute
   LawyerProfileRoute: typeof LawyerProfileRoute
   LawyerQaAssistantRoute: typeof LawyerQaAssistantRoute
+  LawyerRevenueRoute: typeof LawyerRevenueRoute
   LawyerSettingsRoute: typeof LawyerSettingsRoute
   LawyerSummarizerRoute: typeof LawyerSummarizerRoute
   LawyerIndexRoute: typeof LawyerIndexRoute
@@ -926,6 +967,7 @@ const LawyerRouteChildren: LawyerRouteChildren = {
   LawyerNotificationsRoute: LawyerNotificationsRoute,
   LawyerProfileRoute: LawyerProfileRoute,
   LawyerQaAssistantRoute: LawyerQaAssistantRoute,
+  LawyerRevenueRoute: LawyerRevenueRoute,
   LawyerSettingsRoute: LawyerSettingsRoute,
   LawyerSummarizerRoute: LawyerSummarizerRoute,
   LawyerIndexRoute: LawyerIndexRoute,

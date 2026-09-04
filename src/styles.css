@@ -508,3 +508,18 @@ md-dialog {
   box-sizing: border-box !important;
   word-break: break-word !important;
 }
+
+@keyframes banner-marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-banner-marquee {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: banner-marquee 4s linear infinite;
+}
