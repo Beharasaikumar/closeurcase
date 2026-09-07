@@ -148,7 +148,8 @@ export function AdminRevenuePage() {
         cur.setDate(cur.getDate() + 1);
       }
       return days;
-    } else {
+    } else if (diffDays <= 730) {
+      // Up to 2 years: Monthly intervals
       const monthsMap = new Map<string, number>();
       const cur = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
       const endMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
@@ -176,6 +177,63 @@ export function AdminRevenuePage() {
         date: key,
         amount,
       }));
+    } else if (diffDays <= 1825) {
+      // 2 to 5 years: Quarterly intervals
+      const quartersMap = new Map<string, { label: string; amount: number }>();
+      const cur = new Date(startDate.getFullYear(), Math.floor(startDate.getMonth() / 3) * 3, 1);
+      const endQ = new Date(endDate.getFullYear(), Math.floor(endDate.getMonth() / 3) * 3, 1);
+
+      while (cur <= endQ) {
+        const y = cur.getFullYear();
+        const q = Math.floor(cur.getMonth() / 3) + 1;
+        const key = `${y}-Q${q}`;
+        const label = `Q${q} '${String(y).slice(-2)}`;
+        quartersMap.set(key, { label, amount: 0 });
+        cur.setMonth(cur.getMonth() + 3);
+      }
+
+      for (const p of payments) {
+        if (p.date >= from && p.date <= to) {
+          const d = new Date(`${p.date}T00:00:00`);
+          const y = d.getFullYear();
+          const q = Math.floor(d.getMonth() / 3) + 1;
+          const key = `${y}-Q${q}`;
+          const existing = quartersMap.get(key);
+          if (existing) {
+            existing.amount += p.platformAmount;
+          }
+        }
+      }
+
+      return [...quartersMap.entries()].map(([key, item]) => ({
+        label: item.label,
+        date: key,
+        amount: item.amount,
+      }));
+    } else {
+      // Over 5 years: Yearly intervals
+      const yearsMap = new Map<string, number>();
+      const startYear = startDate.getFullYear();
+      const endYear = endDate.getFullYear();
+
+      for (let y = startYear; y <= endYear; y++) {
+        yearsMap.set(String(y), 0);
+      }
+
+      for (const p of payments) {
+        if (p.date >= from && p.date <= to) {
+          const y = p.date.slice(0, 4);
+          if (yearsMap.has(y)) {
+            yearsMap.set(y, (yearsMap.get(y) ?? 0) + p.platformAmount);
+          }
+        }
+      }
+
+      return [...yearsMap.entries()].map(([year, amount]) => ({
+        label: year,
+        date: year,
+        amount,
+      }));
     }
   }, [payments, from, to]);
 
@@ -191,7 +249,12 @@ export function AdminRevenuePage() {
     return [0, Math.round(maxNice / 3), Math.round((maxNice * 2) / 3), maxNice];
   }, [maxNice]);
 
-  const labelStep = chartData.length > 14 ? Math.ceil(chartData.length / 10) : 1;
+  const labelStep =
+    chartData.length > 20
+      ? Math.ceil(chartData.length / 8)
+      : chartData.length > 10
+        ? Math.ceil(chartData.length / 6)
+        : 1;
 
   return (
     <div className="space-y-6 w-full max-w-5xl mx-auto">
@@ -252,7 +315,7 @@ export function AdminRevenuePage() {
         </div>
       </Card>
 
-      <div className="rounded-2xl border border-border bg-surface p-4 sm:p-5 shadow-2xs space-y-4">
+      <div className="rounded-2xl border border-border bg-surface p-4 sm:p-5 shadow-2xs space-y-4 overflow-hidden">
         {/* Header row with Title on left, Date filter on top right */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
           <h3 className="text-sm font-bold text-foreground">Platform Income Trend</h3>
@@ -282,9 +345,9 @@ export function AdminRevenuePage() {
         </div>
 
         <div className="pt-2">
-          <div className="flex gap-3">
+          <div className="flex gap-3 min-w-0">
             {/* Y-Axis labels */}
-            <div className="flex flex-col justify-between text-right pr-2 text-[10px] font-mono font-semibold text-muted-foreground border-r border-border h-40 select-none pb-6">
+            <div className="flex flex-col justify-between text-right pr-2 text-[10px] font-mono font-semibold text-muted-foreground border-r border-border h-40 select-none pb-6 shrink-0">
               {yAxisTicks
                 .slice()
                 .reverse()
@@ -296,7 +359,7 @@ export function AdminRevenuePage() {
             </div>
 
             {/* Chart Plot Area */}
-            <div className="relative flex-1 h-40">
+            <div className="relative flex-1 h-40 min-w-0">
               {/* Horizontal Gridlines */}
               <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-6">
                 {yAxisTicks.map((_, idx) => (
@@ -305,15 +368,30 @@ export function AdminRevenuePage() {
               </div>
 
               {/* Bars & X-Axis */}
-              <div className="relative z-10 flex items-end justify-around h-full gap-1 sm:gap-2 px-1">
+              <div
+                className={`relative z-10 flex items-end justify-around h-full ${
+                  chartData.length > 20 ? "gap-0.5" : "gap-1 sm:gap-2"
+                } px-1 min-w-0 w-full`}
+              >
                 {chartData.map((d, i) => {
                   const heightPct =
                     d.amount > 0 && maxNice > 0 ? Math.max(Math.round((d.amount / maxNice) * 100), 4) : 0;
                   const showLabel = i % labelStep === 0 || i === chartData.length - 1;
                   return (
-                    <div key={i} className="flex flex-col items-center flex-1 h-full justify-end group">
+                    <div
+                      key={i}
+                      className="relative flex flex-col items-center flex-1 min-w-0 h-full justify-end group"
+                    >
                       {/* Hover Tooltip */}
-                      <div className="mb-1 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-bold font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded whitespace-nowrap z-20">
+                      <div
+                        className={`pointer-events-none absolute -top-7 opacity-0 group-hover:opacity-100 transition-all duration-150 text-[10px] font-bold font-mono text-primary bg-surface border border-primary/25 shadow-md px-1.5 py-0.5 rounded-md whitespace-nowrap z-30 ${
+                          i === 0
+                            ? "left-0"
+                            : i === chartData.length - 1
+                              ? "right-0"
+                              : "left-1/2 -translate-x-1/2"
+                        }`}
+                      >
                         {formatInr(d.amount)}
                       </div>
                       {/* Bar */}
@@ -329,9 +407,21 @@ export function AdminRevenuePage() {
                       {/* X-Axis Baseline */}
                       <div className="w-full border-t-2 border-border mt-0.5" />
                       {/* X-Axis Label */}
-                      <span className="mt-1 text-[10px] font-bold text-muted-foreground group-hover:text-foreground transition-colors whitespace-nowrap">
-                        {showLabel ? d.label : ""}
-                      </span>
+                      <div className="relative w-full flex justify-center h-4 mt-1">
+                        {showLabel && (
+                          <span
+                            className={`absolute top-0 text-[10px] font-bold text-muted-foreground group-hover:text-foreground transition-colors whitespace-nowrap select-none ${
+                              i === 0
+                                ? "left-0 text-left"
+                                : i === chartData.length - 1
+                                  ? "right-0 text-right"
+                                  : "left-1/2 -translate-x-1/2 text-center"
+                            }`}
+                          >
+                            {d.label}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   );
                 })}

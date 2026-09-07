@@ -38,6 +38,7 @@ const CASES_KEY = "cuc_cases_v12";
 const NOTES_KEY = "cuc_case_notes_v1";
 const SUBSCRIPTIONS_KEY = "cuc_subscriptions_v1";
 const PAYMENTS_KEY = "cuc_payments_v1";
+const LAWYER_RATINGS_KEY = "cuc_lawyer_ratings_v1";
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
@@ -362,6 +363,152 @@ export function updateLawyerProfile(id: string, fields: Partial<Lawyer>) {
   const current = getLawyers();
   const updated = current.map((l) => (l.id === id ? { ...l, ...fields } : l));
   saveLawyers(updated);
+}
+
+/* ── LAWYER RATINGS & REVIEWS STORE ──────────────────────────────────────── */
+export interface LawyerRatingRecord {
+  id: string;
+  lawyerId: string;
+  caseId: string;
+  rating: number; // 0 - 5
+  feedback: string;
+  citizenName?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function getLawyerRatings(): LawyerRatingRecord[] {
+  return load<LawyerRatingRecord[]>(LAWYER_RATINGS_KEY, []);
+}
+
+export function getLawyerRatingForCase(
+  caseId: string,
+  lawyerId: string,
+): LawyerRatingRecord | undefined {
+  const all = getLawyerRatings();
+  return all.find((r) => r.caseId === caseId && r.lawyerId === lawyerId);
+}
+
+/**
+ * Mathematical formulation for dynamic rating averaging:
+ *
+ * Case A (New rating):
+ * - Previous rating count: N_old (defaults to lawyer.ratingCount || 1)
+ * - Previous average rating: R_old (defaults to lawyer.rating || 5.0)
+ * - Previous sum of ratings: S_old = R_old * N_old
+ * - New total ratings count: N_new = N_old + 1
+ * - New sum of ratings: S_new = S_old + r
+ * - New average rating: R_new = S_new / N_new = ((R_old * N_old) + r) / (N_old + 1)
+ *
+ * Case B (Updating an existing rating for the same case):
+ * - Previous rating on this case: r_prev
+ * - Total count remains unchanged: N_new = N_old
+ * - New sum of ratings: S_new = S_old - r_prev + r
+ * - New average rating: R_new = S_new / N_new
+ *
+ * Clamping & Rounding:
+ * - R_clamped = Math.min(5, Math.max(0, R_new))
+ * - R_display = Number(R_clamped.toFixed(1))
+ */
+export function submitLawyerRating({
+  lawyerId,
+  caseId,
+  rating,
+  feedback = "",
+  citizenName,
+}: {
+  lawyerId: string;
+  caseId: string;
+  rating: number;
+  feedback?: string;
+  citizenName?: string;
+}): { newRating: number; newRatingCount: number } {
+  // Clamp input rating strictly between 0 and 5
+  const clampedRating = Math.min(5, Math.max(0, rating));
+  const now = new Date().toISOString();
+
+  const allRatings = getLawyerRatings();
+  const existingIndex = allRatings.findIndex(
+    (r) => r.caseId === caseId && r.lawyerId === lawyerId,
+  );
+  const existingRecord = existingIndex >= 0 ? allRatings[existingIndex] : undefined;
+
+  const lawyers = getLawyers();
+  const lawyer = lawyers.find((l) => l.id === lawyerId);
+
+  let newRating = clampedRating;
+  let newRatingCount = 1;
+
+  if (lawyer) {
+    const oldCount = lawyer.ratingCount ?? (lawyer.rating ? 1 : 0);
+    const oldAverage = lawyer.rating ?? 5.0;
+    const oldSum = oldAverage * oldCount;
+
+    if (existingRecord) {
+      // Citizen is updating an existing review for this case
+      const prevRating = existingRecord.rating;
+      newRatingCount = Math.max(1, oldCount);
+      const newSum = oldSum - prevRating + clampedRating;
+      newRating = Number((newSum / newRatingCount).toFixed(1));
+    } else {
+      // First-time review for this case
+      newRatingCount = oldCount + 1;
+      const newSum = oldSum + clampedRating;
+      newRating = Number((newSum / newRatingCount).toFixed(1));
+    }
+
+    newRating = Math.min(5, Math.max(0, newRating));
+
+    // Save updated lawyer profile
+    const updatedLawyers = lawyers.map((l) =>
+      l.id === lawyerId
+        ? {
+            ...l,
+            rating: newRating,
+            ratingCount: newRatingCount,
+          }
+        : l,
+    );
+    saveLawyers(updatedLawyers);
+  }
+
+  // Save or update the rating submission record
+  let updatedRatings: LawyerRatingRecord[];
+  if (existingIndex >= 0) {
+    updatedRatings = allRatings.map((r, i) =>
+      i === existingIndex
+        ? {
+            ...r,
+            rating: clampedRating,
+            feedback,
+            citizenName: citizenName || r.citizenName,
+            updatedAt: now,
+          }
+        : r,
+    );
+  } else {
+    const newRecord: LawyerRatingRecord = {
+      id: `rev_${Date.now()}`,
+      lawyerId,
+      caseId,
+      rating: clampedRating,
+      feedback,
+      citizenName,
+      createdAt: now,
+      updatedAt: now,
+    };
+    updatedRatings = [newRecord, ...allRatings];
+  }
+  save(LAWYER_RATINGS_KEY, updatedRatings);
+
+  if (lawyer) {
+    addNotification({
+      title: "Rating Submitted",
+      body: `You rated ${lawyer.name} ${clampedRating}/5 stars. Average rating is now ${newRating.toFixed(1)} (${newRatingCount}).`,
+    });
+  }
+
+  return { newRating, newRatingCount };
 }
 
 /* ── CITIZENS STORE ──────────────────────────────────────────────────────── */

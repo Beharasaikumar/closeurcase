@@ -25,6 +25,7 @@ import {
   Lock,
   IndianRupee,
   Landmark,
+  Star,
 } from "lucide-react";
 import { Button, TextField, Select, Checkbox, InputChip, IconButton } from "@/components/m3";
 import { LAWYER_PRACTICE_AREAS } from "@/components/app/lawyerPracticeAreas";
@@ -361,6 +362,10 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                   <ShieldCheck className="h-3 w-3" />
                   {lawyer.status === "Approved" ? "Verified Advocate" : "Registration Verified"}
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-bold text-amber-600 dark:text-amber-400">
+                  <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                  {lawyer.rating.toFixed(1)} ({lawyer.ratingCount ?? 0})
                 </span>
               </div>
 

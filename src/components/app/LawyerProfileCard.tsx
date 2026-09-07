@@ -76,7 +76,7 @@ export function LawyerProfileCard({
                 }}
               />
               <span className="font-bold text-foreground">{lawyer.rating.toFixed(1)}</span>
-              {lawyer.ratingCount ? <span>({lawyer.ratingCount}+ ratings)</span> : null}
+              <span className="font-medium text-muted-foreground">({lawyer.ratingCount ?? 0})</span>
             </span>
             <span className="flex items-center gap-1">
               <MapPin className="h-3.5 w-3.5" /> {lawyer.city}

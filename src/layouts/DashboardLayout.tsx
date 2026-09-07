@@ -1,4 +1,4 @@
-import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { Link, useRouter, useRouterState, useNavigate } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -21,7 +21,7 @@ import {
   CreditCard,
   IndianRupee,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { getNotifications, getProfilePhoto, subscribeToStore } from "@/data/appStore";
 import { LexBot } from "@/components/app/LexBot";
 import { WhatsAppFloatingButton } from "@/components/app/WhatsAppButton";
@@ -236,7 +236,47 @@ export function DashboardLayout({
    *  wizard's Continue button) that these would otherwise sit on top of. */
   hideFloatingWidgets?: boolean;
 }) {
+  const router = useRouter();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const mainRef = useRef<HTMLElement>(null);
+
+  const resetScroll = () => {
+    if (mainRef.current) {
+      mainRef.current.scrollTop = 0;
+    }
+    const dashboardMain = document.getElementById("dashboard-main");
+    if (dashboardMain) {
+      dashboardMain.scrollTop = 0;
+    }
+    document.querySelectorAll("main, [data-scroll-container]").forEach((el) => {
+      el.scrollTop = 0;
+    });
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  };
+
+  useLayoutEffect(() => {
+    resetScroll();
+  }, [pathname]);
+
+  useEffect(() => {
+    resetScroll();
+    const rafId = requestAnimationFrame(resetScroll);
+    const timer = setTimeout(resetScroll, 50);
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(timer);
+    };
+  }, [pathname]);
+
+  useEffect(() => {
+    return router.subscribe("onRendered", () => {
+      resetScroll();
+      requestAnimationFrame(resetScroll);
+    });
+  }, [router]);
+
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -471,6 +511,10 @@ export function DashboardLayout({
 
           {/* Scrollable main content (or, for fullBleed pages like chat, a strictly bounded box) */}
           <main
+            id="dashboard-main"
+            data-scroll-container="true"
+            data-scroll-restoration-id="dashboard-main"
+            ref={mainRef}
             className={
               fullBleed
                 ? "flex-1 min-h-0 overflow-hidden"
@@ -478,9 +522,12 @@ export function DashboardLayout({
             }
           >
             {fullBleed ? (
-              children
+              <div key={pathname} className="h-full w-full">
+                {children}
+              </div>
             ) : (
               <div
+                key={pathname}
                 className={`mx-auto w-full space-y-4 sm:space-y-6 ${role === "citizen" ? "max-w-6xl" : "max-w-none"}`}
               >
                 {children}

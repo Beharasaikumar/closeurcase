@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Outlet, Link, createRootRouteWithContext, useRouter } from "@tanstack/react-router";
+import { Outlet, Link, createRootRouteWithContext, useRouter, useRouterState } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { CitizenLanguageProvider } from "@/features/citizen/i18n/CitizenLanguageContext";
 import { Button, FILLED_LINK_BUTTON_CLASS, OUTLINED_LINK_BUTTON_CLASS } from "@/components/m3";
 
@@ -62,12 +63,53 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+function ScrollToTop() {
+  const router = useRouter();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+  }, []);
+
+  useEffect(() => {
+    const reset = () => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      document.querySelectorAll("main, [data-scroll-container], #dashboard-main").forEach((el) => {
+        el.scrollTop = 0;
+      });
+    };
+    reset();
+    const rafId = requestAnimationFrame(reset);
+    const tm = setTimeout(reset, 50);
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(tm);
+    };
+  }, [pathname]);
+
+  useEffect(() => {
+    return router.subscribe("onRendered", () => {
+      window.scrollTo(0, 0);
+      document.querySelectorAll("main, [data-scroll-container], #dashboard-main").forEach((el) => {
+        el.scrollTop = 0;
+      });
+    });
+  }, [router]);
+
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
     <QueryClientProvider client={queryClient}>
       <CitizenLanguageProvider>
+        <ScrollToTop />
         <Outlet />
       </CitizenLanguageProvider>
     </QueryClientProvider>

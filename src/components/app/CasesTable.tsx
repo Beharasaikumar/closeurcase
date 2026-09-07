@@ -16,15 +16,29 @@ import {
   Landmark,
   User,
   Hash,
+  Star,
 } from "lucide-react";
-import { Button, IconButton } from "@/components/m3";
+import {
+  Button,
+  IconButton,
+  Dialog,
+  DialogHeader,
+  DialogTitle,
+  DialogContent,
+  DialogFooter,
+  TextField,
+} from "@/components/m3";
 import {
   getCases,
   saveCases,
   addCaseAttachments,
   updateCaseStatus,
   subscribeToStore,
+  getLawyers,
+  submitLawyerRating,
+  getLawyerRatingForCase,
 } from "@/data/appStore";
+import { UserAvatar } from "@/components/app/UserAvatar";
 import { MAX_ATTACHMENT_BYTES, formatFileSize, readFileAsDataUrl, openDocumentInNewTab } from "@/lib/files";
 import { sanitizeName, sanitizeCNR, validateName, validateCNR } from "@/lib/validations";
 import { searchCourtCases } from "@/data/courtCasesFixture";
@@ -75,11 +89,10 @@ function CaseTypeBadge({ caseItem }: { caseItem: LegalCase }) {
   const type = caseTypeOf(caseItem);
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-        type === "Existing"
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${type === "Existing"
           ? "bg-primary/10 text-primary"
           : "bg-[var(--md-extended-color-success)]/10 text-[var(--md-extended-color-success)]"
-      }`}
+        }`}
     >
       {type}
     </span>
@@ -120,11 +133,70 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
 
   const isLawyer = role === "lawyer";
 
+  const [ratingCase, setRatingCase] = useState<LegalCase | null>(null);
+  const [ratingScore, setRatingScore] = useState<number>(5);
+  const [hoveredScore, setHoveredScore] = useState<number | null>(null);
+  const [ratingFeedback, setRatingFeedback] = useState<string>("");
+  const [lawyers, setLawyers] = useState(getLawyers);
+
   useEffect(() => {
-    const sync = () => setAllCases(getCases());
+    const sync = () => {
+      setAllCases(getCases());
+      setLawyers(getLawyers());
+    };
     sync();
     return subscribeToStore(sync);
   }, []);
+
+  function handleOpenRatingModal(c: LegalCase) {
+    const matchedLawyer = lawyers.find(
+      (l) =>
+        (c.lawyerId && l.id === c.lawyerId) ||
+        (c.lawyerName && l.name.toLowerCase() === c.lawyerName.toLowerCase()),
+    );
+    const lawyerId = matchedLawyer?.id || c.lawyerId;
+
+    if (lawyerId) {
+      const existing = getLawyerRatingForCase(c.id, lawyerId);
+      if (existing) {
+        setRatingScore(existing.rating);
+        setRatingFeedback(existing.feedback || "");
+      } else {
+        setRatingScore(5);
+        setRatingFeedback("");
+      }
+    } else {
+      setRatingScore(5);
+      setRatingFeedback("");
+    }
+    setHoveredScore(null);
+    setRatingCase(c);
+  }
+
+  function handleSubmitRating() {
+    if (!ratingCase) return;
+    const matchedLawyer = lawyers.find(
+      (l) =>
+        (ratingCase.lawyerId && l.id === ratingCase.lawyerId) ||
+        (ratingCase.lawyerName && l.name.toLowerCase() === ratingCase.lawyerName.toLowerCase()),
+    );
+    const lawyerId = matchedLawyer?.id || ratingCase.lawyerId;
+    if (!lawyerId) {
+      alert("No registered lawyer found for this case to rate.");
+      setRatingCase(null);
+      return;
+    }
+
+    submitLawyerRating({
+      lawyerId,
+      caseId: ratingCase.id,
+      rating: ratingScore,
+      feedback: ratingFeedback.trim(),
+      citizenName: ratingCase.citizenName,
+    });
+
+    setRatingCase(null);
+  }
 
   // Reset to page 1 whenever the caller's filtered/sorted case list changes shape.
   useEffect(() => {
@@ -190,18 +262,18 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
       const updatedCases = allCases.map((c) =>
         c.id === editingCase.id
           ? {
-              ...c,
-              title: ecourtMatch.title,
-              source: "ecourt" as const,
-              caseDetails: {
-                ...c.caseDetails,
-                caseNumber: ecourtMatch.caseNumber,
-                cnr: query,
-                historyOfCaseHearings: hearings,
-                hearingCount: hearings.length,
-              },
-              updatedAt: today,
-            }
+            ...c,
+            title: ecourtMatch.title,
+            source: "ecourt" as const,
+            caseDetails: {
+              ...c.caseDetails,
+              caseNumber: ecourtMatch.caseNumber,
+              cnr: query,
+              historyOfCaseHearings: hearings,
+              hearingCount: hearings.length,
+            },
+            updatedAt: today,
+          }
           : c,
       );
       saveCases(updatedCases);
@@ -246,15 +318,15 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
         if (c.id !== editingCase.id) return c;
         const timeline = statusChanged
           ? [
-              ...(c.timeline || []),
-              {
-                id: `t_${Date.now()}`,
-                status: caseStatus as CaseStatus,
-                at: today,
-                time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
-                note: `Status updated to ${STATUS_META[caseStatus]?.label ?? caseStatus}`,
-              },
-            ]
+            ...(c.timeline || []),
+            {
+              id: `t_${Date.now()}`,
+              status: caseStatus as CaseStatus,
+              at: today,
+              time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+              note: `Status updated to ${STATUS_META[caseStatus]?.label ?? caseStatus}`,
+            },
+          ]
           : c.timeline;
         return {
           ...c,
@@ -366,11 +438,10 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
             return (
               <div
                 key={c.id}
-                className={`relative flex h-full min-h-64 flex-col justify-between overflow-hidden rounded-2xl border p-4.5 shadow-2xs sm:p-5 ${
-                  isPendingDecision
+                className={`relative flex h-full min-h-64 flex-col justify-between overflow-hidden rounded-2xl border p-4.5 shadow-2xs sm:p-5 ${isPendingDecision
                     ? "border-amber-500/40 bg-gradient-to-b from-amber-500/[0.06] via-surface to-surface"
                     : "border-border/70 bg-gradient-to-b from-surface via-surface/98 to-surface/90"
-                }`}
+                  }`}
               >
                 {isPendingDecision && (
                   <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500 to-transparent opacity-90" />
@@ -502,14 +573,26 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
                         </button>
                       </>
                     ) : (
-                      <IconButton
-                        variant="tonal"
-                        title={isLawyer ? "Edit case" : "View case details"}
-                        ariaLabel={isLawyer ? `Edit case ${c.id}` : `View details for case ${c.id}`}
-                        onClick={() => handleOpenModal(c)}
-                      >
-                        {isLawyer ? <Pencil className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </IconButton>
+                      <>
+                        {!isLawyer && (
+                          <IconButton
+                            variant="tonal"
+                            title={c.lawyerName ? `Rate Lawyer (${c.lawyerName})` : "Rate Lawyer"}
+                            ariaLabel={`Rate lawyer for case ${c.id}`}
+                            onClick={() => handleOpenRatingModal(c)}
+                          >
+                            <Star className="h-4 w-4 text-[var(--md-extended-color-warning)] fill-[var(--md-extended-color-warning)]" />
+                          </IconButton>
+                        )}
+                        <IconButton
+                          variant="tonal"
+                          title={isLawyer ? "Edit case" : "View case details"}
+                          ariaLabel={isLawyer ? `Edit case ${c.id}` : `View details for case ${c.id}`}
+                          onClick={() => handleOpenModal(c)}
+                        >
+                          {isLawyer ? <Pencil className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </IconButton>
+                      </>
                     )}
                     <IconButton
                       variant="tonal"
@@ -600,9 +683,8 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
                           setPartyNameError("");
                         }}
                         placeholder="e.g. Y L N R Vs. NSF"
-                        className={`h-11 rounded-lg border px-3.5 text-sm text-foreground outline-hidden focus:border-primary focus:ring-1 focus:ring-primary ${
-                          partyNameError ? "border-destructive bg-destructive/5" : "border-border bg-card"
-                        }`}
+                        className={`h-11 rounded-lg border px-3.5 text-sm text-foreground outline-hidden focus:border-primary focus:ring-1 focus:ring-primary ${partyNameError ? "border-destructive bg-destructive/5" : "border-border bg-card"
+                          }`}
                       />
                       {partyNameError && (
                         <p className="text-[10.5px] font-medium text-destructive">
@@ -647,9 +729,8 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
                             onChange={(e) => handleCnrChange(sanitizeCNR(e.target.value))}
                             placeholder="e.g. TSHC010011342025"
                             maxLength={16}
-                            className={`h-11 flex-1 rounded-lg border px-3.5 text-sm text-foreground font-mono outline-hidden focus:border-primary focus:ring-1 focus:ring-primary uppercase ${
-                              cnrError ? "border-destructive bg-destructive/5" : "border-border bg-card"
-                            }`}
+                            className={`h-11 flex-1 rounded-lg border px-3.5 text-sm text-foreground font-mono outline-hidden focus:border-primary focus:ring-1 focus:ring-primary uppercase ${cnrError ? "border-destructive bg-destructive/5" : "border-border bg-card"
+                              }`}
                           />
                           <div className="flex shrink-0 gap-2">
                             <Button
@@ -725,21 +806,19 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
                       {getStageHistory(editingCase).map((stage) => (
                         <div key={stage.key} className="relative">
                           <span
-                            className={`absolute -left-[29px] top-0.5 h-[14px] w-[14px] rounded-full border-2 ${
-                              stage.at
+                            className={`absolute -left-[29px] top-0.5 h-[14px] w-[14px] rounded-full border-2 ${stage.at
                                 ? "border-primary bg-primary"
                                 : "border-muted-foreground/50 bg-card"
-                            }`}
+                              }`}
                           />
                           <div className="flex items-center justify-between gap-3">
                             <span
-                              className={`text-xs font-semibold ${
-                                stage.isCurrent
+                              className={`text-xs font-semibold ${stage.isCurrent
                                   ? "text-primary"
                                   : stage.at
                                     ? "text-foreground"
                                     : "text-muted-foreground"
-                              }`}
+                                }`}
                             >
                               {stage.label}
                               {stage.isCurrent && (
@@ -913,11 +992,10 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
           <div className="w-full max-w-sm rounded-2xl bg-[var(--md-sys-color-surface-container-low,#f5f3f7)] shadow-2xl border border-border/80 p-6 text-foreground">
             <div className="flex items-center gap-3 mb-3">
               <span
-                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-                  cnrImportResult.status === "found"
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${cnrImportResult.status === "found"
                     ? "bg-[var(--md-extended-color-success)]/10 text-[var(--md-extended-color-success)]"
                     : "bg-destructive/10 text-destructive"
-                }`}
+                  }`}
               >
                 {cnrImportResult.status === "found" ? (
                   <Check className="h-5 w-5" />
@@ -1105,9 +1183,8 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
           }}
         >
           <div
-            className={`flex flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl transition-all ${
-              previewFullScreen ? "h-full w-full" : "max-h-[85vh] w-full max-w-2xl"
-            }`}
+            className={`flex flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl transition-all ${previewFullScreen ? "h-full w-full" : "max-h-[85vh] w-full max-w-2xl"
+              }`}
           >
             <div className="flex items-center justify-between gap-3 border-b border-border px-4 sm:px-6 py-3.5">
               <div className="flex min-w-0 items-center gap-2.5">
@@ -1222,6 +1299,140 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
           </div>
         </div>
       )}
+
+      {/* ── Lawyer Rating Popup Dialog ─────────────────────────────────── */}
+      <Dialog
+        open={ratingCase !== null}
+        onOpenChange={(open) => !open && setRatingCase(null)}
+        maxWidth="480px"
+      >
+        {ratingCase && (() => {
+          const activeRatingLawyer = lawyers.find(
+            (l) =>
+              (ratingCase.lawyerId && l.id === ratingCase.lawyerId) ||
+              (ratingCase.lawyerName &&
+                l.name.toLowerCase() === ratingCase.lawyerName.toLowerCase()),
+          );
+
+          return (
+            <>
+              <DialogHeader>
+                <div className="flex items-center justify-between">
+                  <DialogTitle className="text-base font-bold text-foreground">
+                    Rate Lawyer
+                  </DialogTitle>
+                  <IconButton ariaLabel="Close" onClick={() => setRatingCase(null)}>
+                    <X className="h-4 w-4 text-muted-foreground" />
+                  </IconButton>
+                </div>
+              </DialogHeader>
+
+              <DialogContent className="space-y-4 pt-1">
+                {/* Lawyer summary */}
+                <div className="flex items-center gap-3 rounded-2xl border border-border/80 bg-muted/30 p-3">
+                  <UserAvatar
+                    name={activeRatingLawyer?.name || ratingCase.lawyerName || "Lawyer"}
+                    photoUrl={activeRatingLawyer?.photoUrl}
+                    size="md"
+                    role="lawyer"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <h4 className="truncate text-sm font-bold text-foreground">
+                        {activeRatingLawyer?.name || ratingCase.lawyerName || "Unassigned"}
+                      </h4>
+                      {activeRatingLawyer && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold text-amber-600 dark:text-amber-400 shrink-0">
+                          <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
+                          {activeRatingLawyer.rating.toFixed(1)} ({activeRatingLawyer.ratingCount ?? 0})
+                        </span>
+                      )}
+                    </div>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {activeRatingLawyer?.category || ratingCase.category} Law
+                      {activeRatingLawyer?.city ? ` · ${activeRatingLawyer.city}` : ""}
+                    </p>
+                    <p className="truncate font-mono text-[10.5px] text-primary/80 mt-0.5">
+                      Case: {ratingCase.id}
+                    </p>
+                  </div>
+                </div>
+
+                {!activeRatingLawyer && !ratingCase.lawyerName ? (
+                  <p className="text-xs text-muted-foreground py-2">
+                    No lawyer has been assigned to this case yet. You can rate the lawyer once assigned.
+                  </p>
+                ) : (
+                  <>
+                    {/* Rating selector (0 - 5 Stars) */}
+                    <div className="space-y-2 rounded-2xl border border-border/80 bg-card p-3.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                          Your Rating (0 - 5)
+                        </label>
+                        <span className="inline-flex items-center rounded-md bg-amber-500/10 px-2 py-0.5 text-xs font-bold text-amber-600 dark:text-amber-400">
+                          {ratingScore} / 5
+                        </span>
+                      </div>
+
+                      {/* Interactive Stars 1 to 5 */}
+                      <div className="flex items-center justify-center gap-1.5 py-1">
+                        {[1, 2, 3, 4, 5].map((starVal) => {
+                          const isFilled =
+                            (hoveredScore !== null ? hoveredScore : ratingScore) >= starVal;
+                          return (
+                            <button
+                              key={starVal}
+                              type="button"
+                              onClick={() => setRatingScore(starVal)}
+                              onMouseEnter={() => setHoveredScore(starVal)}
+                              onMouseLeave={() => setHoveredScore(null)}
+                              className="p-1 rounded-lg hover:bg-amber-500/10 hover:scale-115 transition-all cursor-pointer"
+                              title={`${starVal} Star${starVal > 1 ? "s" : ""}`}
+                            >
+                              <Star
+                                className={`h-8 w-8 transition-colors ${isFilled
+                                    ? "fill-amber-400 text-amber-400"
+                                    : "text-muted-foreground/30 fill-transparent"
+                                  }`}
+                              />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Review comments text field */}
+                    <div className="space-y-1">
+                      <TextField
+                        label="Review / Feedback Comments"
+                        type="textarea"
+                        rows={3}
+                        value={ratingFeedback}
+                        onChange={setRatingFeedback}
+                        placeholder="Write your feedback or review about this lawyer..."
+                        supportingText="Optional comments to help improve legal services"
+                        className="w-full"
+                      />
+                    </div>
+                  </>
+                )}
+              </DialogContent>
+
+              <DialogFooter className="flex items-center justify-end gap-2 px-6 pb-5 pt-2">
+                <Button variant="text" onClick={() => setRatingCase(null)}>
+                  Cancel
+                </Button>
+                {activeRatingLawyer || ratingCase.lawyerName ? (
+                  <Button variant="filled" onClick={handleSubmitRating}>
+                    Submit Rating
+                  </Button>
+                ) : null}
+              </DialogFooter>
+            </>
+          );
+        })()}
+      </Dialog>
     </>
   );
 }
