@@ -402,3 +402,43 @@ export interface LawyerDocument {
   fileName?: string;
   fileMimeType?: string;
 }
+
+/* ── Admin Data Management Master Interfaces ─────────────────────────────── */
+export interface CaseCategoryItem {
+  id: string;
+  name: string;
+  code: string;
+  description: string;
+  subCategories?: string[];
+  active: boolean;
+  updatedAt?: string;
+}
+
+export interface LanguageItem {
+  id: string;
+  name: string;
+  nativeName: string;
+  code: string;
+  active: boolean;
+  updatedAt?: string;
+}
+
+export interface CityItem {
+  id: string;
+  name: string;
+  state: string;
+  tier: "Tier 1" | "Tier 2" | "Tier 3";
+  active: boolean;
+  updatedAt?: string;
+}
+
+export interface CourtItem {
+  id: string;
+  name: string;
+  level: "Supreme Court" | "High Court" | "District Court" | "Tribunal";
+  state: string;
+  city?: string;
+  active: boolean;
+  updatedAt?: string;
+}
+

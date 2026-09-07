@@ -14,6 +14,10 @@ import type {
   UserRole,
   VideoCall,
   WithdrawalRequest,
+  CaseCategoryItem,
+  LanguageItem,
+  CityItem,
+  CourtItem,
 } from "@/types";
 import {
   categories as seedCategories,
@@ -39,6 +43,10 @@ const NOTES_KEY = "cuc_case_notes_v1";
 const SUBSCRIPTIONS_KEY = "cuc_subscriptions_v1";
 const PAYMENTS_KEY = "cuc_payments_v1";
 const LAWYER_RATINGS_KEY = "cuc_lawyer_ratings_v1";
+const CASE_CATEGORIES_KEY = "cuc_case_categories_v1";
+const LANGUAGES_KEY = "cuc_languages_v1";
+const CITIES_KEY = "cuc_cities_v1";
+const COURTS_KEY = "cuc_courts_v1";
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
@@ -879,3 +887,377 @@ export function rejectWithdrawalRequest(id: string, reason?: string): Withdrawal
 
   return rejectedReq;
 }
+
+/* ── DATA MANAGEMENT STORE (CRUD for Categories, Languages, Cities, Courts) ── */
+
+export const DEFAULT_CASE_CATEGORIES: CaseCategoryItem[] = [
+  {
+    id: "cat_1",
+    name: "Criminal",
+    code: "CRIM",
+    description: "Bail matters, criminal trials, IPC/BNS offenses, and white collar defense",
+    subCategories: [
+      "Anticipatory Bail",
+      "Criminal Trial",
+      "Cyber Crime",
+      "Fraud Case",
+      "POCSO Act",
+      "Anti Corruption",
+      "PMLA Matter",
+      "Narcotics / NDPS",
+    ],
+    active: true,
+  },
+  {
+    id: "cat_2",
+    name: "Civil",
+    code: "CIV",
+    description: "Contracts, recovery of money, torts, and civil dispute resolution",
+    subCategories: [
+      "Money Recovery",
+      "Breach of Contract",
+      "Injunction Suit",
+      "Arbitration",
+      "Defamation",
+      "Commercial Dispute",
+      "Legal Documentation",
+    ],
+    active: true,
+  },
+  {
+    id: "cat_3",
+    name: "Property",
+    code: "PROP",
+    description: "Land titles, partition suits, RERA disputes, and real estate litigation",
+    subCategories: [
+      "Property Dispute",
+      "Landlord & Tenant",
+      "RERA Matters",
+      "Title Verification",
+      "Partition Suit",
+      "Succession Certificate",
+      "Wills / Trusts",
+    ],
+    active: true,
+  },
+  {
+    id: "cat_4",
+    name: "Family",
+    code: "FAM",
+    description: "Divorce, child custody, maintenance, and domestic relations",
+    subCategories: [
+      "Divorce",
+      "Child Custody",
+      "Mutual Consent Divorce",
+      "Domestic Violence",
+      "Maintenance & Alimony",
+      "Court Marriage",
+      "Muslim Law",
+      "Family Settlement",
+    ],
+    active: true,
+  },
+  {
+    id: "cat_5",
+    name: "Consumer",
+    code: "CONS",
+    description: "Consumer forum complaints, deficiency of service, and unfair trade practices",
+    subCategories: [
+      "Consumer Court Dispute",
+      "Medical Negligence",
+      "Insurance Claim",
+      "Builder / Project Delay",
+      "Deficiency of Service",
+      "Product Liability",
+    ],
+    active: true,
+  },
+  {
+    id: "cat_6",
+    name: "Cyber",
+    code: "CYB",
+    description: "Cybercrime, IT Act offenses, digital fraud, and online privacy",
+    subCategories: [
+      "Cyber Crime Complaint",
+      "Online Harassment",
+      "Financial Cyber Fraud",
+      "Data Theft & Privacy",
+      "IT Act Offenses",
+      "Social Media Impersonation",
+    ],
+    active: true,
+  },
+  {
+    id: "cat_7",
+    name: "Corporate",
+    code: "CORP",
+    description: "NCLT matters, company law, mergers, and corporate contracts",
+    subCategories: [
+      "NCLT Matters",
+      "Company Incorporation",
+      "Insolvency & Bankruptcy (IBC)",
+      "Mergers & Acquisitions",
+      "Shareholder Agreements",
+      "Corporate Due Diligence",
+    ],
+    active: true,
+  },
+  {
+    id: "cat_8",
+    name: "Labour",
+    code: "LAB",
+    description: "Industrial disputes, employment contracts, PF, and workplace claims",
+    subCategories: [
+      "Industrial Disputes",
+      "Employment Agreements",
+      "Wrongful Termination",
+      "PF & Gratuity Claims",
+      "Workplace Harassment / POSH",
+      "Labour Court Matters",
+    ],
+    active: true,
+  },
+  {
+    id: "cat_9",
+    name: "Tax",
+    code: "TAX",
+    description: "Direct/indirect tax appeals, GST disputes, and income tax tribunals",
+    subCategories: [
+      "Income Tax Appeals",
+      "GST Disputes & Filings",
+      "Customs & Central Excise",
+      "Tax Assessment Notices",
+      "Cheque Bounce (Sec 138)",
+      "Debt Recovery Tribunal (DRT)",
+    ],
+    active: true,
+  },
+  {
+    id: "cat_10",
+    name: "Environmental",
+    code: "ENV",
+    description: "NGT proceedings, pollution control violations, and clearances",
+    subCategories: [
+      "National Green Tribunal (NGT)",
+      "Pollution Control Board Matters",
+      "Environmental Impact Clearance",
+      "Forest & Wildlife Regulations",
+      "Waste Management Compliance",
+    ],
+    active: true,
+  },
+];
+
+export const DEFAULT_LANGUAGES: LanguageItem[] = [
+  { id: "lang_1", name: "English", nativeName: "English", code: "EN", active: true },
+  { id: "lang_2", name: "Telugu", nativeName: "తెలుగు", code: "TE", active: true },
+  { id: "lang_3", name: "Hindi", nativeName: "हिन्दी", code: "HI", active: true },
+  { id: "lang_4", name: "Tamil", nativeName: "தமிழ்", code: "TA", active: true },
+  { id: "lang_5", name: "Kannada", nativeName: "ಕನ್ನಡ", code: "KN", active: true },
+  { id: "lang_6", name: "Malayalam", nativeName: "മലയാളം", code: "ML", active: true },
+  { id: "lang_7", name: "Marathi", nativeName: "मराठी", code: "MR", active: true },
+  { id: "lang_8", name: "Bengali", nativeName: "বাংলা", code: "BN", active: true },
+  { id: "lang_9", name: "Gujarati", nativeName: "ગુજરાતી", code: "GU", active: true },
+  { id: "lang_10", name: "Odia", nativeName: "ଓଡ଼ିଆ", code: "OR", active: true },
+  { id: "lang_11", name: "Punjabi", nativeName: "ਪੰਜਾਬੀ", code: "PA", active: true },
+  { id: "lang_12", name: "Urdu", nativeName: "اردو", code: "UR", active: true },
+];
+
+export const DEFAULT_CITIES: CityItem[] = [
+  { id: "city_1", name: "Hyderabad", state: "Telangana", tier: "Tier 1", active: true },
+  { id: "city_2", name: "Bengaluru", state: "Karnataka", tier: "Tier 1", active: true },
+  { id: "city_3", name: "Mumbai", state: "Maharashtra", tier: "Tier 1", active: true },
+  { id: "city_4", name: "Delhi", state: "Delhi NCR", tier: "Tier 1", active: true },
+  { id: "city_5", name: "Chennai", state: "Tamil Nadu", tier: "Tier 1", active: true },
+  { id: "city_6", name: "Kolkata", state: "West Bengal", tier: "Tier 1", active: true },
+  { id: "city_7", name: "Pune", state: "Maharashtra", tier: "Tier 1", active: true },
+  { id: "city_8", name: "Ahmedabad", state: "Gujarat", tier: "Tier 1", active: true },
+  { id: "city_9", name: "Visakhapatnam", state: "Andhra Pradesh", tier: "Tier 2", active: true },
+  { id: "city_10", name: "Vijayawada", state: "Andhra Pradesh", tier: "Tier 2", active: true },
+  { id: "city_11", name: "Jaipur", state: "Rajasthan", tier: "Tier 2", active: true },
+  { id: "city_12", name: "Lucknow", state: "Uttar Pradesh", tier: "Tier 2", active: true },
+  { id: "city_13", name: "Chandigarh", state: "Punjab & Haryana", tier: "Tier 2", active: true },
+  { id: "city_14", name: "Kochi", state: "Kerala", tier: "Tier 2", active: true },
+  { id: "city_15", name: "Indore", state: "Madhya Pradesh", tier: "Tier 2", active: true },
+];
+
+export const DEFAULT_COURTS: CourtItem[] = [
+  { id: "crt_1", name: "Supreme Court of India", level: "Supreme Court", state: "Delhi", city: "New Delhi", active: true },
+  { id: "crt_2", name: "High Court for the State of Telangana", level: "High Court", state: "Telangana", city: "Hyderabad", active: true },
+  { id: "crt_3", name: "High Court of Andhra Pradesh", level: "High Court", state: "Andhra Pradesh", city: "Amaravati", active: true },
+  { id: "crt_4", name: "High Court of Karnataka", level: "High Court", state: "Karnataka", city: "Bengaluru", active: true },
+  { id: "crt_5", name: "Bombay High Court", level: "High Court", state: "Maharashtra", city: "Mumbai", active: true },
+  { id: "crt_6", name: "Delhi High Court", level: "High Court", state: "Delhi", city: "New Delhi", active: true },
+  { id: "crt_7", name: "Madras High Court", level: "High Court", state: "Tamil Nadu", city: "Chennai", active: true },
+  { id: "crt_8", name: "Calcutta High Court", level: "High Court", state: "West Bengal", city: "Kolkata", active: true },
+  { id: "crt_9", name: "City Civil and Sessions Court, Hyderabad", level: "District Court", state: "Telangana", city: "Hyderabad", active: true },
+  { id: "crt_10", name: "City Civil Court, Bengaluru", level: "District Court", state: "Karnataka", city: "Bengaluru", active: true },
+  { id: "crt_11", name: "National Company Law Tribunal (NCLT) Hyderabad", level: "Tribunal", state: "Telangana", city: "Hyderabad", active: true },
+  { id: "crt_12", name: "National Green Tribunal (NGT) Southern Zone", level: "Tribunal", state: "Tamil Nadu", city: "Chennai", active: true },
+  { id: "crt_13", name: "Central Administrative Tribunal (CAT) Hyderabad", level: "Tribunal", state: "Telangana", city: "Hyderabad", active: true },
+];
+
+// --- Case Categories CRUD ---
+export function getCaseCategories(): CaseCategoryItem[] {
+  const loaded = load<CaseCategoryItem[]>(CASE_CATEGORIES_KEY, DEFAULT_CASE_CATEGORIES);
+  let changed = false;
+  const hydrated = loaded.map((cat) => {
+    if (!cat.subCategories || cat.subCategories.length === 0) {
+      const match = DEFAULT_CASE_CATEGORIES.find(
+        (d) => d.name.toLowerCase() === cat.name.toLowerCase() || d.code === cat.code
+      );
+      if (match?.subCategories && match.subCategories.length > 0) {
+        changed = true;
+        return { ...cat, subCategories: match.subCategories };
+      }
+    }
+    return cat;
+  });
+  if (changed) {
+    save(CASE_CATEGORIES_KEY, hydrated);
+  }
+  return hydrated;
+}
+
+export function saveCaseCategory(item: Omit<CaseCategoryItem, "id"> & { id?: string }): CaseCategoryItem {
+  const current = getCaseCategories();
+  const now = new Date().toISOString().slice(0, 10);
+  let saved: CaseCategoryItem;
+
+  if (item.id && current.some((c) => c.id === item.id)) {
+    saved = { ...item, id: item.id, updatedAt: now } as CaseCategoryItem;
+    const next = current.map((c) => (c.id === item.id ? saved : c));
+    save(CASE_CATEGORIES_KEY, next);
+  } else {
+    saved = {
+      ...item,
+      id: item.id || `cat_${Date.now()}`,
+      updatedAt: now,
+    } as CaseCategoryItem;
+    save(CASE_CATEGORIES_KEY, [saved, ...current]);
+  }
+  return saved;
+}
+
+export function deleteCaseCategory(id: string): boolean {
+  const current = getCaseCategories();
+  const filtered = current.filter((c) => c.id !== id);
+  if (filtered.length !== current.length) {
+    save(CASE_CATEGORIES_KEY, filtered);
+    return true;
+  }
+  return false;
+}
+
+// --- Languages CRUD ---
+export function getLanguages(): LanguageItem[] {
+  return load<LanguageItem[]>(LANGUAGES_KEY, DEFAULT_LANGUAGES);
+}
+
+export function saveLanguage(item: Omit<LanguageItem, "id"> & { id?: string }): LanguageItem {
+  const current = getLanguages();
+  const now = new Date().toISOString().slice(0, 10);
+  let saved: LanguageItem;
+
+  if (item.id && current.some((l) => l.id === item.id)) {
+    saved = { ...item, id: item.id, updatedAt: now } as LanguageItem;
+    const next = current.map((l) => (l.id === item.id ? saved : l));
+    save(LANGUAGES_KEY, next);
+  } else {
+    saved = {
+      ...item,
+      id: item.id || `lang_${Date.now()}`,
+      updatedAt: now,
+    } as LanguageItem;
+    save(LANGUAGES_KEY, [saved, ...current]);
+  }
+  return saved;
+}
+
+export function deleteLanguage(id: string): boolean {
+  const current = getLanguages();
+  const filtered = current.filter((l) => l.id !== id);
+  if (filtered.length !== current.length) {
+    save(LANGUAGES_KEY, filtered);
+    return true;
+  }
+  return false;
+}
+
+// --- Cities CRUD ---
+export function getCities(): CityItem[] {
+  return load<CityItem[]>(CITIES_KEY, DEFAULT_CITIES);
+}
+
+export function saveCity(item: Omit<CityItem, "id"> & { id?: string }): CityItem {
+  const current = getCities();
+  const now = new Date().toISOString().slice(0, 10);
+  let saved: CityItem;
+
+  if (item.id && current.some((c) => c.id === item.id)) {
+    saved = { ...item, id: item.id, updatedAt: now } as CityItem;
+    const next = current.map((c) => (c.id === item.id ? saved : c));
+    save(CITIES_KEY, next);
+  } else {
+    saved = {
+      ...item,
+      id: item.id || `city_${Date.now()}`,
+      updatedAt: now,
+    } as CityItem;
+    save(CITIES_KEY, [saved, ...current]);
+  }
+  return saved;
+}
+
+export function deleteCity(id: string): boolean {
+  const current = getCities();
+  const filtered = current.filter((c) => c.id !== id);
+  if (filtered.length !== current.length) {
+    save(CITIES_KEY, filtered);
+    return true;
+  }
+  return false;
+}
+
+// --- Courts CRUD ---
+export function getCourts(): CourtItem[] {
+  return load<CourtItem[]>(COURTS_KEY, DEFAULT_COURTS);
+}
+
+export function saveCourt(item: Omit<CourtItem, "id"> & { id?: string }): CourtItem {
+  const current = getCourts();
+  const now = new Date().toISOString().slice(0, 10);
+  let saved: CourtItem;
+
+  if (item.id && current.some((c) => c.id === item.id)) {
+    saved = { ...item, id: item.id, updatedAt: now } as CourtItem;
+    const next = current.map((c) => (c.id === item.id ? saved : c));
+    save(COURTS_KEY, next);
+  } else {
+    saved = {
+      ...item,
+      id: item.id || `crt_${Date.now()}`,
+      updatedAt: now,
+    } as CourtItem;
+    save(COURTS_KEY, [saved, ...current]);
+  }
+  return saved;
+}
+
+export function deleteCourt(id: string): boolean {
+  const current = getCourts();
+  const filtered = current.filter((c) => c.id !== id);
+  if (filtered.length !== current.length) {
+    save(COURTS_KEY, filtered);
+    return true;
+  }
+  return false;
+}
+
+export function resetDataManagementToDefaults() {
+  save(CASE_CATEGORIES_KEY, DEFAULT_CASE_CATEGORIES);
+  save(LANGUAGES_KEY, DEFAULT_LANGUAGES);
+  save(CITIES_KEY, DEFAULT_CITIES);
+  save(COURTS_KEY, DEFAULT_COURTS);
+}
+

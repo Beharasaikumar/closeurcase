@@ -21,6 +21,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminCasesRouteImport } from './routes/admin.cases'
+import { Route as AdminDataManagementRouteImport } from './routes/admin.data-management'
 import { Route as AdminKnowledgeBaseRouteImport } from './routes/admin.knowledge-base'
 import { Route as AdminLawyersRouteImport } from './routes/admin.lawyers'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
@@ -106,6 +107,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminCasesRoute = AdminCasesRouteImport.update({
   id: '/cases',
   path: '/cases',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDataManagementRoute = AdminDataManagementRouteImport.update({
+  id: '/data-management',
+  path: '/data-management',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminKnowledgeBaseRoute = AdminKnowledgeBaseRouteImport.update({
@@ -251,6 +257,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/admin/cases': typeof AdminCasesRoute
+  '/admin/data-management': typeof AdminDataManagementRoute
   '/admin/knowledge-base': typeof AdminKnowledgeBaseRoute
   '/admin/lawyers': typeof AdminLawyersRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -288,6 +295,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/admin/cases': typeof AdminCasesRoute
+  '/admin/data-management': typeof AdminDataManagementRoute
   '/admin/knowledge-base': typeof AdminKnowledgeBaseRoute
   '/admin/lawyers': typeof AdminLawyersRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -328,6 +336,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/admin/cases': typeof AdminCasesRoute
+  '/admin/data-management': typeof AdminDataManagementRoute
   '/admin/knowledge-base': typeof AdminKnowledgeBaseRoute
   '/admin/lawyers': typeof AdminLawyersRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -370,6 +379,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/admin/cases'
+    | '/admin/data-management'
     | '/admin/knowledge-base'
     | '/admin/lawyers'
     | '/admin/notifications'
@@ -407,6 +417,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/admin/cases'
+    | '/admin/data-management'
     | '/admin/knowledge-base'
     | '/admin/lawyers'
     | '/admin/notifications'
@@ -446,6 +457,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/admin/cases'
+    | '/admin/data-management'
     | '/admin/knowledge-base'
     | '/admin/lawyers'
     | '/admin/notifications'
@@ -572,6 +584,13 @@ declare module '@tanstack/react-router' {
       path: '/cases'
       fullPath: '/admin/cases'
       preLoaderRoute: typeof AdminCasesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/data-management': {
+      id: '/admin/data-management'
+      path: '/data-management'
+      fullPath: '/admin/data-management'
+      preLoaderRoute: typeof AdminDataManagementRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/knowledge-base': {
@@ -761,6 +780,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminCasesRoute: typeof AdminCasesRoute
+  AdminDataManagementRoute: typeof AdminDataManagementRoute
   AdminKnowledgeBaseRoute: typeof AdminKnowledgeBaseRoute
   AdminLawyersRoute: typeof AdminLawyersRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
@@ -772,6 +792,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminCasesRoute: AdminCasesRoute,
+  AdminDataManagementRoute: AdminDataManagementRoute,
   AdminKnowledgeBaseRoute: AdminKnowledgeBaseRoute,
   AdminLawyersRoute: AdminLawyersRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
