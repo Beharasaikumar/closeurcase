@@ -521,5 +521,5 @@ md-dialog {
 .animate-banner-marquee {
   display: inline-flex;
   white-space: nowrap;
-  animation: banner-marquee 4s linear infinite;
+  animation: banner-marquee 10s linear infinite;
 }

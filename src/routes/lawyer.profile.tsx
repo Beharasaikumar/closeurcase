@@ -24,6 +24,7 @@ import {
   X,
   Lock,
   IndianRupee,
+  Landmark,
 } from "lucide-react";
 import { Button, TextField, Select, Checkbox, InputChip, IconButton } from "@/components/m3";
 import { LAWYER_PRACTICE_AREAS } from "@/components/app/lawyerPracticeAreas";
@@ -112,6 +113,12 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
   const [awards, setAwards] = useState<LawyerAward[]>(lawyer.awards || []);
   const [awardTitle, setAwardTitle] = useState("");
   const [awardYear, setAwardYear] = useState("");
+
+  // Bank Account Details — one-time entry; locked once saved
+  const bankDetailsLocked = Boolean(lawyer.accountNumber && lawyer.ifscCode);
+  const [bankName, setBankName] = useState(lawyer.bankName || "");
+  const [accountNumber, setAccountNumber] = useState(lawyer.accountNumber || "");
+  const [ifscCode, setIfscCode] = useState(lawyer.ifscCode || "");
 
   // Practice Areas & 3-Tier Multi-Select State
   const [selectedPracticeArea, setSelectedPracticeArea] = useState<string>("");
@@ -311,6 +318,13 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
       idProofUrl,
       availabilityStatus,
       consultationFee: Number(consultationFee) || 1500,
+      ...(bankDetailsLocked
+        ? {}
+        : {
+            bankName: bankName.trim(),
+            accountNumber: accountNumber.trim(),
+            ifscCode: ifscCode.trim().toUpperCase(),
+          }),
     });
 
     setSaved(true);
@@ -427,13 +441,13 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
               <label className="block text-xs font-bold text-foreground uppercase tracking-wide">
                 Account Availability Status
               </label>
-              <div className="grid grid-cols-2 gap-2 rounded-xl border border-border bg-muted p-1">
+              <div className="grid h-9 grid-cols-2 gap-2 rounded-xl border border-border bg-muted p-1">
                 <button
                   type="button"
                   onClick={() => {
                     if (availabilityStatus !== "Active") setPendingStatus("Active");
                   }}
-                  className={`flex items-center justify-center gap-2 rounded-lg py-2 text-xs font-extrabold transition-all cursor-pointer ${
+                  className={`flex items-center justify-center gap-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
                     availabilityStatus === "Active"
                       ? "bg-surface text-emerald-600 dark:text-emerald-400 shadow-xs border border-emerald-500/30"
                       : "text-muted-foreground hover:text-foreground"
@@ -447,7 +461,7 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
                   onClick={() => {
                     if (availabilityStatus !== "Inactive") setPendingStatus("Inactive");
                   }}
-                  className={`flex items-center justify-center gap-2 rounded-lg py-2 text-xs font-extrabold transition-all cursor-pointer ${
+                  className={`flex items-center justify-center gap-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
                     availabilityStatus === "Inactive"
                       ? "bg-surface text-amber-600 dark:text-amber-400 shadow-xs border border-amber-500/30"
                       : "text-muted-foreground hover:text-foreground"
@@ -464,8 +478,10 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
 
             {/* Consultation Fee Input Field */}
             <div className="space-y-2">
+              <label className="block text-xs font-bold text-foreground uppercase tracking-wide">
+                Consultation Fee (₹)
+              </label>
               <TextField
-                label="Consultation Fee (₹)"
                 type="number"
                 value={consultationFee}
                 onChange={(v) => setConsultationFee(v.replace(/\D/g, ""))}
@@ -900,6 +916,54 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
               ))}
             </ul>
           )}
+        </div>
+
+        {/* Bank Account Details */}
+        <div className="space-y-4 rounded-2xl border border-border/80 bg-surface/95 p-5 shadow-2xs sm:p-6">
+          <div className="border-b border-border/60 pb-3">
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-wide flex items-center gap-2">
+              <Landmark className="h-4 w-4 text-primary" /> Bank Account Details
+            </h3>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              {bankDetailsLocked
+                ? "Your bank details are on file and locked for security. Contact support to update them."
+                : "Add your bank account once to enable withdrawals. Account number and IFSC code can only be entered here one time."}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <TextField
+              label="Bank Name"
+              value={bankName}
+              onChange={setBankName}
+              placeholder="e.g. State Bank of India"
+              disabled={bankDetailsLocked}
+            />
+            <TextField
+              label="Account Number"
+              value={bankDetailsLocked ? `••••••••${accountNumber.slice(-4)}` : accountNumber}
+              onChange={(v) => setAccountNumber(v.replace(/\D/g, ""))}
+              placeholder="Enter account number"
+              disabled={bankDetailsLocked}
+              trailingIcon={
+                bankDetailsLocked ? (
+                  <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                ) : undefined
+              }
+            />
+            <TextField
+              label="IFSC Code"
+              value={bankDetailsLocked ? `••••${ifscCode.slice(-4)}` : ifscCode}
+              onChange={(v) => setIfscCode(v.toUpperCase())}
+              placeholder="e.g. SBIN0001234"
+              disabled={bankDetailsLocked}
+              trailingIcon={
+                bankDetailsLocked ? (
+                  <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                ) : undefined
+              }
+            />
+          </div>
         </div>
 
         {/* Bottom Save Action Bar */}

@@ -24,6 +24,17 @@ export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
 });
 
+const NATIVE_DATE_INPUT_CLS =
+  "h-9 rounded-lg border border-border bg-card px-2.5 text-xs text-foreground outline-hidden focus:border-primary focus:ring-1 focus:ring-primary";
+
+const todayIso = () => new Date().toISOString().slice(0, 10);
+
+const daysAgoIso = (n: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0, 10);
+};
+
 /* ── Minimal SVG Donut/Pie chart helper (moved in from the former Reports page) ── */
 interface PieSlice {
   label: string;
@@ -112,12 +123,16 @@ interface DailyRegPoint {
   lawyers: number;
 }
 
-function buildDailyRegistrations(lawyers: Lawyer[], citizens: Citizen[]): DailyRegPoint[] {
+function buildDailyRegistrations(
+  lawyers: Lawyer[],
+  citizens: Citizen[],
+  from: string,
+  to: string,
+): DailyRegPoint[] {
   const days: DailyRegPoint[] = [];
-  const now = new Date();
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
+  const start = new Date(`${from}T00:00:00`);
+  const end = new Date(`${to}T00:00:00`);
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     const iso = d.toISOString().slice(0, 10);
     const label = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     days.push({
@@ -181,6 +196,11 @@ function DailyRegistrationsChart({ data }: { data: DailyRegPoint[] }) {
   const lawyerPoints = data.map((d, i) => ({ x: xFor(i), y: yFor(d.lawyers) }));
 
   const bottomY = padding.top + plotH;
+
+  // Past ~45 days, per-day dots overlap into a solid smear along the
+  // baseline — past that point just show the smooth wave line/area and
+  // reserve dots for the single hovered day.
+  const showAllDots = data.length <= 45;
 
   // Grid steps (4 horizontal lines)
   const gridSteps = [0, 0.33, 0.66, 1];
@@ -321,22 +341,25 @@ function DailyRegistrationsChart({ data }: { data: DailyRegPoint[] }) {
                 strokeLinejoin="round"
                 filter="url(#glow-blue)"
               />
-              {citizenPoints.map((p, i) => (
-                <g key={i}>
-                  {hoverIndex === i && (
-                    <circle cx={p.x} cy={p.y} r="10" fill="#3b82f6" fillOpacity="0.25" />
-                  )}
-                  <circle
-                    cx={p.x}
-                    cy={p.y}
-                    r={hoverIndex === i ? 6 : 4.5}
-                    fill="#3b82f6"
-                    stroke="#ffffff"
-                    strokeWidth="2.5"
-                    className="transition-all cursor-pointer"
-                  />
-                </g>
-              ))}
+              {citizenPoints.map((p, i) => {
+                if (!showAllDots && hoverIndex !== i) return null;
+                return (
+                  <g key={i}>
+                    {hoverIndex === i && (
+                      <circle cx={p.x} cy={p.y} r="10" fill="#3b82f6" fillOpacity="0.25" />
+                    )}
+                    <circle
+                      cx={p.x}
+                      cy={p.y}
+                      r={hoverIndex === i ? 6 : 4.5}
+                      fill="#3b82f6"
+                      stroke="#ffffff"
+                      strokeWidth="2.5"
+                      className="transition-all cursor-pointer"
+                    />
+                  </g>
+                );
+              })}
             </g>
           )}
 
@@ -353,45 +376,52 @@ function DailyRegistrationsChart({ data }: { data: DailyRegPoint[] }) {
                 strokeLinejoin="round"
                 filter="url(#glow-rose)"
               />
-              {lawyerPoints.map((p, i) => (
-                <g key={i}>
-                  {hoverIndex === i && (
-                    <circle cx={p.x} cy={p.y} r="10" fill="#f43f5e" fillOpacity="0.25" />
-                  )}
-                  <circle
-                    cx={p.x}
-                    cy={p.y}
-                    r={hoverIndex === i ? 6 : 4.5}
-                    fill="#f43f5e"
-                    stroke="#ffffff"
-                    strokeWidth="2.5"
-                    className="transition-all cursor-pointer"
-                  />
-                </g>
-              ))}
+              {lawyerPoints.map((p, i) => {
+                if (!showAllDots && hoverIndex !== i) return null;
+                return (
+                  <g key={i}>
+                    {hoverIndex === i && (
+                      <circle cx={p.x} cy={p.y} r="10" fill="#f43f5e" fillOpacity="0.25" />
+                    )}
+                    <circle
+                      cx={p.x}
+                      cy={p.y}
+                      r={hoverIndex === i ? 6 : 4.5}
+                      fill="#f43f5e"
+                      stroke="#ffffff"
+                      strokeWidth="2.5"
+                      className="transition-all cursor-pointer"
+                    />
+                  </g>
+                );
+              })}
             </g>
           )}
 
-          {/* X Axis Labels (dates) */}
-          {data.map((d, i) => {
-            const x = xFor(i);
-            const isHovered = hoverIndex === i;
-            return (
-              <g key={d.date}>
-                <text
-                  x={x}
-                  y={viewBoxH - 8}
-                  textAnchor="middle"
-                  fontSize="11"
-                  fontWeight={isHovered ? "800" : "600"}
-                  fill={isHovered ? "var(--color-foreground)" : "var(--color-muted-foreground)"}
-                  className="transition-colors"
-                >
-                  {d.label}
-                </text>
-              </g>
-            );
-          })}
+          {/* X Axis Labels (dates) — thinned out for long ranges to avoid overlap */}
+          {(() => {
+            const labelStep = Math.max(1, Math.ceil(data.length / 10));
+            return data.map((d, i) => {
+              if (i % labelStep !== 0 && i !== data.length - 1) return null;
+              const x = xFor(i);
+              const isHovered = hoverIndex === i;
+              return (
+                <g key={d.date}>
+                  <text
+                    x={x}
+                    y={viewBoxH - 8}
+                    textAnchor="middle"
+                    fontSize="11"
+                    fontWeight={isHovered ? "800" : "600"}
+                    fill={isHovered ? "var(--color-foreground)" : "var(--color-muted-foreground)"}
+                    className="transition-colors"
+                  >
+                    {d.label}
+                  </text>
+                </g>
+              );
+            });
+          })()}
 
           {/* Hover Crosshair Guideline */}
           {hoverIndex !== null && (
@@ -468,9 +498,12 @@ function AdminDashboard() {
   const openCases = casesList.filter((c) => c.status !== "Resolved" && c.status !== "Closed");
   const unassignedEmergencyCases = casesList.filter((c) => c.isEmergency && !c.lawyerId);
 
+  const [regFrom, setRegFrom] = useState(daysAgoIso(6));
+  const [regTo, setRegTo] = useState(todayIso());
+
   const dailyRegData = useMemo(
-    () => buildDailyRegistrations(lawyersList, citizensList),
-    [lawyersList, citizensList],
+    () => buildDailyRegistrations(lawyersList, citizensList, regFrom, regTo),
+    [lawyersList, citizensList, regFrom, regTo],
   );
 
   const totalCases = casesList.length;
@@ -593,19 +626,42 @@ function AdminDashboard() {
         </Card>
       </div>
 
-      {/* New Registrations — Last 7 Days */}
+      {/* New Registrations */}
       <div className="rounded-2xl border border-border bg-surface p-6 shadow-2xs space-y-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 justify-between border-b border-border pb-3">
           <div className="flex items-center gap-2">
             <LineChart className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-bold text-foreground">New Registrations — Last 7 Days</h3>
+            <h3 className="text-sm font-bold text-foreground">New Registrations</h3>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-muted-foreground">From</span>
+              <input
+                type="date"
+                value={regFrom}
+                max={regTo}
+                onChange={(e) => setRegFrom(e.target.value)}
+                className={NATIVE_DATE_INPUT_CLS}
+              />
+            </label>
+            <label className="flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-muted-foreground">To</span>
+              <input
+                type="date"
+                value={regTo}
+                min={regFrom}
+                max={todayIso()}
+                onChange={(e) => setRegTo(e.target.value)}
+                className={NATIVE_DATE_INPUT_CLS}
+              />
+            </label>
           </div>
         </div>
         <DailyRegistrationsChart data={dailyRegData} />
       </div>
 
       {/* NEEDS ATTENTION — real actionable items, no invented data */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div className="rounded-2xl border border-border bg-surface p-6 shadow-2xs space-y-3">
           <div className="flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-2">
@@ -696,7 +752,7 @@ function AdminDashboard() {
       </div>
 
       {/* PIE CHARTS ROW */}
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <div className="rounded-2xl border border-border bg-surface p-5 shadow-2xs space-y-4">
           <div className="flex items-center gap-2 border-b border-border pb-3">
             <PieChart className="h-4 w-4 text-primary" />
@@ -771,7 +827,7 @@ function AdminDashboard() {
       </div>
 
       {/* BAR CHART METERS GRID */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div className="rounded-2xl border border-border bg-surface p-6 shadow-2xs space-y-4">
           <div className="flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-2">
@@ -851,7 +907,7 @@ function AdminDashboard() {
           </h3>
           <span className="text-xs text-muted-foreground">{totalLawyers} Total Counsel</span>
         </div>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {categoryStats.map((item) => (
             <div
               key={item.category}

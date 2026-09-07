@@ -522,7 +522,7 @@ export function FindLawyerWizard() {
         </Card>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 sm:px-6 sm:py-4 md:px-10 md:py-4">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 pb-24 sm:px-6 sm:py-4 sm:pb-4 md:px-10 md:py-4">
         {/* ── STEP 1: choose path + provide details ─────────────────────── */}
         {step === "details" && (
           <div className="space-y-3">
@@ -1122,7 +1122,7 @@ export function FindLawyerWizard() {
               </div>
             </Card>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {/* Card 1: Choose a Lawyer (Pay As You Go) */}
               <Card
                 variant="outlined"
@@ -1297,7 +1297,7 @@ export function FindLawyerWizard() {
                   </div>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {SUBSCRIPTION_PLANS.map((plan) => {
                     const isYearly = plan.id === "yearly" || plan.badge;
                     const isSelected = subscriptionPlan === plan.id;
@@ -1455,7 +1455,7 @@ export function FindLawyerWizard() {
                   Complete Case Dossier Details
                 </h4>
 
-                <div className="grid gap-2.5 sm:grid-cols-2 text-xs">
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 text-xs">
                   {/* Item 1: Case Type & Path */}
                   <div className="rounded-lg border border-border/80 bg-background/60 p-3 flex items-start gap-2.5">
                     <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary mt-0.5">

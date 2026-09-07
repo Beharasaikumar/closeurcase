@@ -22,7 +22,7 @@ export function WhatsAppFloatingButton({
   raised?: boolean;
 } = {}) {
   const sideCls = position === "right" ? "right-4 sm:right-6" : "left-4 sm:left-6";
-  const bottomCls = raised ? "bottom-20 sm:bottom-6" : "bottom-4 sm:bottom-6";
+  const bottomCls = raised ? "bottom-24 sm:bottom-6" : "bottom-4 sm:bottom-6";
   return (
     <a
       href={whatsappUrl("Hi, I need help with my legal case on CloseUrCase.")}

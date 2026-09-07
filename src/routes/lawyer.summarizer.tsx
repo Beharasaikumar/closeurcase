@@ -306,7 +306,7 @@ export function CaseSummarizer() {
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5 rounded-xl border border-border/70 bg-background p-4">
               <div className="flex items-center gap-1.5 text-primary">
                 <FileText className="h-3.5 w-3.5 shrink-0" />

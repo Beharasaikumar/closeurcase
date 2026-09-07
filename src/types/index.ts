@@ -84,6 +84,11 @@ export interface Lawyer {
   ratingCount?: number;
   consultationFee?: number;
   availabilityStatus?: "Active" | "Inactive";
+  /** Bank account details for withdrawals. `accountNumber` and `ifscCode` are
+   * masked in the UI once set and can only be entered once. */
+  bankName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
 }
 
 export type SubscriptionPlanId = "monthly" | "yearly";
@@ -101,6 +106,37 @@ export interface Subscription {
   status: "Active" | "Cancelled" | "Expired";
   /** The case this subscription was purchased for, if any. */
   caseId?: string;
+}
+
+/** "commission" covers the platform's cut of lawyer consultations and case
+ * settlements; "subscription" covers a citizen's Auto-Assign plan purchase. */
+export type PaymentSource = "commission" | "subscription";
+
+export type PaymentStatus = "Completed" | "Processing";
+
+/** A single money movement on the platform — a citizen paying for a
+ * consultation or an Auto-Assign subscription, or the platform's commission
+ * share of a lawyer's case settlement. Backs both the lawyer and admin
+ * Revenue tabs. */
+export interface Payment {
+  id: string;
+  source: PaymentSource;
+  /** ISO date (YYYY-MM-DD) the payment was made. */
+  date: string;
+  status: PaymentStatus;
+  citizenId?: string;
+  citizenName?: string;
+  lawyerId?: string;
+  lawyerName?: string;
+  caseId?: string;
+  caseTitle?: string;
+  /** Total amount paid by the citizen. */
+  grossAmount: number;
+  /** Platform's commission cut of `grossAmount` (0 for subscription payments,
+   * which go to the platform in full). */
+  platformAmount: number;
+  /** Amount credited to the lawyer, i.e. `grossAmount - platformAmount`. */
+  lawyerAmount: number;
 }
 
 export interface CaseDocument {
@@ -283,6 +319,9 @@ export interface LegalCase {
   source?: "manual" | "ecourt";
   isEmergency?: boolean;
   emergencyReason?: string;
+  /** True when this case originated from a citizen's WhatsApp conversation
+   * with the platform, rather than the in-app case creation wizard. */
+  viaWhatsApp?: boolean;
   practiceArea?: string;
   specialization?: string;
   legalService?: string;

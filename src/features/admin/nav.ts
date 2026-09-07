@@ -2,7 +2,7 @@ import { LayoutGrid, Users, Scale, Folder, BookOpen, Bell, User, IndianRupee } f
 import type { NavItem } from "@/layouts/DashboardLayout";
 
 export const adminNav: NavItem[] = [
-  { to: "/admin", label: "Dashboard", icon: LayoutGrid },
+  { to: "/admin", label: "Home", icon: LayoutGrid },
   { to: "/admin/users", label: "Users", icon: Users },
   { to: "/admin/lawyers", label: "Lawyers", icon: Scale },
   { to: "/admin/cases", label: "Case Management", icon: Folder },

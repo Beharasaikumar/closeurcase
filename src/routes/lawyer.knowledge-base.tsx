@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { DataTable, type Column } from "@/components/app/DataTable";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 import { DocumentPreviewBody } from "@/components/app/DocumentPreview";
+import { SegmentedControl } from "@/components/app/SegmentedControl";
 import {
   getKnowledgeBase,
   getLawyers,
@@ -24,7 +25,6 @@ import {
 import {
   Search,
   BookOpen,
-  FileStack,
   Upload,
   Trash2,
   FileText,
@@ -47,7 +47,6 @@ import {
   ChipSet,
   FilterChip,
   Badge,
-  Tabs,
   Dialog,
   DialogHeader,
   DialogTitle,
@@ -73,19 +72,16 @@ export function LawyerKnowledgeBase() {
       <PageHeader
         title="Legal Knowledge Base & References"
         description="Browse indexed statutory acts and landmark judgements, or keep your own reference documents handy."
-      />
-
-      <Tabs
-        value={tab}
-        onChange={(v) => setTab(v as KbTab)}
-        tabs={[
-          { value: "global", label: "Global Docs", icon: <BookOpen className="h-4 w-4" /> },
-          {
-            value: "mine",
-            label: `My Docs (${myDocs.docs.length})`,
-            icon: <FileStack className="h-4 w-4" />,
-          },
-        ]}
+        actions={
+          <SegmentedControl
+            value={tab}
+            onChange={setTab}
+            options={[
+              { value: "global", label: "Global Docs" },
+              { value: "mine", label: `My Docs (${myDocs.docs.length})` },
+            ]}
+          />
+        }
       />
 
       {tab === "global" ? <GlobalDocsTab /> : <MyDocsTab state={myDocs} />}

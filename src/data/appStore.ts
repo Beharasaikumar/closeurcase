@@ -9,6 +9,7 @@ import type {
   Lawyer,
   LawyerDocument,
   LegalCase,
+  Payment,
   Subscription,
   UserRole,
   VideoCall,
@@ -19,6 +20,7 @@ import {
   lawyers as seedLawyers,
   cases as seedCases,
   subscriptions as seedSubscriptions,
+  payments as seedPayments,
   notifications as seedNotifications,
   videoCalls as seedVideoCalls,
   knowledgeBase as seedKnowledgeBase,
@@ -34,6 +36,7 @@ const PROFILE_PHOTOS_KEY = "cuc_profile_photos_v1";
 const CASES_KEY = "cuc_cases_v12";
 const NOTES_KEY = "cuc_case_notes_v1";
 const SUBSCRIPTIONS_KEY = "cuc_subscriptions_v1";
+const PAYMENTS_KEY = "cuc_payments_v1";
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
@@ -581,4 +584,11 @@ export function addSubscription(
   });
 
   return newSub;
+}
+
+/* ── PAYMENTS STORE (Revenue tabs) ───────────────────────────────────────── */
+export function getPayments(lawyerId?: string): Payment[] {
+  const all = load<Payment[]>(PAYMENTS_KEY, seedPayments);
+  const sorted = [...all].sort((a, b) => b.date.localeCompare(a.date));
+  return lawyerId ? sorted.filter((p) => p.lawyerId === lawyerId) : sorted;
 }

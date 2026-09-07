@@ -1,8 +1,6 @@
 import { Outlet, createFileRoute, redirect, useRouterState } from "@tanstack/react-router";
-import { useMemo } from "react";
-import { LayoutGrid, Search, Folder, User, Bell, CreditCard } from "lucide-react";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
-import { useCitizenLanguage } from "@/features/citizen/i18n/CitizenLanguageContext";
+import { useCitizenNav } from "@/features/citizen/nav";
 import { getCitizenSession } from "@/features/citizen/session";
 import { getCitizens } from "@/data/appStore";
 
@@ -19,7 +17,6 @@ export const Route = createFileRoute("/citizen")({
 });
 
 function CitizenLayout() {
-  const { translate } = useCitizenLanguage();
   const session = getCitizenSession();
   const firstCitizen = getCitizens()[0];
   const userName = session.fullName || firstCitizen?.name || "Sai Teja Reddy";
@@ -29,21 +26,7 @@ function CitizenLayout() {
   // scroll region (no page-level scrolling), same reasoning as chat.
   const isCreateCaseRoute = pathname === "/citizen/create-case";
 
-  const nav = useMemo(
-    () => [
-      { to: "/citizen", label: translate("navDashboard"), icon: LayoutGrid },
-      { to: "/citizen/create-case", label: translate("navFindLawyer"), icon: Search },
-      { to: "/citizen/my-cases", label: translate("navMyCases"), icon: Folder },
-      {
-        to: "/citizen/subscriptions",
-        label: translate("navMySubscriptions"),
-        icon: CreditCard,
-      },
-      { to: "/citizen/notifications", label: translate("navNotifications"), icon: Bell },
-      { to: "/citizen/profile", label: translate("navMyProfile"), icon: User },
-    ],
-    [translate],
-  );
+  const nav = useCitizenNav();
 
   return (
     <DashboardLayout
@@ -52,6 +35,8 @@ function CitizenLayout() {
       userName={userName}
       nav={nav}
       fullBleed={isChatRoute || isCreateCaseRoute}
+      hideBottomNav={isChatRoute}
+      hideFloatingWidgets={isCreateCaseRoute}
     >
       <Outlet />
     </DashboardLayout>

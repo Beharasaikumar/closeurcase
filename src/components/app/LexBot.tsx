@@ -302,7 +302,7 @@ export function LexBot({
   const chatW = expanded
     ? "w-[calc(100vw-2rem)] sm:w-[420px]"
     : "w-[calc(100vw-2rem)] sm:w-[340px]";
-  const bottomPos = hideTrigger || raised ? "bottom-20 sm:bottom-6" : "bottom-4 sm:bottom-6";
+  const bottomPos = hideTrigger || raised ? "bottom-24 sm:bottom-6" : "bottom-4 sm:bottom-6";
 
   return (
     <>

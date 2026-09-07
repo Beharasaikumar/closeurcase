@@ -6,10 +6,11 @@ import { ImportCaseModal } from "@/components/app/ImportCaseModal";
 import { CaseDocketRegister } from "@/components/app/CaseDocketRegister";
 import { ExpandableFilterChips } from "@/components/app/ExpandableFilterChips";
 import { FilterPanelButton, type FilterSection } from "@/components/app/FilterPanelButton";
+import { SegmentedControl } from "@/components/app/SegmentedControl";
 import { getCases, getLawyers, subscribeToStore } from "@/data/appStore";
 import type { LegalCase } from "@/types";
 import { Search, Download } from "lucide-react";
-import { Button, Tabs, TextField } from "@/components/m3";
+import { Button, TextField } from "@/components/m3";
 
 type CaseTab = "Assigned" | "Imported";
 
@@ -99,16 +100,16 @@ export function CasesListView() {
       <PageHeader
         title="My Cases"
         description="Track cases assigned to you and cases imported from eCourts."
-      />
-
-      {/* Assigned / Imported toggle */}
-      <Tabs
-        value={tab}
-        onChange={(v) => selectTab(v as CaseTab)}
-        tabs={[
-          { value: "Assigned", label: `Assigned (${assignedCases.length})` },
-          { value: "Imported", label: `Imported (${importedCases.length})` },
-        ]}
+        actions={
+          <SegmentedControl
+            value={tab}
+            onChange={selectTab}
+            options={[
+              { value: "Assigned", label: `Assigned (${assignedCases.length})` },
+              { value: "Imported", label: `Imported (${importedCases.length})` },
+            ]}
+          />
+        }
       />
 
       {tab === "Assigned" ? (

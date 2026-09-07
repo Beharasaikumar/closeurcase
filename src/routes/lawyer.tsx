@@ -17,6 +17,7 @@ function LawyerLayout() {
       userName="Swathi Reddy"
       nav={lawyerNav}
       fullBleed={isChatRoute}
+      hideBottomNav={isChatRoute}
     >
       <Outlet />
     </DashboardLayout>

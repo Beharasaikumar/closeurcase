@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/app/PageHeader";
+import { SegmentedControl } from "@/components/app/SegmentedControl";
 import { StatusDot } from "@/components/app/StatusDot";
 import { StatusBadge } from "@/components/app/caseDocketShared";
 import { UserAvatar } from "@/components/app/UserAvatar";
+import { WhatsAppInlineIcon } from "@/components/app/WhatsAppButton";
 import { FilterPanelButton, type FilterSection } from "@/components/app/FilterPanelButton";
 import {
   getCases,
@@ -26,6 +28,8 @@ import {
   DialogContent,
 } from "@/components/m3";
 
+type CaseTab = "Assigned" | "Unassigned";
+
 export const Route = createFileRoute("/admin/cases")({
   head: () => ({ meta: [{ title: "Manage Platform Cases — CloseUrCase" }] }),
   component: CasesPage,
@@ -45,6 +49,7 @@ function CasesPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Record<string, string[]>>({});
+  const [tab, setTab] = useState<CaseTab>("Assigned");
   // Pagination — set to 8 rows per page
   const PAGE_SIZE = 8;
   const [page, setPage] = useState(1);
@@ -84,7 +89,11 @@ function CasesPage() {
     },
   ];
 
-  const filtered = rows
+  const assignedCases = rows.filter((r) => r.lawyerId);
+  const unassignedCases = rows.filter((r) => !r.lawyerId);
+  const tabCases = tab === "Assigned" ? assignedCases : unassignedCases;
+
+  const filtered = tabCases
     .filter((r) =>
       Object.entries(filters).every(
         ([key, values]) =>
@@ -105,10 +114,10 @@ function CasesPage() {
 
   const selectedCase = selectedId ? rows.find((r) => r.id === selectedId) : undefined;
 
-  // Reset page when search/filters change
+  // Reset page when search/filters/tab change
   useEffect(() => {
     setPage(1);
-  }, [search, filters]);
+  }, [search, filters, tab]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -119,6 +128,16 @@ function CasesPage() {
       <PageHeader
         title="Case Management & Lawyer Assignment"
         description="Review case records, assign or reassign Lawyers to citizen cases, and override case statuses."
+        actions={
+          <SegmentedControl
+            value={tab}
+            onChange={setTab}
+            options={[
+              { value: "Assigned", label: `Assigned (${assignedCases.length})` },
+              { value: "Unassigned", label: `Unassigned (${unassignedCases.length})` },
+            ]}
+          />
+        }
       />
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-2xl border border-border/80 bg-surface p-2.5 sm:p-3 shadow-2xs">
@@ -144,22 +163,17 @@ function CasesPage() {
             return (
               <div
                 key={r.id}
-                className={`group relative flex h-full min-h-64 flex-col justify-between overflow-hidden rounded-2xl border p-4.5 shadow-2xs transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:p-5 ${
+                className={`relative flex h-full min-h-64 flex-col justify-between overflow-hidden rounded-2xl border p-4.5 shadow-2xs sm:p-5 ${
                   isOpen
                     ? "border-primary bg-primary/5 shadow-primary/10"
                     : r.isEmergency
-                      ? "border-red-500/40 bg-gradient-to-b from-red-500/[0.06] via-surface to-surface hover:border-red-500/70 hover:shadow-red-500/10"
-                      : "border-border/70 bg-gradient-to-b from-surface via-surface/98 to-surface/90 hover:border-primary/45 hover:shadow-primary/5"
+                      ? "border-red-500/40 bg-gradient-to-b from-red-500/[0.06] via-surface to-surface"
+                      : "border-border/70 bg-gradient-to-b from-surface via-surface/98 to-surface/90"
                 }`}
               >
-                {/* Top Subtle Gradient Accent Line on Hover */}
-                <div
-                  className={`absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r transition-opacity duration-300 ${
-                    r.isEmergency
-                      ? "from-transparent via-red-500 to-transparent opacity-90 animate-pulse"
-                      : "from-transparent via-primary/60 to-transparent opacity-0 group-hover:opacity-100"
-                  }`}
-                />
+                {r.isEmergency && (
+                  <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-red-500 to-transparent opacity-90 animate-pulse" />
+                )}
 
                 <div className="space-y-3.5">
                   {/* Header: ID, Badges & Status */}
@@ -178,6 +192,12 @@ function CasesPage() {
                           Emergency
                         </span>
                       )}
+                      {r.viaWhatsApp && (
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#25D366] px-2.5 py-0.5 text-[9px] font-extrabold text-white uppercase tracking-wider shadow-2xs">
+                          <WhatsAppInlineIcon className="h-3 w-3" />
+                          WhatsApp
+                        </span>
+                      )}
                     </div>
                     <div className="shrink-0">
                       <StatusBadge status={r.status} />
@@ -187,7 +207,7 @@ function CasesPage() {
                   {/* Title & Emergency Reason */}
                   <div>
                     <h3
-                      className="line-clamp-2 text-base font-bold text-foreground leading-snug tracking-tight group-hover:text-primary transition-colors cursor-pointer"
+                      className="line-clamp-2 text-base font-bold text-foreground leading-snug tracking-tight cursor-pointer"
                       title={r.title}
                       onClick={() => setSelectedId(r.id)}
                     >
@@ -249,9 +269,6 @@ function CasesPage() {
                       )}
                     </div>
                   </div>
-
-                  {/* Citizen Taxonomy Information (Read-Only) */}
-                  <CitizenRequirementsView c={r} />
                 </div>
 
                 {/* Footer Action Bar */}

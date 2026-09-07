@@ -73,12 +73,6 @@ const LAWYER_BOTTOM_NAV: {
     icon: BookOpen,
     match: (p) => p.startsWith("/lawyer/knowledge-base"),
   },
-  {
-    to: "/lawyer/notifications",
-    label: "Notifications",
-    icon: Bell,
-    match: (p) => p.startsWith("/lawyer/notifications"),
-  },
 ];
 
 /** Citizen-only mobile bottom tab bar destinations. */
@@ -103,15 +97,15 @@ const CITIZEN_BOTTOM_NAV: {
   },
   {
     to: "/citizen/subscriptions",
-    label: "My Subscription",
+    label: "Plans",
     icon: CreditCard,
     match: (p) => p.startsWith("/citizen/subscriptions"),
   },
   {
-    to: "/citizen/notifications",
-    label: "Notifications",
-    icon: Bell,
-    match: (p) => p.startsWith("/citizen/notifications"),
+    to: "/citizen/profile",
+    label: "My Profile",
+    icon: User,
+    match: (p) => p.startsWith("/citizen/profile"),
   },
 ];
 
@@ -122,7 +116,7 @@ const ADMIN_BOTTOM_NAV: {
   icon: LucideIcon;
   match: (pathname: string) => boolean;
 }[] = [
-  { to: "/admin", label: "Dashboard", icon: LayoutGrid, match: (p) => p === "/admin" },
+  { to: "/admin", label: "Home", icon: LayoutGrid, match: (p) => p === "/admin" },
   { to: "/admin/users", label: "Users", icon: Users, match: (p) => p.startsWith("/admin/users") },
   {
     to: "/admin/lawyers",
@@ -137,10 +131,10 @@ const ADMIN_BOTTOM_NAV: {
     match: (p) => p.startsWith("/admin/cases"),
   },
   {
-    to: "/admin/notifications",
-    label: "Notifications",
-    icon: Bell,
-    match: (p) => p.startsWith("/admin/notifications"),
+    to: "/admin/knowledge-base",
+    label: "Knowledge Base",
+    icon: BookOpen,
+    match: (p) => p.startsWith("/admin/knowledge-base"),
   },
 ];
 
@@ -218,17 +212,29 @@ export function DashboardLayout({
   nav,
   children,
   fullBleed = false,
+  hideBottomNav = false,
+  hideFloatingWidgets = false,
 }: {
   role: "citizen" | "lawyer" | "admin";
   roleLabel: string;
   userName: string;
   nav: NavItem[];
   children: ReactNode;
-  /** For pages like chat that need to fill the exact remaining height and
-   *  manage their own internal scrolling — skips main's padding/max-width
-   *  wrapper (which has no defined height) and stops main itself from
-   *  scrolling, so a h-full child is actually bounded by real space. */
+  /** For pages like chat and the Find a Lawyer wizard that need to fill the
+   *  exact remaining height and manage their own internal scrolling — skips
+   *  main's padding/max-width wrapper (which has no defined height) and stops
+   *  main itself from scrolling, so a h-full child is actually bounded by
+   *  real space. Independent of `hideBottomNav`/`hideFloatingWidgets` — most
+   *  fullBleed pages still want the floating tab bar and widgets visible. */
   fullBleed?: boolean;
+  /** Hides the floating mobile bottom tab bar — for pages like chat that pin
+   *  their own message composer to the bottom of the screen, which the tab
+   *  bar would otherwise sit on top of. */
+  hideBottomNav?: boolean;
+  /** Hides the WhatsApp/Legal Bot bottom-right floating buttons — for pages
+   *  with their own bottom-right action button(s) (e.g. the Find a Lawyer
+   *  wizard's Continue button) that these would otherwise sit on top of. */
+  hideFloatingWidgets?: boolean;
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
@@ -468,9 +474,7 @@ export function DashboardLayout({
             className={
               fullBleed
                 ? "flex-1 min-h-0 overflow-hidden"
-                : `flex-1 min-h-0 overflow-y-auto px-3 py-3 sm:px-6 sm:py-6 md:px-10 ${
-                    role === "citizen" ? "md:py-5" : "md:py-8"
-                  } pb-24 md:pb-10`
+                : "flex-1 min-h-0 overflow-y-auto px-3 py-3 sm:px-6 sm:py-6 md:px-10 md:py-5 pb-24 md:pb-10"
             }
           >
             {fullBleed ? (
@@ -485,9 +489,9 @@ export function DashboardLayout({
           </main>
         </div>
 
-        {/* ── Mobile Navigation Bar (bottom tab bar) — every role gets one. ── */}
-        {!fullBleed && (
-          <nav className="fixed inset-x-0 bottom-0 z-40 flex items-stretch bg-[var(--md-sys-color-surface-container)] border-t border-[var(--md-sys-color-outline-variant)] md:hidden">
+        {/* ── Mobile Navigation Bar (floating bottom tab bar) — every role gets one. ── */}
+        {!hideBottomNav && (
+          <nav className="fixed inset-x-3 bottom-3 z-40 flex items-stretch rounded-[var(--md-sys-shape-corner-large)] border border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface-container)] shadow-[var(--md-sys-elevation-level2)] md:hidden">
             {bottomNav.map((item) => {
               const active = item.match(pathname);
               const Icon = item.icon;
@@ -495,15 +499,15 @@ export function DashboardLayout({
                 <Link
                   key={item.to}
                   to={item.to}
-                  className="flex flex-1 flex-col items-center gap-0.5 px-0.5 py-2 text-center text-[10px] font-semibold leading-tight"
+                  className="flex flex-1 flex-col items-center gap-0.5 px-0.5 py-2.5 text-center text-[9.5px] font-semibold leading-tight"
                 >
                   <span
-                    className={`flex h-8 w-14 items-center justify-center rounded-[var(--md-sys-shape-corner-full)] transition-colors ${
+                    className={`flex h-7 w-12 items-center justify-center rounded-full transition-colors ${
                       active ? "bg-[var(--md-sys-color-secondary-container)]" : ""
                     }`}
                   >
                     <Icon
-                      className={`h-5 w-5 ${active ? "text-[var(--md-sys-color-on-secondary-container)]" : "text-[var(--md-sys-color-on-surface-variant)]"}`}
+                      className={`h-4.5 w-4.5 ${active ? "text-[var(--md-sys-color-on-secondary-container)]" : "text-[var(--md-sys-color-on-surface-variant)]"}`}
                     />
                   </span>
                   <span
@@ -521,17 +525,18 @@ export function DashboardLayout({
           </nav>
         )}
 
-        {/* Floating widgets — except fullBleed pages like chat, where they'd overlap
-          the chat's own input/send button. Lawyer and citizen get WhatsApp in the
-          floating slot and Legal Bot moves into the sidebar/hamburger menu instead;
-          admin keeps the floating bot trigger, raised to clear its bottom tab bar. */}
-        {!fullBleed && (role === "lawyer" || role === "citizen") && (
+        {/* Floating widgets — except pages that pin their own bottom-right action
+          button(s) to the screen, where these would overlap it. Lawyer and citizen
+          get WhatsApp in the floating slot and Legal Bot moves into the sidebar/
+          hamburger menu instead; admin keeps the floating bot trigger, raised to
+          clear its bottom tab bar. */}
+        {!hideBottomNav && !hideFloatingWidgets && (role === "lawyer" || role === "citizen") && (
           <>
             <WhatsAppFloatingButton position="right" raised />
             <LexBot open={botMenuOpen} onOpenChange={setBotMenuOpen} hideTrigger />
           </>
         )}
-        {!fullBleed && role === "admin" && <LexBot raised />}
+        {!hideBottomNav && !hideFloatingWidgets && role === "admin" && <LexBot raised />}
       </div>
     </VideoCallProvider>
   );

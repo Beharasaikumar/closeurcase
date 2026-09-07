@@ -366,26 +366,21 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
             return (
               <div
                 key={c.id}
-                className={`group relative flex h-full min-h-64 flex-col justify-between overflow-hidden rounded-2xl border p-4.5 shadow-2xs transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:p-5 ${
+                className={`relative flex h-full min-h-64 flex-col justify-between overflow-hidden rounded-2xl border p-4.5 shadow-2xs sm:p-5 ${
                   isPendingDecision
-                    ? "border-amber-500/40 bg-gradient-to-b from-amber-500/[0.06] via-surface to-surface hover:border-amber-500/70 hover:shadow-amber-500/10"
-                    : "border-border/70 bg-gradient-to-b from-surface via-surface/98 to-surface/90 hover:border-primary/45 hover:shadow-primary/5"
+                    ? "border-amber-500/40 bg-gradient-to-b from-amber-500/[0.06] via-surface to-surface"
+                    : "border-border/70 bg-gradient-to-b from-surface via-surface/98 to-surface/90"
                 }`}
               >
-                {/* Top Subtle Gradient Accent Line on Hover */}
-                <div
-                  className={`absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r transition-opacity duration-300 ${
-                    isPendingDecision
-                      ? "from-transparent via-amber-500 to-transparent opacity-90"
-                      : "from-transparent via-primary/60 to-transparent opacity-0 group-hover:opacity-100"
-                  }`}
-                />
+                {isPendingDecision && (
+                  <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500 to-transparent opacity-90" />
+                )}
 
                 <div className="space-y-3.5">
                   {/* Title & Badges Header */}
                   <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0 flex-1">
-                      <h3 className="line-clamp-2 text-base font-bold text-foreground leading-snug tracking-tight transition-colors group-hover:text-primary">
+                      <h3 className="line-clamp-2 text-base font-bold text-foreground leading-snug tracking-tight">
                         {titleVsParts.length === 2 ? (
                           <>
                             <span>{titleVsParts[0]}</span>

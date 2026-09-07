@@ -21,7 +21,7 @@ export default defineConfig({
         short_name: "CloseUrCase",
         description:
           "CloseUrCase connects citizens, lawyers, and administrators on a single platform for managing legal cases end-to-end.",
-        theme_color: "#06213e",
+        theme_color: "#fefbff",
         background_color: "#fafafa",
         display: "standalone",
         start_url: "/",

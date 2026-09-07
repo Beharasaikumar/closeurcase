@@ -25,18 +25,14 @@ import { Route as AdminKnowledgeBaseRouteImport } from './routes/admin.knowledge
 import { Route as AdminLawyersRouteImport } from './routes/admin.lawyers'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminProfileRouteImport } from './routes/admin.profile'
-import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminRevenueRouteImport } from './routes/admin.revenue'
-import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as CitizenIndexRouteImport } from './routes/citizen.index'
 import { Route as CitizenCreateCaseRouteImport } from './routes/citizen.create-case'
 import { Route as CitizenMyCasesRouteImport } from './routes/citizen.my-cases'
 import { Route as CitizenNotificationsRouteImport } from './routes/citizen.notifications'
 import { Route as CitizenProfileRouteImport } from './routes/citizen.profile'
-import { Route as CitizenSettingsRouteImport } from './routes/citizen.settings'
 import { Route as CitizenSubscriptionsRouteImport } from './routes/citizen.subscriptions'
-import { Route as CitizenTrackCaseRouteImport } from './routes/citizen.track-case'
 import { Route as LawyerIndexRouteImport } from './routes/lawyer.index'
 import { Route as LawyerAiAssistantRouteImport } from './routes/lawyer.ai-assistant'
 import { Route as LawyerCasesRouteImport } from './routes/lawyer.cases'
@@ -45,11 +41,9 @@ import { Route as LawyerNotificationsRouteImport } from './routes/lawyer.notific
 import { Route as LawyerProfileRouteImport } from './routes/lawyer.profile'
 import { Route as LawyerQaAssistantRouteImport } from './routes/lawyer.qa-assistant'
 import { Route as LawyerRevenueRouteImport } from './routes/lawyer.revenue'
-import { Route as LawyerSettingsRouteImport } from './routes/lawyer.settings'
 import { Route as LawyerSummarizerRouteImport } from './routes/lawyer.summarizer'
 import { Route as CitizenCasesIdRouteImport } from './routes/citizen.cases.$id'
 import { Route as CitizenChatIdRouteImport } from './routes/citizen.chat.$id'
-import { Route as CitizenLawyerIdRouteImport } from './routes/citizen.lawyer.$id'
 import { Route as LawyerCasesIndexRouteImport } from './routes/lawyer.cases.index'
 import { Route as LawyerCasesIdRouteImport } from './routes/lawyer.cases.$id'
 import { Route as LawyerChatIdRouteImport } from './routes/lawyer.chat.$id'
@@ -134,19 +128,9 @@ const AdminProfileRoute = AdminProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminReportsRoute = AdminReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminRevenueRoute = AdminRevenueRouteImport.update({
   id: '/revenue',
   path: '/revenue',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminSettingsRoute = AdminSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
@@ -179,19 +163,9 @@ const CitizenProfileRoute = CitizenProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => CitizenRoute,
 } as any)
-const CitizenSettingsRoute = CitizenSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => CitizenRoute,
-} as any)
 const CitizenSubscriptionsRoute = CitizenSubscriptionsRouteImport.update({
   id: '/subscriptions',
   path: '/subscriptions',
-  getParentRoute: () => CitizenRoute,
-} as any)
-const CitizenTrackCaseRoute = CitizenTrackCaseRouteImport.update({
-  id: '/track-case',
-  path: '/track-case',
   getParentRoute: () => CitizenRoute,
 } as any)
 const LawyerIndexRoute = LawyerIndexRouteImport.update({
@@ -234,11 +208,6 @@ const LawyerRevenueRoute = LawyerRevenueRouteImport.update({
   path: '/revenue',
   getParentRoute: () => LawyerRoute,
 } as any)
-const LawyerSettingsRoute = LawyerSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => LawyerRoute,
-} as any)
 const LawyerSummarizerRoute = LawyerSummarizerRouteImport.update({
   id: '/summarizer',
   path: '/summarizer',
@@ -252,11 +221,6 @@ const CitizenCasesIdRoute = CitizenCasesIdRouteImport.update({
 const CitizenChatIdRoute = CitizenChatIdRouteImport.update({
   id: '/chat/$id',
   path: '/chat/$id',
-  getParentRoute: () => CitizenRoute,
-} as any)
-const CitizenLawyerIdRoute = CitizenLawyerIdRouteImport.update({
-  id: '/lawyer/$id',
-  path: '/lawyer/$id',
   getParentRoute: () => CitizenRoute,
 } as any)
 const LawyerCasesIndexRoute = LawyerCasesIndexRouteImport.update({
@@ -291,17 +255,13 @@ export interface FileRoutesByFullPath {
   '/admin/lawyers': typeof AdminLawyersRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/profile': typeof AdminProfileRoute
-  '/admin/reports': typeof AdminReportsRoute
   '/admin/revenue': typeof AdminRevenueRoute
-  '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/citizen/create-case': typeof CitizenCreateCaseRoute
   '/citizen/my-cases': typeof CitizenMyCasesRoute
   '/citizen/notifications': typeof CitizenNotificationsRoute
   '/citizen/profile': typeof CitizenProfileRoute
-  '/citizen/settings': typeof CitizenSettingsRoute
   '/citizen/subscriptions': typeof CitizenSubscriptionsRoute
-  '/citizen/track-case': typeof CitizenTrackCaseRoute
   '/lawyer/ai-assistant': typeof LawyerAiAssistantRoute
   '/lawyer/cases': typeof LawyerCasesRouteWithChildren
   '/lawyer/knowledge-base': typeof LawyerKnowledgeBaseRoute
@@ -309,14 +269,12 @@ export interface FileRoutesByFullPath {
   '/lawyer/profile': typeof LawyerProfileRoute
   '/lawyer/qa-assistant': typeof LawyerQaAssistantRoute
   '/lawyer/revenue': typeof LawyerRevenueRoute
-  '/lawyer/settings': typeof LawyerSettingsRoute
   '/lawyer/summarizer': typeof LawyerSummarizerRoute
   '/admin/': typeof AdminIndexRoute
   '/citizen/': typeof CitizenIndexRoute
   '/lawyer/': typeof LawyerIndexRoute
   '/citizen/cases/$id': typeof CitizenCasesIdRoute
   '/citizen/chat/$id': typeof CitizenChatIdRoute
-  '/citizen/lawyer/$id': typeof CitizenLawyerIdRoute
   '/lawyer/cases/$id': typeof LawyerCasesIdRoute
   '/lawyer/chat/$id': typeof LawyerChatIdRoute
   '/lawyer/cases/': typeof LawyerCasesIndexRoute
@@ -334,31 +292,25 @@ export interface FileRoutesByTo {
   '/admin/lawyers': typeof AdminLawyersRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/profile': typeof AdminProfileRoute
-  '/admin/reports': typeof AdminReportsRoute
   '/admin/revenue': typeof AdminRevenueRoute
-  '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/citizen/create-case': typeof CitizenCreateCaseRoute
   '/citizen/my-cases': typeof CitizenMyCasesRoute
   '/citizen/notifications': typeof CitizenNotificationsRoute
   '/citizen/profile': typeof CitizenProfileRoute
-  '/citizen/settings': typeof CitizenSettingsRoute
   '/citizen/subscriptions': typeof CitizenSubscriptionsRoute
-  '/citizen/track-case': typeof CitizenTrackCaseRoute
   '/lawyer/ai-assistant': typeof LawyerAiAssistantRoute
   '/lawyer/knowledge-base': typeof LawyerKnowledgeBaseRoute
   '/lawyer/notifications': typeof LawyerNotificationsRoute
   '/lawyer/profile': typeof LawyerProfileRoute
   '/lawyer/qa-assistant': typeof LawyerQaAssistantRoute
   '/lawyer/revenue': typeof LawyerRevenueRoute
-  '/lawyer/settings': typeof LawyerSettingsRoute
   '/lawyer/summarizer': typeof LawyerSummarizerRoute
   '/admin': typeof AdminIndexRoute
   '/citizen': typeof CitizenIndexRoute
   '/lawyer': typeof LawyerIndexRoute
   '/citizen/cases/$id': typeof CitizenCasesIdRoute
   '/citizen/chat/$id': typeof CitizenChatIdRoute
-  '/citizen/lawyer/$id': typeof CitizenLawyerIdRoute
   '/lawyer/cases/$id': typeof LawyerCasesIdRoute
   '/lawyer/chat/$id': typeof LawyerChatIdRoute
   '/lawyer/cases': typeof LawyerCasesIndexRoute
@@ -380,17 +332,13 @@ export interface FileRoutesById {
   '/admin/lawyers': typeof AdminLawyersRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/profile': typeof AdminProfileRoute
-  '/admin/reports': typeof AdminReportsRoute
   '/admin/revenue': typeof AdminRevenueRoute
-  '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/citizen/create-case': typeof CitizenCreateCaseRoute
   '/citizen/my-cases': typeof CitizenMyCasesRoute
   '/citizen/notifications': typeof CitizenNotificationsRoute
   '/citizen/profile': typeof CitizenProfileRoute
-  '/citizen/settings': typeof CitizenSettingsRoute
   '/citizen/subscriptions': typeof CitizenSubscriptionsRoute
-  '/citizen/track-case': typeof CitizenTrackCaseRoute
   '/lawyer/ai-assistant': typeof LawyerAiAssistantRoute
   '/lawyer/cases': typeof LawyerCasesRouteWithChildren
   '/lawyer/knowledge-base': typeof LawyerKnowledgeBaseRoute
@@ -398,14 +346,12 @@ export interface FileRoutesById {
   '/lawyer/profile': typeof LawyerProfileRoute
   '/lawyer/qa-assistant': typeof LawyerQaAssistantRoute
   '/lawyer/revenue': typeof LawyerRevenueRoute
-  '/lawyer/settings': typeof LawyerSettingsRoute
   '/lawyer/summarizer': typeof LawyerSummarizerRoute
   '/admin/': typeof AdminIndexRoute
   '/citizen/': typeof CitizenIndexRoute
   '/lawyer/': typeof LawyerIndexRoute
   '/citizen/cases/$id': typeof CitizenCasesIdRoute
   '/citizen/chat/$id': typeof CitizenChatIdRoute
-  '/citizen/lawyer/$id': typeof CitizenLawyerIdRoute
   '/lawyer/cases/$id': typeof LawyerCasesIdRoute
   '/lawyer/chat/$id': typeof LawyerChatIdRoute
   '/lawyer/cases/': typeof LawyerCasesIndexRoute
@@ -428,17 +374,13 @@ export interface FileRouteTypes {
     | '/admin/lawyers'
     | '/admin/notifications'
     | '/admin/profile'
-    | '/admin/reports'
     | '/admin/revenue'
-    | '/admin/settings'
     | '/admin/users'
     | '/citizen/create-case'
     | '/citizen/my-cases'
     | '/citizen/notifications'
     | '/citizen/profile'
-    | '/citizen/settings'
     | '/citizen/subscriptions'
-    | '/citizen/track-case'
     | '/lawyer/ai-assistant'
     | '/lawyer/cases'
     | '/lawyer/knowledge-base'
@@ -446,14 +388,12 @@ export interface FileRouteTypes {
     | '/lawyer/profile'
     | '/lawyer/qa-assistant'
     | '/lawyer/revenue'
-    | '/lawyer/settings'
     | '/lawyer/summarizer'
     | '/admin/'
     | '/citizen/'
     | '/lawyer/'
     | '/citizen/cases/$id'
     | '/citizen/chat/$id'
-    | '/citizen/lawyer/$id'
     | '/lawyer/cases/$id'
     | '/lawyer/chat/$id'
     | '/lawyer/cases/'
@@ -471,31 +411,25 @@ export interface FileRouteTypes {
     | '/admin/lawyers'
     | '/admin/notifications'
     | '/admin/profile'
-    | '/admin/reports'
     | '/admin/revenue'
-    | '/admin/settings'
     | '/admin/users'
     | '/citizen/create-case'
     | '/citizen/my-cases'
     | '/citizen/notifications'
     | '/citizen/profile'
-    | '/citizen/settings'
     | '/citizen/subscriptions'
-    | '/citizen/track-case'
     | '/lawyer/ai-assistant'
     | '/lawyer/knowledge-base'
     | '/lawyer/notifications'
     | '/lawyer/profile'
     | '/lawyer/qa-assistant'
     | '/lawyer/revenue'
-    | '/lawyer/settings'
     | '/lawyer/summarizer'
     | '/admin'
     | '/citizen'
     | '/lawyer'
     | '/citizen/cases/$id'
     | '/citizen/chat/$id'
-    | '/citizen/lawyer/$id'
     | '/lawyer/cases/$id'
     | '/lawyer/chat/$id'
     | '/lawyer/cases'
@@ -516,17 +450,13 @@ export interface FileRouteTypes {
     | '/admin/lawyers'
     | '/admin/notifications'
     | '/admin/profile'
-    | '/admin/reports'
     | '/admin/revenue'
-    | '/admin/settings'
     | '/admin/users'
     | '/citizen/create-case'
     | '/citizen/my-cases'
     | '/citizen/notifications'
     | '/citizen/profile'
-    | '/citizen/settings'
     | '/citizen/subscriptions'
-    | '/citizen/track-case'
     | '/lawyer/ai-assistant'
     | '/lawyer/cases'
     | '/lawyer/knowledge-base'
@@ -534,14 +464,12 @@ export interface FileRouteTypes {
     | '/lawyer/profile'
     | '/lawyer/qa-assistant'
     | '/lawyer/revenue'
-    | '/lawyer/settings'
     | '/lawyer/summarizer'
     | '/admin/'
     | '/citizen/'
     | '/lawyer/'
     | '/citizen/cases/$id'
     | '/citizen/chat/$id'
-    | '/citizen/lawyer/$id'
     | '/lawyer/cases/$id'
     | '/lawyer/chat/$id'
     | '/lawyer/cases/'
@@ -674,25 +602,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProfileRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/reports': {
-      id: '/admin/reports'
-      path: '/reports'
-      fullPath: '/admin/reports'
-      preLoaderRoute: typeof AdminReportsRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/revenue': {
       id: '/admin/revenue'
       path: '/revenue'
       fullPath: '/admin/revenue'
       preLoaderRoute: typeof AdminRevenueRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/settings': {
-      id: '/admin/settings'
-      path: '/settings'
-      fullPath: '/admin/settings'
-      preLoaderRoute: typeof AdminSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/users': {
@@ -737,25 +651,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CitizenProfileRouteImport
       parentRoute: typeof CitizenRoute
     }
-    '/citizen/settings': {
-      id: '/citizen/settings'
-      path: '/settings'
-      fullPath: '/citizen/settings'
-      preLoaderRoute: typeof CitizenSettingsRouteImport
-      parentRoute: typeof CitizenRoute
-    }
     '/citizen/subscriptions': {
       id: '/citizen/subscriptions'
       path: '/subscriptions'
       fullPath: '/citizen/subscriptions'
       preLoaderRoute: typeof CitizenSubscriptionsRouteImport
-      parentRoute: typeof CitizenRoute
-    }
-    '/citizen/track-case': {
-      id: '/citizen/track-case'
-      path: '/track-case'
-      fullPath: '/citizen/track-case'
-      preLoaderRoute: typeof CitizenTrackCaseRouteImport
       parentRoute: typeof CitizenRoute
     }
     '/lawyer/': {
@@ -814,13 +714,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LawyerRevenueRouteImport
       parentRoute: typeof LawyerRoute
     }
-    '/lawyer/settings': {
-      id: '/lawyer/settings'
-      path: '/settings'
-      fullPath: '/lawyer/settings'
-      preLoaderRoute: typeof LawyerSettingsRouteImport
-      parentRoute: typeof LawyerRoute
-    }
     '/lawyer/summarizer': {
       id: '/lawyer/summarizer'
       path: '/summarizer'
@@ -840,13 +733,6 @@ declare module '@tanstack/react-router' {
       path: '/chat/$id'
       fullPath: '/citizen/chat/$id'
       preLoaderRoute: typeof CitizenChatIdRouteImport
-      parentRoute: typeof CitizenRoute
-    }
-    '/citizen/lawyer/$id': {
-      id: '/citizen/lawyer/$id'
-      path: '/lawyer/$id'
-      fullPath: '/citizen/lawyer/$id'
-      preLoaderRoute: typeof CitizenLawyerIdRouteImport
       parentRoute: typeof CitizenRoute
     }
     '/lawyer/cases/': {
@@ -879,9 +765,7 @@ interface AdminRouteChildren {
   AdminLawyersRoute: typeof AdminLawyersRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminProfileRoute: typeof AdminProfileRoute
-  AdminReportsRoute: typeof AdminReportsRoute
   AdminRevenueRoute: typeof AdminRevenueRoute
-  AdminSettingsRoute: typeof AdminSettingsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -892,9 +776,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminLawyersRoute: AdminLawyersRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminProfileRoute: AdminProfileRoute,
-  AdminReportsRoute: AdminReportsRoute,
   AdminRevenueRoute: AdminRevenueRoute,
-  AdminSettingsRoute: AdminSettingsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
@@ -906,13 +788,10 @@ interface CitizenRouteChildren {
   CitizenMyCasesRoute: typeof CitizenMyCasesRoute
   CitizenNotificationsRoute: typeof CitizenNotificationsRoute
   CitizenProfileRoute: typeof CitizenProfileRoute
-  CitizenSettingsRoute: typeof CitizenSettingsRoute
   CitizenSubscriptionsRoute: typeof CitizenSubscriptionsRoute
-  CitizenTrackCaseRoute: typeof CitizenTrackCaseRoute
   CitizenIndexRoute: typeof CitizenIndexRoute
   CitizenCasesIdRoute: typeof CitizenCasesIdRoute
   CitizenChatIdRoute: typeof CitizenChatIdRoute
-  CitizenLawyerIdRoute: typeof CitizenLawyerIdRoute
 }
 
 const CitizenRouteChildren: CitizenRouteChildren = {
@@ -920,13 +799,10 @@ const CitizenRouteChildren: CitizenRouteChildren = {
   CitizenMyCasesRoute: CitizenMyCasesRoute,
   CitizenNotificationsRoute: CitizenNotificationsRoute,
   CitizenProfileRoute: CitizenProfileRoute,
-  CitizenSettingsRoute: CitizenSettingsRoute,
   CitizenSubscriptionsRoute: CitizenSubscriptionsRoute,
-  CitizenTrackCaseRoute: CitizenTrackCaseRoute,
   CitizenIndexRoute: CitizenIndexRoute,
   CitizenCasesIdRoute: CitizenCasesIdRoute,
   CitizenChatIdRoute: CitizenChatIdRoute,
-  CitizenLawyerIdRoute: CitizenLawyerIdRoute,
 }
 
 const CitizenRouteWithChildren =
@@ -954,7 +830,6 @@ interface LawyerRouteChildren {
   LawyerProfileRoute: typeof LawyerProfileRoute
   LawyerQaAssistantRoute: typeof LawyerQaAssistantRoute
   LawyerRevenueRoute: typeof LawyerRevenueRoute
-  LawyerSettingsRoute: typeof LawyerSettingsRoute
   LawyerSummarizerRoute: typeof LawyerSummarizerRoute
   LawyerIndexRoute: typeof LawyerIndexRoute
   LawyerChatIdRoute: typeof LawyerChatIdRoute
@@ -968,7 +843,6 @@ const LawyerRouteChildren: LawyerRouteChildren = {
   LawyerProfileRoute: LawyerProfileRoute,
   LawyerQaAssistantRoute: LawyerQaAssistantRoute,
   LawyerRevenueRoute: LawyerRevenueRoute,
-  LawyerSettingsRoute: LawyerSettingsRoute,
   LawyerSummarizerRoute: LawyerSummarizerRoute,
   LawyerIndexRoute: LawyerIndexRoute,
   LawyerChatIdRoute: LawyerChatIdRoute,

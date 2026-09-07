@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import {
   CheckCircle2,
   CreditCard,
@@ -13,12 +13,20 @@ import {
   Calendar,
 } from "lucide-react";
 import { PageHeader } from "@/components/app/PageHeader";
+import { SegmentedControl } from "@/components/app/SegmentedControl";
 import { Button, Card, CircularProgress } from "@/components/m3";
-import { addSubscription, getSubscriptions, subscribeToStore } from "@/data/appStore";
+import {
+  addSubscription,
+  getPayments,
+  getSubscriptions,
+  subscribeToStore,
+} from "@/data/appStore";
 import { SUBSCRIPTION_PLANS } from "@/data/subscriptionPlans";
-import type { Subscription, SubscriptionPlanId } from "@/types";
+import type { Payment, Subscription, SubscriptionPlanId } from "@/types";
 
 const CITIZEN_ID = "u_001";
+
+type HistoryTab = "Subscription" | "Consultation";
 
 export const Route = createFileRoute("/citizen/subscriptions")({
   head: () => ({ meta: [{ title: "My Subscriptions — CloseUrCase" }] }),
@@ -32,13 +40,43 @@ const STATUS_STYLE: Record<Subscription["status"], string> = {
   Cancelled: "bg-destructive/15 text-destructive border border-destructive/25",
 };
 
+/** md-outlined-button's label/outline colors come from CSS custom properties,
+ * not regular CSS — plain Tailwind text/border classes can't reach past its
+ * shadow DOM, so the white styling for this button on the dark VIP hero card
+ * has to be set this way instead. */
+const vipManageButtonStyle: CSSProperties = {
+  "--md-outlined-button-label-text-color": "#ffffff",
+  "--md-outlined-button-hover-label-text-color": "#ffffff",
+  "--md-outlined-button-pressed-label-text-color": "#ffffff",
+  "--md-outlined-button-focus-label-text-color": "#ffffff",
+  "--md-outlined-button-outline-color": "rgba(255,255,255,0.3)",
+  "--md-outlined-button-hover-state-layer-color": "#ffffff",
+} as CSSProperties;
+
+const CONSULTATION_STATUS_STYLE: Record<Payment["status"], string> = {
+  Completed:
+    "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25",
+  Processing: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25",
+};
+
 export function MySubscriptions() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>(() =>
     getSubscriptions(CITIZEN_ID),
   );
+  const [payments, setPayments] = useState<Payment[]>(() =>
+    getPayments().filter((p) => p.citizenId === CITIZEN_ID && p.source === "commission"),
+  );
   const [subscribingPlan, setSubscribingPlan] = useState<SubscriptionPlanId | null>(null);
+  const [historyTab, setHistoryTab] = useState<HistoryTab>("Subscription");
 
   useEffect(() => subscribeToStore(() => setSubscriptions(getSubscriptions(CITIZEN_ID))), []);
+  useEffect(
+    () =>
+      subscribeToStore(() =>
+        setPayments(getPayments().filter((p) => p.citizenId === CITIZEN_ID && p.source === "commission")),
+      ),
+    [],
+  );
 
   const activeSub = subscriptions.find((s) => s.status === "Active");
   const activePlanId = activeSub?.planId;
@@ -51,7 +89,8 @@ export function MySubscriptions() {
     }, 900);
   }
 
-  const totalSpent = subscriptions.reduce((sum, s) => sum + s.amount, 0);
+  const totalSubscriptionSpent = subscriptions.reduce((sum, s) => sum + s.amount, 0);
+  const totalConsultationSpent = payments.reduce((sum, p) => sum + p.grossAmount, 0);
 
   return (
     <div className="space-y-6 max-w-6xl pb-8">
@@ -112,7 +151,8 @@ export function MySubscriptions() {
               </div>
               <Button
                 variant="outlined"
-                className="mt-2 border-white/30 text-white hover:bg-white/10 text-xs font-bold h-9 px-4 rounded-xl"
+                className="mt-2 text-xs font-bold h-9 px-4 rounded-xl"
+                style={vipManageButtonStyle}
               >
                 Manage Subscription
               </Button>
@@ -156,7 +196,7 @@ export function MySubscriptions() {
           </div>
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           {SUBSCRIPTION_PLANS.map((plan) => {
             const isCurrent = activePlanId === plan.id;
             const isSubscribing = subscribingPlan === plan.id;
@@ -278,7 +318,7 @@ export function MySubscriptions() {
 
       {/* ── BILLING & TRANSACTION HISTORY ──────────────────────────── */}
       <Card variant="elevated" className="space-y-4 p-5 sm:p-7 rounded-3xl border border-border/80 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <History className="h-4.5 w-4.5" />
@@ -286,54 +326,135 @@ export function MySubscriptions() {
             <div>
               <h2 className="text-sm font-bold text-foreground">Billing & Subscription History</h2>
               <p className="text-[11px] text-muted-foreground">
-                All receipts and subscription transactions associated with your citizen account.
+                All receipts and transactions associated with your citizen account.
               </p>
             </div>
           </div>
 
-          {subscriptions.length > 0 && (
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-muted-foreground">Total Invested:</span>
-              <span className="font-black text-foreground text-sm flex items-center">
-                <IndianRupee className="h-3.5 w-3.5 text-primary" />
-                {totalSpent}
-              </span>
-            </div>
-          )}
+          <div className="flex flex-wrap items-center gap-3">
+            {historyTab === "Subscription" && subscriptions.length > 0 && (
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-muted-foreground">Total Invested:</span>
+                <span className="font-black text-foreground text-sm flex items-center">
+                  <IndianRupee className="h-3.5 w-3.5 text-primary" />
+                  {totalSubscriptionSpent}
+                </span>
+              </div>
+            )}
+            {historyTab === "Consultation" && payments.length > 0 && (
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-muted-foreground">Total Invested:</span>
+                <span className="font-black text-foreground text-sm flex items-center">
+                  <IndianRupee className="h-3.5 w-3.5 text-primary" />
+                  {totalConsultationSpent}
+                </span>
+              </div>
+            )}
+
+            <SegmentedControl
+              value={historyTab}
+              onChange={setHistoryTab}
+              options={[
+                { value: "Subscription", label: "Subscription" },
+                { value: "Consultation", label: "Consultation" },
+              ]}
+            />
+          </div>
         </div>
 
-        {subscriptions.length === 0 ? (
+        {historyTab === "Subscription" ? (
+          subscriptions.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border bg-background/50 p-8 text-center space-y-2">
+              <CreditCard className="h-8 w-8 mx-auto text-muted-foreground/50" />
+              <p className="text-xs font-semibold text-foreground">No subscription history yet</p>
+              <p className="text-[11px] text-muted-foreground max-w-sm mx-auto">
+                Subscribe to an Auto-Assign plan above to start routing cases directly to expert advocates.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {subscriptions.map((sub) => (
+                <div
+                  key={sub.id}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-border/70 bg-background/80 hover:bg-accent/40 p-4 transition-all text-xs"
+                >
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-500/20">
+                      <CreditCard className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-extrabold text-foreground text-sm truncate flex items-center gap-2">
+                        {sub.planLabel} Subscription Pass
+                        {sub.caseId && (
+                          <span className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                            Case: {sub.caseId}
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-0.5 text-[11px] text-muted-foreground flex items-center gap-2">
+                        <span>Purchased on {sub.startedAt}</span>
+                        <span>•</span>
+                        <span>Transaction ID: #{sub.id}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 border-t sm:border-t-0 border-border/40 pt-2 sm:pt-0">
+                    <div className="text-right">
+                      <div className="flex items-center font-black text-foreground text-base">
+                        <IndianRupee className="h-4 w-4 text-primary" />
+                        {sub.amount}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">GST Inclusive</div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`rounded-full px-3 py-1 text-[11px] font-extrabold ${STATUS_STYLE[sub.status]}`}
+                      >
+                        {sub.status}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        ) : payments.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-background/50 p-8 text-center space-y-2">
-            <CreditCard className="h-8 w-8 mx-auto text-muted-foreground/50" />
-            <p className="text-xs font-semibold text-foreground">No subscription history yet</p>
+            <IndianRupee className="h-8 w-8 mx-auto text-muted-foreground/50" />
+            <p className="text-xs font-semibold text-foreground">No consultation history yet</p>
             <p className="text-[11px] text-muted-foreground max-w-sm mx-auto">
-              Subscribe to an Auto-Assign plan above to start routing cases directly to expert advocates.
+              Payments made to lawyers for consultations and case handling will appear here.
             </p>
           </div>
         ) : (
           <div className="space-y-2.5">
-            {subscriptions.map((sub) => (
+            {payments.map((p) => (
               <div
-                key={sub.id}
+                key={p.id}
                 className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-border/70 bg-background/80 hover:bg-accent/40 p-4 transition-all text-xs"
               >
                 <div className="flex items-center gap-3.5 min-w-0">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-500/20">
-                    <CreditCard className="h-5 w-5" />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold border border-primary/20">
+                    <IndianRupee className="h-5 w-5" />
                   </div>
                   <div className="min-w-0">
                     <div className="font-extrabold text-foreground text-sm truncate flex items-center gap-2">
-                      {sub.planLabel} Subscription Pass
-                      {sub.caseId && (
+                      {p.lawyerName ?? "Lawyer"}
+                      {p.caseId && (
                         <span className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                          Case: {sub.caseId}
+                          Case: {p.caseId}
                         </span>
                       )}
                     </div>
+                    <div className="mt-0.5 text-[11px] text-muted-foreground truncate">
+                      {p.caseTitle}
+                    </div>
                     <div className="mt-0.5 text-[11px] text-muted-foreground flex items-center gap-2">
-                      <span>Purchased on {sub.startedAt}</span>
+                      <span>Paid on {p.date}</span>
                       <span>•</span>
-                      <span>Transaction ID: #{sub.id}</span>
+                      <span>Transaction ID: #{p.id}</span>
                     </div>
                   </div>
                 </div>
@@ -342,16 +463,16 @@ export function MySubscriptions() {
                   <div className="text-right">
                     <div className="flex items-center font-black text-foreground text-base">
                       <IndianRupee className="h-4 w-4 text-primary" />
-                      {sub.amount}
+                      {p.grossAmount}
                     </div>
                     <div className="text-[10px] text-muted-foreground">GST Inclusive</div>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <span
-                      className={`rounded-full px-3 py-1 text-[11px] font-extrabold ${STATUS_STYLE[sub.status]}`}
+                      className={`rounded-full px-3 py-1 text-[11px] font-extrabold ${CONSULTATION_STATUS_STYLE[p.status]}`}
                     >
-                      {sub.status}
+                      {p.status}
                     </span>
                   </div>
                 </div>

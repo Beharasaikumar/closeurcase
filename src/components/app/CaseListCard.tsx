@@ -33,15 +33,12 @@ export function CaseListCard({ caseItem }: { caseItem: LegalCase }) {
   const titleVsParts = formattedTitle.split(/\s+vs\s+/i);
 
   return (
-    <div className="group relative flex h-full min-h-64 flex-col justify-between overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-b from-surface via-surface/98 to-surface/90 p-4.5 shadow-2xs transition-all duration-300 hover:-translate-y-1 hover:border-primary/45 hover:shadow-xl hover:shadow-primary/5 sm:p-5">
-      {/* Top Subtle Gradient Accent Line on Hover */}
-      <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-primary/60 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-
+    <div className="relative flex h-full min-h-64 flex-col justify-between overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-b from-surface via-surface/98 to-surface/90 p-4.5 shadow-2xs sm:p-5">
       <div className="space-y-3.5">
         {/* Title & Badges */}
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">
-            <h3 className="line-clamp-2 text-base font-bold text-foreground leading-snug tracking-tight transition-colors group-hover:text-primary">
+            <h3 className="line-clamp-2 text-base font-bold text-foreground leading-snug tracking-tight">
               {titleVsParts.length === 2 ? (
                 <>
                   <span>{titleVsParts[0]}</span>
