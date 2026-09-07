@@ -72,7 +72,7 @@ function LawyerCard({ lawyer }: { lawyer: (typeof LAWYERS)[number] }) {
   return (
     <Card
       variant="outlined"
-      className="!w-56 shrink-0 !rounded-2xl !border-slate-200/80 !bg-white p-4 text-center shadow-sm shadow-slate-900/5 transition-all duration-300 hover:!border-[#d4af37]/40 hover:shadow-md hover:shadow-slate-900/8"
+      className="flex !h-64 !w-56 shrink-0 flex-col !rounded-2xl !border-slate-200/80 !bg-white p-4 text-center shadow-sm shadow-slate-900/5 transition-all duration-300 hover:!border-[#d4af37]/40 hover:shadow-md hover:shadow-slate-900/8"
     >
       <img
         src={avatarUrlFor(lawyer.name, 160)}
@@ -81,17 +81,21 @@ function LawyerCard({ lawyer }: { lawyer: (typeof LAWYERS)[number] }) {
         loading="eager"
         draggable={false}
       />
-      <h4 className="mt-2.5 text-sm font-bold text-slate-900">{lawyer.name}</h4>
-      <p className="mt-0.5 font-serif text-xs font-semibold text-[#a9853f]">{lawyer.practice}</p>
-      <p className="mt-1 text-xs text-slate-500">{lawyer.city}</p>
+      <h4 className="mt-2.5 line-clamp-1 text-sm font-bold text-slate-900">{lawyer.name}</h4>
+      <p className="mt-0.5 line-clamp-1 font-serif text-xs font-semibold text-[#a9853f]">
+        {lawyer.practice}
+      </p>
+      <p className="mt-1 flex min-h-8 items-start justify-center text-xs text-slate-500">
+        {lawyer.city}
+      </p>
       <div className="mt-1.5 flex items-center justify-center gap-1.5">
         <StarRating rating={lawyer.rating} />
         <span className="text-[11px] font-bold text-[#a9853f]">{lawyer.rating}</span>
         <span className="text-[10px] text-slate-400">({lawyer.reviews})</span>
       </div>
-      <span className="mt-2.5 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+      <span className="mx-auto mt-auto inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
         <ShieldCheck className="h-2.5 w-2.5" />
-        Bar Verified
+        Verified
       </span>
     </Card>
   );

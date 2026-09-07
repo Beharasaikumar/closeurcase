@@ -13,6 +13,7 @@ import type {
   Subscription,
   UserRole,
   VideoCall,
+  WithdrawalRequest,
 } from "@/types";
 import {
   categories as seedCategories,
@@ -591,4 +592,143 @@ export function getPayments(lawyerId?: string): Payment[] {
   const all = load<Payment[]>(PAYMENTS_KEY, seedPayments);
   const sorted = [...all].sort((a, b) => b.date.localeCompare(a.date));
   return lawyerId ? sorted.filter((p) => p.lawyerId === lawyerId) : sorted;
+}
+
+/* ── WITHDRAWAL REQUESTS STORE ───────────────────────────────────────────── */
+const WITHDRAWALS_KEY = "cuc_withdrawals_v3";
+
+const seedWithdrawals: WithdrawalRequest[] = [
+  {
+    id: "w_101",
+    lawyerId: "l_001",
+    lawyerName: "Sai Teja Reddy",
+    amount: 12240,
+    requestedAt: "2026-09-02",
+    status: "Approved",
+    bankName: "HDFC Bank Ltd",
+    accountNumber: "•••• 4829",
+    ifscCode: "HDFC0001234",
+    processedAt: "2026-09-02",
+    referenceId: "TXN_94820194",
+  },
+  {
+    id: "w_102",
+    lawyerId: "l_002",
+    lawyerName: "Ananya Sharma",
+    amount: 8500,
+    requestedAt: "2026-09-06",
+    status: "Pending",
+    bankName: "State Bank of India",
+    accountNumber: "•••• 9102",
+    ifscCode: "SBIN0004812",
+  },
+  {
+    id: "w_103",
+    lawyerId: "l_003",
+    lawyerName: "Rajesh Kumar",
+    amount: 15400,
+    requestedAt: "2026-09-07",
+    status: "Pending",
+    bankName: "ICICI Bank",
+    accountNumber: "•••• 3391",
+    ifscCode: "ICIC0000281",
+  },
+  {
+    id: "w_104",
+    lawyerId: "l_004",
+    lawyerName: "Meera Nair",
+    amount: 22000,
+    requestedAt: "2026-09-07",
+    status: "Pending",
+    bankName: "Axis Bank",
+    accountNumber: "•••• 7714",
+    ifscCode: "UTIB0001092",
+  },
+];
+
+export function getWithdrawalRequests(lawyerId?: string): WithdrawalRequest[] {
+  const all = load<WithdrawalRequest[]>(WITHDRAWALS_KEY, seedWithdrawals);
+  const sorted = [...all].sort((a, b) => b.requestedAt.localeCompare(a.requestedAt));
+  return lawyerId ? sorted.filter((w) => w.lawyerId === lawyerId) : sorted;
+}
+
+export function addWithdrawalRequest(
+  req: Omit<WithdrawalRequest, "id" | "requestedAt" | "status">,
+): WithdrawalRequest {
+  const current = load<WithdrawalRequest[]>(WITHDRAWALS_KEY, seedWithdrawals);
+  const today = new Date().toISOString().slice(0, 10);
+  const newReq: WithdrawalRequest = {
+    ...req,
+    id: `w_${Date.now()}`,
+    requestedAt: today,
+    status: "Pending",
+  };
+
+  save(WITHDRAWALS_KEY, [newReq, ...current]);
+
+  addNotification({
+    title: "New Withdrawal Request",
+    body: `${req.lawyerName} submitted a payout withdrawal request of ₹${req.amount.toLocaleString("en-IN")}.`,
+    role: "admin",
+  });
+
+  return newReq;
+}
+
+export function approveWithdrawalRequest(id: string): WithdrawalRequest | undefined {
+  const current = load<WithdrawalRequest[]>(WITHDRAWALS_KEY, seedWithdrawals);
+  const today = new Date().toISOString().slice(0, 10);
+  const refId = `TXN_${Date.now().toString().slice(-8)}`;
+
+  let approvedReq: WithdrawalRequest | undefined;
+
+  const updated = current.map((w) => {
+    if (w.id !== id) return w;
+    approvedReq = {
+      ...w,
+      status: "Approved" as const,
+      processedAt: today,
+      referenceId: refId,
+    };
+    return approvedReq;
+  });
+
+  save(WITHDRAWALS_KEY, updated);
+
+  if (approvedReq) {
+    addNotification({
+      title: "Withdrawal Approved",
+      body: `Your payout of ₹${approvedReq.amount.toLocaleString("en-IN")} has been approved and transferred to your bank account (${approvedReq.bankName}).`,
+      role: "lawyer",
+    });
+  }
+
+  return approvedReq;
+}
+
+export function rejectWithdrawalRequest(id: string, reason?: string): WithdrawalRequest | undefined {
+  const current = load<WithdrawalRequest[]>(WITHDRAWALS_KEY, seedWithdrawals);
+  let rejectedReq: WithdrawalRequest | undefined;
+
+  const updated = current.map((w) => {
+    if (w.id !== id) return w;
+    rejectedReq = {
+      ...w,
+      status: "Rejected" as const,
+      rejectionReason: reason || "Bank details verification mismatch",
+    };
+    return rejectedReq;
+  });
+
+  save(WITHDRAWALS_KEY, updated);
+
+  if (rejectedReq) {
+    addNotification({
+      title: "Withdrawal Request Rejected",
+      body: `Your payout request of ₹${rejectedReq.amount.toLocaleString("en-IN")} was rejected. Reason: ${reason || "Verification mismatch"}.`,
+      role: "lawyer",
+    });
+  }
+
+  return rejectedReq;
 }

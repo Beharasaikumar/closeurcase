@@ -129,7 +129,6 @@ export const INDIAN_COURTS = [
       "Cheque bounce cases under Section 138 of Negotiable Instruments Act",
       "Criminal trials, bail applications, and breach of contract suits",
     ],
-    ctaLabel: "File a District Court Case",
   },
   {
     id: "highcourt",
@@ -144,7 +143,6 @@ export const INDIAN_COURTS = [
       "Anticipatory bail applications and quashing of police complaints",
       "Company disputes and commercial suits of high financial value",
     ],
-    ctaLabel: "File a High Court Matter",
   },
   {
     id: "consumer",
@@ -159,7 +157,6 @@ export const INDIAN_COURTS = [
       "Speedy compromise settlements through Lok Adalat with zero court fee",
       "Compensation claims for unfair trade practices and delayed delivery",
     ],
-    ctaLabel: "File a Consumer Claim",
   },
   {
     id: "tribunals",
@@ -173,7 +170,6 @@ export const INDIAN_COURTS = [
       "Bank debt recovery under SARFAESI Act and Tribunal proceedings",
       "Government service matters, pensions, and administrative grievances",
     ],
-    ctaLabel: "File a Tribunal Matter",
   },
 ];
 

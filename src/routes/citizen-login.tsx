@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { Phone, ArrowLeft, ChevronRight, Tag, User } from "lucide-react";
 import { OtpInput, TextField, Button } from "@/components/m3";
@@ -7,7 +7,7 @@ import { FormStepper } from "@/components/app/FormStepper";
 import type { FormStep } from "@/components/app/FormStepper";
 import { PermissionsGate } from "@/components/app/PermissionsGate";
 import { usePermissionsGate } from "@/features/permissions/usePermissionsGate";
-import { setCitizenSession } from "@/features/citizen/session";
+import { getCitizenSession, setCitizenSession } from "@/features/citizen/session";
 import { CitizenLanguageButtons } from "@/features/citizen/CitizenLanguageButtons";
 import { useCitizenLanguage } from "@/features/citizen/i18n/CitizenLanguageContext";
 import { getCitizens, updateCitizenProfile } from "@/data/appStore";
@@ -52,6 +52,18 @@ export function CitizenLogin() {
   const { translate } = useCitizenLanguage();
 
   const [permissionsAcknowledged, acknowledgePermissions] = usePermissionsGate();
+
+  useEffect(() => {
+    const session = getCitizenSession();
+    if (session.authenticated) {
+      if (area || specialization || service) {
+        navigate({
+          to: "/citizen/create-case",
+          search: { area, specialization, service },
+        });
+      }
+    }
+  }, [area, specialization, service, navigate]);
 
   const [step, setStep] = useState<Step>("phone");
 
@@ -116,7 +128,14 @@ export function CitizenLogin() {
       });
     }
 
-    navigate({ to: "/citizen" });
+    if (area || specialization || service) {
+      navigate({
+        to: "/citizen/create-case",
+        search: { area, specialization, service },
+      });
+    } else {
+      navigate({ to: "/citizen" });
+    }
   };
 
   const handleFormEnterKey = (e: React.KeyboardEvent<HTMLElement>) => {

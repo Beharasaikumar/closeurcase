@@ -69,7 +69,7 @@ export function AvatarUploadField({
   if (centered) {
     return (
       <div className="flex flex-col items-center gap-3 text-center">
-        <UserAvatar name={name} photoUrl={photoUrl ?? defaultPhotoUrl} size="lg" />
+        <UserAvatar name={name} photoUrl={photoUrl ?? defaultPhotoUrl} size="lg" role={role} />
         <div className="space-y-1.5">
           <div className="flex flex-wrap items-center justify-center gap-2">
             <button
@@ -101,7 +101,7 @@ export function AvatarUploadField({
 
   return (
     <div className="flex items-center gap-4">
-      <UserAvatar name={name} photoUrl={photoUrl ?? defaultPhotoUrl} size="lg" />
+      <UserAvatar name={name} photoUrl={photoUrl ?? defaultPhotoUrl} size="lg" role={role} />
       <div className="space-y-1.5">
         <div className="flex gap-2">
           <button

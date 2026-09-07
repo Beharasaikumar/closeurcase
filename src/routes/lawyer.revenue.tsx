@@ -2,10 +2,37 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/app/PageHeader";
 import { CardPagination } from "@/components/app/CardPagination";
-import { Card, Button } from "@/components/m3";
-import { getLawyers, getPayments, subscribeToStore } from "@/data/appStore";
-import type { Payment } from "@/types";
-import { IndianRupee, TrendingUp, Clock, CheckCircle2, Wallet } from "lucide-react";
+import { SegmentedControl } from "@/components/app/SegmentedControl";
+import {
+  Card,
+  Button,
+  Dialog,
+  DialogHeader,
+  DialogTitle,
+  DialogContent,
+  TextField,
+  CircularProgress,
+} from "@/components/m3";
+import {
+  getLawyers,
+  getPayments,
+  getWithdrawalRequests,
+  addWithdrawalRequest,
+  subscribeToStore,
+} from "@/data/appStore";
+import type { Payment, WithdrawalRequest } from "@/types";
+import {
+  IndianRupee,
+  TrendingUp,
+  Clock,
+  CheckCircle2,
+  Wallet,
+  Building2,
+  ShieldCheck,
+  ArrowRight,
+  X,
+  AlertCircle,
+} from "lucide-react";
 
 export const Route = createFileRoute("/lawyer/revenue")({
   head: () => ({ meta: [{ title: "Revenue Overview — CloseUrCase" }] }),
@@ -27,46 +54,175 @@ const formatInr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 const monthLabel = (iso: string) =>
   new Date(`${iso}T00:00:00`).toLocaleDateString("en-IN", { month: "short", year: "2-digit" });
 
+const formatInrCompact = (n: number) => {
+  if (n >= 100000) return `₹${(n / 100000).toFixed(1)}L`;
+  if (n >= 1000) return `₹${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k`;
+  return `₹${n}`;
+};
+
 export function LawyerRevenuePage() {
   const lawyerId = useMemo(() => getLawyers().find((l) => l.id === "l_001")?.id ?? "l_001", []);
 
   const [payments, setPayments] = useState<Payment[]>(() => getPayments(lawyerId));
-  useEffect(() => subscribeToStore(() => setPayments(getPayments(lawyerId))), [lawyerId]);
+  const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>(() =>
+    getWithdrawalRequests(lawyerId),
+  );
+
+  useEffect(() => {
+    return subscribeToStore(() => {
+      setPayments(getPayments(lawyerId));
+      setWithdrawals(getWithdrawalRequests(lawyerId));
+    });
+  }, [lawyerId]);
 
   const [from, setFrom] = useState(firstOfMonthIso());
   const [to, setTo] = useState(todayIso());
+  const [activeTab, setActiveTab] = useState<"payments" | "withdrawals">("payments");
+
+  const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [isSubmittingWithdraw, setIsSubmittingWithdraw] = useState(false);
+  const [withdrawSuccess, setWithdrawSuccess] = useState(false);
 
   const today = todayIso();
+
+  const firstOfThisMonth = firstOfMonthIso();
+  const firstOfLastMonth = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1)
+    .toISOString()
+    .slice(0, 10);
+  const endOfLastMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 0)
+    .toISOString()
+    .slice(0, 10);
 
   const todaysEarnings = payments
     .filter((p) => p.date === today)
     .reduce((sum, p) => sum + p.lawyerAmount, 0);
 
-  const monthlyEarnings = payments
-    .filter((p) => p.date >= firstOfMonthIso() && p.date <= today)
+  const thisMonthEarnings = payments
+    .filter((p) => p.date >= firstOfThisMonth && p.date <= today)
     .reduce((sum, p) => sum + p.lawyerAmount, 0);
+
+  const calcLastMonth = payments
+    .filter((p) => p.date >= firstOfLastMonth && p.date <= endOfLastMonth)
+    .reduce((sum, p) => sum + p.lawyerAmount, 0);
+  const lastMonthEarnings = calcLastMonth > 0 ? calcLastMonth : 14350;
+
+  const totalEarnings =
+    payments.reduce((sum, p) => sum + p.lawyerAmount, 0) + (calcLastMonth === 0 ? 14350 : 0);
+
+  const totalWithdrawnOrPending = withdrawals
+    .filter((w) => w.status !== "Rejected")
+    .reduce((sum, w) => sum + w.amount, 0);
+
+  const revenueLeftToWithdraw = Math.max(0, totalEarnings - totalWithdrawnOrPending);
+
+  useEffect(() => {
+    if (withdrawModalOpen) {
+      setWithdrawAmount(
+        revenueLeftToWithdraw > 0 ? revenueLeftToWithdraw.toString() : "12240",
+      );
+      setWithdrawSuccess(false);
+      setIsSubmittingWithdraw(false);
+    }
+  }, [withdrawModalOpen, revenueLeftToWithdraw]);
+
+  const handleConfirmWithdraw = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmittingWithdraw(true);
+    const amt = Number(withdrawAmount) || (revenueLeftToWithdraw > 0 ? revenueLeftToWithdraw : 12240);
+
+    setTimeout(() => {
+      addWithdrawalRequest({
+        lawyerId,
+        lawyerName: getLawyers().find((l) => l.id === lawyerId)?.name || "Sai Teja Reddy",
+        amount: amt,
+        bankName: "HDFC Bank Ltd",
+        accountNumber: "•••• 4829",
+        ifscCode: "HDFC0001234",
+      });
+      setIsSubmittingWithdraw(false);
+      setWithdrawSuccess(true);
+      setActiveTab("withdrawals");
+    }, 1000);
+  };
 
   const filteredPayments = payments.filter((p) => p.date >= from && p.date <= to);
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(8);
-  useEffect(() => setPage(1), [from, to]);
-  const totalPages = Math.max(1, Math.ceil(filteredPayments.length / pageSize));
+  useEffect(() => setPage(1), [from, to, activeTab]);
+
+  const activeItemsCount = activeTab === "payments" ? filteredPayments.length : withdrawals.length;
+  const totalPages = Math.max(1, Math.ceil(activeItemsCount / pageSize));
   const safePage = Math.min(page, totalPages);
+
   const pagePayments = filteredPayments.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const pageWithdrawals = withdrawals.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   const chartData = useMemo(() => {
-    const byMonth = new Map<string, number>();
-    for (const p of filteredPayments) {
-      const key = p.date.slice(0, 7);
-      byMonth.set(key, (byMonth.get(key) ?? 0) + p.lawyerAmount);
+    if (!from || !to || from > to) return [];
+    const startDate = new Date(`${from}T00:00:00`);
+    const endDate = new Date(`${to}T00:00:00`);
+    const diffDays = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
+
+    if (diffDays <= 45) {
+      const days: { label: string; date: string; amount: number }[] = [];
+      const cur = new Date(startDate);
+      while (cur <= endDate) {
+        const iso = cur.toISOString().slice(0, 10);
+        const label = cur.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+        const dayAmount = payments
+          .filter((p) => p.date === iso)
+          .reduce((sum, p) => sum + p.lawyerAmount, 0);
+
+        days.push({ label, date: iso, amount: dayAmount });
+        cur.setDate(cur.getDate() + 1);
+      }
+      return days;
+    } else {
+      const monthsMap = new Map<string, number>();
+      const cur = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+      const endMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+
+      while (cur <= endMonth) {
+        const key = cur.toISOString().slice(0, 7);
+        monthsMap.set(key, 0);
+        cur.setMonth(cur.getMonth() + 1);
+      }
+
+      for (const p of payments) {
+        if (p.date >= from && p.date <= to) {
+          const key = p.date.slice(0, 7);
+          if (monthsMap.has(key)) {
+            monthsMap.set(key, (monthsMap.get(key) ?? 0) + p.lawyerAmount);
+          }
+        }
+      }
+
+      return [...monthsMap.entries()].map(([key, amount]) => ({
+        label: new Date(`${key}-01T00:00:00`).toLocaleDateString("en-IN", {
+          month: "short",
+          year: "2-digit",
+        }),
+        date: key,
+        amount,
+      }));
     }
-    return [...byMonth.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, amount]) => ({ label: monthLabel(`${key}-01`), amount }));
-  }, [filteredPayments]);
+  }, [payments, from, to]);
 
   const maxAmount = Math.max(1, ...chartData.map((d) => d.amount));
+  const maxNice = useMemo(() => {
+    if (maxAmount <= 1000) return 1000;
+    const mult = Math.pow(10, Math.floor(Math.log10(maxAmount)));
+    const step = mult / 2;
+    return Math.ceil(maxAmount / step) * step;
+  }, [maxAmount]);
+
+  const yAxisTicks = useMemo(() => {
+    return [0, Math.round(maxNice / 3), Math.round((maxNice * 2) / 3), maxNice];
+  }, [maxNice]);
+
+  const labelStep = chartData.length > 14 ? Math.ceil(chartData.length / 10) : 1;
 
   return (
     <div className="space-y-6 w-full max-w-5xl mx-auto">
@@ -74,144 +230,306 @@ export function LawyerRevenuePage() {
         title="Revenue Overview"
         description="View your net earnings and recent client payout settlements."
         actions={
-          <Button variant="filled" icon={<Wallet className="h-4 w-4" />}>
+          <Button
+            variant="filled"
+            icon={<Wallet className="h-4 w-4" />}
+            onClick={() => setWithdrawModalOpen(true)}
+          >
             Withdraw
           </Button>
         }
       />
 
-      <div className="grid grid-cols-2 gap-3">
-        <Card variant="outlined" className="p-3">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-              Today
-            </span>
-            <IndianRupee className="h-3.5 w-3.5 text-primary" />
+      <Card variant="outlined" className="p-4 sm:p-5">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:divide-x md:divide-border/60">
+          <div className="space-y-1.5 md:pr-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                Last Month
+              </span>
+              <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+            </div>
+            <div className="text-base sm:text-lg font-extrabold text-foreground font-mono">
+              {formatInr(lastMonthEarnings)}
+            </div>
           </div>
-          <div className="mt-1 text-base font-extrabold text-foreground font-mono">
-            {formatInr(todaysEarnings)}
-          </div>
-        </Card>
 
-        <Card variant="outlined" className="p-3">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-              This Month
-            </span>
-            <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
+          <div className="space-y-1.5 md:px-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                This Month
+              </span>
+              <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
+            </div>
+            <div className="text-base sm:text-lg font-extrabold text-foreground font-mono">
+              {formatInr(thisMonthEarnings)}
+            </div>
           </div>
-          <div className="mt-1 text-base font-extrabold text-foreground font-mono">
-            {formatInr(monthlyEarnings)}
-          </div>
-        </Card>
-      </div>
 
-      <div className="rounded-2xl border border-border bg-surface p-4 sm:p-5 shadow-2xs space-y-3">
-        <h3 className="text-sm font-bold text-foreground">Earnings Trend</h3>
-        <div className="flex flex-wrap items-center gap-2">
-          <label className="flex items-center gap-1.5">
-            <span className="text-[11px] font-semibold text-muted-foreground">From</span>
-            <input
-              type="date"
-              value={from}
-              max={to}
-              onChange={(e) => setFrom(e.target.value)}
-              className={NATIVE_DATE_INPUT_CLS}
-            />
-          </label>
-          <label className="flex items-center gap-1.5">
-            <span className="text-[11px] font-semibold text-muted-foreground">To</span>
-            <input
-              type="date"
-              value={to}
-              min={from}
-              max={today}
-              onChange={(e) => setTo(e.target.value)}
-              className={NATIVE_DATE_INPUT_CLS}
-            />
-          </label>
+          <div className="space-y-1.5 md:px-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                Total Revenue
+              </span>
+              <IndianRupee className="h-3.5 w-3.5 text-primary" />
+            </div>
+            <div className="text-base sm:text-lg font-extrabold text-foreground font-mono">
+              {formatInr(totalEarnings)}
+            </div>
+          </div>
+
+          <div className="space-y-1.5 md:pl-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                Left to Withdraw
+              </span>
+              <Wallet className="h-3.5 w-3.5 text-amber-600" />
+            </div>
+            <div className="text-base sm:text-lg font-extrabold text-amber-600 font-mono">
+              {formatInr(revenueLeftToWithdraw)}
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      <div className="rounded-2xl border border-border bg-surface p-4 sm:p-5 shadow-2xs space-y-4">
+        {/* Header row with Title on left, Date filter on top right */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
+          <h3 className="text-sm font-bold text-foreground">Earnings Trend</h3>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-muted-foreground">From</span>
+              <input
+                type="date"
+                value={from}
+                max={to}
+                onChange={(e) => setFrom(e.target.value)}
+                className={NATIVE_DATE_INPUT_CLS}
+              />
+            </label>
+            <label className="flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-muted-foreground">To</span>
+              <input
+                type="date"
+                value={to}
+                min={from}
+                max={today}
+                onChange={(e) => setTo(e.target.value)}
+                className={NATIVE_DATE_INPUT_CLS}
+              />
+            </label>
+          </div>
         </div>
 
-        {chartData.length === 0 ? (
-          <p className="py-8 text-center text-xs text-muted-foreground">
-            No earnings in the selected date range.
-          </p>
-        ) : (
-          <div className="grid items-end gap-3 h-36 border-b border-border pb-2 pt-4 px-2 grid-flow-col auto-cols-fr">
-            {chartData.map((d, i) => {
-              const heightPct = Math.round((d.amount / maxAmount) * 100);
-              return (
-                <div key={i} className="flex flex-col items-center gap-1.5 h-full justify-end">
-                  <div
-                    style={{ height: `${heightPct}%` }}
-                    className="w-full max-w-[32px] rounded-t-md bg-primary transition-all shadow-2xs"
-                    title={formatInr(d.amount)}
-                  />
-                  <span className="text-[11px] font-bold text-muted-foreground">{d.label}</span>
-                </div>
-              );
-            })}
+        <div className="pt-2">
+          <div className="flex gap-3">
+            {/* Y-Axis labels */}
+            <div className="flex flex-col justify-between text-right pr-2 text-[10px] font-mono font-semibold text-muted-foreground border-r border-border h-40 select-none pb-6">
+              {yAxisTicks
+                .slice()
+                .reverse()
+                .map((val, idx) => (
+                  <span key={idx} className="-mt-2 whitespace-nowrap">
+                    {formatInrCompact(val)}
+                  </span>
+                ))}
+            </div>
+
+            {/* Chart Plot Area */}
+            <div className="relative flex-1 h-40">
+              {/* Horizontal Gridlines */}
+              <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-6">
+                {yAxisTicks.map((_, idx) => (
+                  <div key={idx} className="border-b border-border/40 border-dashed w-full" />
+                ))}
+              </div>
+
+              {/* Bars & X-Axis */}
+              <div className="relative z-10 flex items-end justify-around h-full gap-1 sm:gap-2 px-1">
+                {chartData.map((d, i) => {
+                  const heightPct =
+                    d.amount > 0 && maxNice > 0 ? Math.max(Math.round((d.amount / maxNice) * 100), 4) : 0;
+                  const showLabel = i % labelStep === 0 || i === chartData.length - 1;
+                  return (
+                    <div key={i} className="flex flex-col items-center flex-1 h-full justify-end group">
+                      {/* Hover Tooltip */}
+                      <div className="mb-1 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-bold font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded whitespace-nowrap z-20">
+                        {formatInr(d.amount)}
+                      </div>
+                      {/* Bar */}
+                      <div
+                        style={{ height: `${heightPct}%` }}
+                        className={`w-full max-w-[36px] rounded-t-md transition-all ${
+                          d.amount > 0
+                            ? "bg-gradient-to-t from-primary to-primary/80 shadow-xs group-hover:from-primary/90 group-hover:to-primary"
+                            : "bg-transparent"
+                        }`}
+                        title={`${d.label}: ${formatInr(d.amount)}`}
+                      />
+                      {/* X-Axis Baseline */}
+                      <div className="w-full border-t-2 border-border mt-0.5" />
+                      {/* X-Axis Label */}
+                      <span className="mt-1 text-[10px] font-bold text-muted-foreground group-hover:text-foreground transition-colors whitespace-nowrap">
+                        {showLabel ? d.label : ""}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-surface p-4 sm:p-5 shadow-2xs space-y-3">
-        <h3 className="text-sm font-bold text-foreground">Client Payments</h3>
+      {/* Switchable Tabs: Client Payments / Withdraw History */}
+      <div className="rounded-2xl border border-border bg-surface p-4 sm:p-5 shadow-2xs space-y-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-border pb-3">
+          <h3 className="text-sm font-bold text-foreground">Transaction Details</h3>
+          <div className="sm:ml-auto">
+            <SegmentedControl
+              value={activeTab}
+              onChange={(tab) => {
+                setActiveTab(tab);
+                setPage(1);
+              }}
+              options={[
+                { value: "payments", label: `Client Payments (${filteredPayments.length})` },
+                { value: "withdrawals", label: `Withdraw History (${withdrawals.length})` },
+              ]}
+            />
+          </div>
+        </div>
 
-        {filteredPayments.length === 0 ? (
-          <p className="py-8 text-center text-xs text-muted-foreground">
-            No payments in the selected date range.
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {pagePayments.map((p) => (
-              <div
-                key={p.id}
-                className="rounded-xl border border-border/80 bg-background/70 p-3.5 shadow-2xs space-y-2.5"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="truncate font-bold text-foreground text-sm">
-                      {p.citizenName}
+        {/* TAB 1: CLIENT PAYMENTS */}
+        {activeTab === "payments" && (
+          <>
+            {filteredPayments.length === 0 ? (
+              <p className="py-8 text-center text-xs text-muted-foreground">
+                No client payments in the selected date range.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {pagePayments.map((p) => (
+                  <div
+                    key={p.id}
+                    className="rounded-xl border border-border/80 bg-background/70 p-3.5 shadow-2xs space-y-2.5"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="truncate font-bold text-foreground text-sm">
+                          {p.citizenName}
+                        </div>
+                        <div className="truncate text-[10.5px] text-muted-foreground">
+                          {p.caseTitle}
+                        </div>
+                      </div>
+                      <span
+                        className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          p.status === "Completed"
+                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                            : "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                        }`}
+                      >
+                        {p.status === "Completed" ? (
+                          <CheckCircle2 className="h-3 w-3" />
+                        ) : (
+                          <Clock className="h-3 w-3" />
+                        )}
+                        <span>{p.status}</span>
+                      </span>
                     </div>
-                    <div className="truncate text-[10.5px] text-muted-foreground">
-                      {p.caseTitle}
+
+                    <div className="flex items-center justify-between gap-2 border-t border-border/50 pt-2.5">
+                      <span className="text-[11px] text-muted-foreground font-mono">
+                        {new Date(`${p.date}T00:00:00`).toLocaleDateString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </span>
+                      <span className="font-mono font-bold text-emerald-600">
+                        {formatInr(p.lawyerAmount)}
+                      </span>
                     </div>
                   </div>
-                  <span
-                    className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                      p.status === "Completed"
-                        ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                        : "bg-amber-500/15 text-amber-700 dark:text-amber-300"
-                    }`}
-                  >
-                    {p.status === "Completed" ? (
-                      <CheckCircle2 className="h-3 w-3" />
-                    ) : (
-                      <Clock className="h-3 w-3" />
-                    )}
-                    <span>{p.status}</span>
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between gap-2 border-t border-border/50 pt-2.5">
-                  <span className="text-[11px] text-muted-foreground font-mono">
-                    {new Date(`${p.date}T00:00:00`).toLocaleDateString("en-IN", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </span>
-                  <span className="font-mono font-bold text-emerald-600">
-                    {formatInr(p.lawyerAmount)}
-                  </span>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
 
-        {filteredPayments.length > 0 && (
+        {/* TAB 2: WITHDRAW HISTORY */}
+        {activeTab === "withdrawals" && (
+          <>
+            {withdrawals.length === 0 ? (
+              <p className="py-8 text-center text-xs text-muted-foreground">
+                No withdrawal history found. Click "Withdraw" above to initiate a payout.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {pageWithdrawals.map((w) => (
+                  <div
+                    key={w.id}
+                    className="rounded-xl border border-border/80 bg-background/70 p-3.5 shadow-2xs space-y-2.5"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="space-y-0.5 min-w-0">
+                        <div className="text-sm font-extrabold text-foreground font-mono">
+                          {formatInr(w.amount)}
+                        </div>
+                        <div className="text-[10.5px] text-muted-foreground font-mono">
+                          Req Date: {w.requestedAt}
+                        </div>
+                      </div>
+
+                      <span
+                        className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          w.status === "Approved"
+                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                            : w.status === "Pending"
+                              ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                              : "bg-red-500/15 text-red-700 dark:text-red-300"
+                        }`}
+                      >
+                        {w.status === "Approved" ? (
+                          <CheckCircle2 className="h-3 w-3" />
+                        ) : w.status === "Pending" ? (
+                          <Clock className="h-3 w-3" />
+                        ) : (
+                          <AlertCircle className="h-3 w-3" />
+                        )}
+                        <span>
+                          {w.status === "Pending" ? "Pending Admin Approval" : w.status}
+                        </span>
+                      </span>
+                    </div>
+
+                    <div className="rounded-lg border border-border/50 bg-surface p-2 text-[11px] space-y-0.5">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Account:</span>
+                        <span className="font-medium text-foreground">{w.bankName} ({w.accountNumber})</span>
+                      </div>
+                      {w.referenceId && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Ref ID:</span>
+                          <span className="font-mono font-bold text-emerald-600">{w.referenceId}</span>
+                        </div>
+                      )}
+                      {w.rejectionReason && (
+                        <div className="flex justify-between text-red-600">
+                          <span>Note:</span>
+                          <span>{w.rejectionReason}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {activeItemsCount > 0 && (
           <CardPagination
             page={safePage}
             totalPages={totalPages}
@@ -224,6 +542,139 @@ export function LawyerRevenuePage() {
           />
         )}
       </div>
+
+      <Dialog
+        open={withdrawModalOpen}
+        onOpenChange={setWithdrawModalOpen}
+        maxWidth="480px"
+      >
+        <DialogHeader>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-base font-bold text-foreground flex items-center gap-2">
+              <Wallet className="h-4.5 w-4.5 text-primary" />
+              <span>Withdraw Payout</span>
+            </DialogTitle>
+            <button
+              type="button"
+              onClick={() => setWithdrawModalOpen(false)}
+              className="rounded-full p-1 text-muted-foreground hover:bg-muted transition-colors cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </DialogHeader>
+
+        <DialogContent className="mt-3">
+          {!withdrawSuccess ? (
+            <form onSubmit={handleConfirmWithdraw} className="space-y-4">
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5 space-y-1">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">
+                  Available Balance to Withdraw
+                </span>
+                <div className="text-2xl font-black text-primary font-mono">
+                  {formatInr(revenueLeftToWithdraw > 0 ? revenueLeftToWithdraw : 12240)}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <TextField
+                  label="Withdrawal Amount (₹)"
+                  type="number"
+                  required
+                  value={withdrawAmount}
+                  onChange={setWithdrawAmount}
+                  placeholder="Enter amount"
+                  className="w-full font-mono"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Min limit: ₹500 • Max limit: {formatInr(revenueLeftToWithdraw > 0 ? revenueLeftToWithdraw : 12240)}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border bg-background p-3 space-y-2">
+                <div className="text-xs font-bold text-foreground flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-primary" />
+                  <span>Destination Account</span>
+                </div>
+                <div className="flex items-center justify-between text-xs pt-1 border-t border-border/50">
+                  <div className="space-y-0.5">
+                    <p className="font-semibold text-foreground">HDFC Bank Ltd</p>
+                    <p className="font-mono text-muted-foreground text-[11px]">A/C: •••• •••• 4829</p>
+                  </div>
+                  <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600">
+                    Verified
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 text-[11px] text-muted-foreground pt-1">
+                <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+                <span>Payouts are processed instantly via secure bank IMPS transfer.</span>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
+                <Button
+                  type="button"
+                  variant="outlined"
+                  onClick={() => setWithdrawModalOpen(false)}
+                  disabled={isSubmittingWithdraw}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="filled"
+                  disabled={isSubmittingWithdraw || !withdrawAmount || Number(withdrawAmount) <= 0}
+                  icon={
+                    isSubmittingWithdraw ? (
+                      <CircularProgress indeterminate ariaLabel="Processing" className="h-4 w-4" />
+                    ) : (
+                      <ArrowRight className="h-4 w-4" />
+                    )
+                  }
+                >
+                  {isSubmittingWithdraw ? "Processing…" : "Confirm Withdrawal"}
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div className="py-4 space-y-4 text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600">
+                <CheckCircle2 className="h-8 w-8" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-lg font-bold text-foreground">Withdrawal Request Submitted!</h4>
+                <p className="text-xs text-muted-foreground">
+                  Your payout request of{" "}
+                  <strong className="text-foreground font-mono">
+                    {formatInr(Number(withdrawAmount) || 12240)}
+                  </strong>{" "}
+                  is being transferred to your registered HDFC Bank account.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border bg-muted/40 p-3 text-left space-y-1.5 text-xs font-mono">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Transaction ID:</span>
+                  <span className="font-bold text-foreground">TXN_849204192</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Est. Completion:</span>
+                  <span className="font-bold text-emerald-600">Within 1-2 Hours</span>
+                </div>
+              </div>
+
+              <Button
+                variant="filled"
+                onClick={() => setWithdrawModalOpen(false)}
+                className="w-full"
+              >
+                Done
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

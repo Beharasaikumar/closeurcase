@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   FileSearch,
   FilePlus2,
@@ -59,8 +59,19 @@ import {
   Select,
 } from "@/components/m3";
 
+interface CreateCaseSearchParams {
+  area?: string;
+  specialization?: string;
+  service?: string;
+}
+
 export const Route = createFileRoute("/citizen/create-case")({
   head: () => ({ meta: [{ title: "Find a Lawyer — CloseUrCase" }] }),
+  validateSearch: (s: Record<string, unknown>): CreateCaseSearchParams => ({
+    area: typeof s.area === "string" ? s.area : undefined,
+    specialization: typeof s.specialization === "string" ? s.specialization : undefined,
+    service: typeof s.service === "string" ? s.service : undefined,
+  }),
   component: FindLawyerWizard,
 });
 
@@ -95,9 +106,54 @@ function fmtSize(bytes: number) {
 
 export function FindLawyerWizard() {
   const navigate = useNavigate();
+  const searchParams = Route.useSearch();
+  const initialAreaParam = searchParams.area;
+  const initialSpecParam = searchParams.specialization;
+  const initialServiceParam = searchParams.service;
+
+  const matchedAreaObj = useMemo(() => {
+    if (initialAreaParam) {
+      return LAWYER_PRACTICE_AREAS.find(
+        (pa) => pa.category.toLowerCase() === initialAreaParam.toLowerCase()
+      );
+    }
+    if (initialSpecParam) {
+      return LAWYER_PRACTICE_AREAS.find((pa) =>
+        pa.case_types.some((ct) => ct.case_type.toLowerCase() === initialSpecParam.toLowerCase())
+      );
+    }
+    return undefined;
+  }, [initialAreaParam, initialSpecParam]);
+
+  const defaultArea = matchedAreaObj?.category ?? initialAreaParam ?? "";
+
+  const matchedSpecObj = useMemo(() => {
+    if (!matchedAreaObj) return undefined;
+    if (initialSpecParam) {
+      return matchedAreaObj.case_types.find(
+        (ct) => ct.case_type.toLowerCase() === initialSpecParam.toLowerCase()
+      );
+    }
+    return undefined;
+  }, [matchedAreaObj, initialSpecParam]);
+
+  const defaultSpec = matchedSpecObj?.case_type ?? initialSpecParam ?? "";
+
+  const defaultServices = useMemo(() => {
+    if (initialServiceParam) {
+      return [initialServiceParam];
+    }
+    if (matchedSpecObj) {
+      return matchedSpecObj.legal_services;
+    }
+    return [];
+  }, [initialServiceParam, matchedSpecObj]);
+
+  const hasParams = !!(initialAreaParam || initialSpecParam || initialServiceParam);
+
   const { coords: userCoords, cityLabel: userCityLabel, loading: locating } = useUserLocation();
   const [step, setStep] = useState<Step>("details");
-  const [path, setPath] = useState<CasePath | null>(null);
+  const [path, setPath] = useState<CasePath | null>(hasParams ? "new" : null);
 
   // Petitioner & Respondent Names — required for every submission
   const [clientName, setClientName] = useState("");
@@ -117,12 +173,22 @@ export function FindLawyerWizard() {
   // skip the mocked-AI classification and let them pick it directly via the
   // same Practice Area -> Specialization -> Legal Service cascade used to
   // browse the lawyer directory, instead of a flat category dropdown.
-  const [knowsCaseType, setKnowsCaseType] = useState<boolean | null>(null);
-  const [selectedPracticeArea, setSelectedPracticeArea] = useState("");
-  const [selectedSpecialization, setSelectedSpecialization] = useState("");
+  const [knowsCaseType, setKnowsCaseType] = useState<boolean | null>(hasParams ? true : null);
+  const [selectedPracticeArea, setSelectedPracticeArea] = useState(defaultArea);
+  const [selectedSpecialization, setSelectedSpecialization] = useState(defaultSpec);
   // Legal Service is multi-select — defaults to "all services under the
   // chosen specialization" the moment a specialization is picked.
-  const [selectedLegalServices, setSelectedLegalServices] = useState<string[]>([]);
+  const [selectedLegalServices, setSelectedLegalServices] = useState<string[]>(defaultServices);
+
+  useEffect(() => {
+    if (hasParams) {
+      setPath("new");
+      setKnowsCaseType(true);
+      if (defaultArea) setSelectedPracticeArea(defaultArea);
+      if (defaultSpec) setSelectedSpecialization(defaultSpec);
+      if (defaultServices.length > 0) setSelectedLegalServices(defaultServices);
+    }
+  }, [hasParams, defaultArea, defaultSpec, defaultServices]);
   const baseDescriptionRef = useRef("");
   const {
     isRecording,
@@ -1245,7 +1311,7 @@ export function FindLawyerWizard() {
                           }`}
                       >
                         <div className="flex min-w-0 items-center gap-3">
-                          <UserAvatar name={l.name} size="sm" />
+                          <UserAvatar name={l.name} size="sm" role="lawyer" />
                           <div className="min-w-0">
                             <div className="truncate text-xs font-bold text-foreground">
                               {l.name}

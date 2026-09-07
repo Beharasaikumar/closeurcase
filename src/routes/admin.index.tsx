@@ -298,6 +298,24 @@ function DailyRegistrationsChart({ data }: { data: DailyRegPoint[] }) {
             </filter>
           </defs>
 
+          {/* Y-Axis line and X-Axis line */}
+          <line
+            x1={padding.left}
+            y1={padding.top}
+            x2={padding.left}
+            y2={bottomY}
+            stroke="var(--color-border)"
+            strokeWidth="1.5"
+          />
+          <line
+            x1={padding.left}
+            y1={bottomY}
+            x2={viewBoxW - padding.right}
+            y2={bottomY}
+            stroke="var(--color-border)"
+            strokeWidth="1.5"
+          />
+
           {/* Horizontal Gridlines & Y-axis labels */}
           {gridSteps.map((step) => {
             const y = padding.top + plotH * (1 - step);

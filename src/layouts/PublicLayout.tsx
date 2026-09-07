@@ -1,7 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
-import { ChevronDown, LogIn, Menu, MessageCircle, X } from "lucide-react";
+import { ArrowUpRight, ChevronDown, LogIn, Mail, Menu, MessageCircle, ShieldCheck, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CitizenLoginButton } from "@/components/app/CitizenLoginButton";
 import { CitizenLanguageButtons } from "@/features/citizen/CitizenLanguageButtons";
@@ -377,35 +377,137 @@ export function PublicLayout({ children }: { children: ReactNode }) {
 
       <main className="flex-1">{children}</main>
 
-      <footer className="border-t border-border bg-surface">
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 text-sm font-bold text-foreground hover:opacity-90"
-            >
-              <img src="/logo.png" alt="CloseUrCase Logo" className="h-7 w-7 object-contain" />
-              <span>CloseUrCase</span>
-            </Link>
-            <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
-              <Link
-                to="/citizen-login"
-                className="font-semibold hover:underline"
-                style={{ color: "var(--md-extended-color-citizen)" }}
-              >
-                {translate("citizenLoginLabel")}
+      <footer className="border-t border-slate-200/70 bg-[#faf8f4]">
+        <div className="mx-auto w-full max-w-7xl 2xl:max-w-[1440px] px-4 sm:px-6 lg:px-8 py-12">
+          <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1.1fr]">
+            {/* Brand */}
+            <div>
+              <Link to="/" className="inline-flex items-center gap-2.5 hover:opacity-90">
+                <img src="/logo.png" alt="CloseUrCase Logo" className="h-9 w-9 object-contain" />
+                <span className="flex flex-col leading-tight">
+                  <span className="text-base font-bold tracking-tight text-slate-900">
+                    CloseUrCase
+                  </span>
+                  <span className="text-[10px] font-medium tracking-wide text-[#a9853f]">
+                    Just click for justice
+                  </span>
+                </span>
               </Link>
-              <Link to="/lawyer-register" className="hover:text-foreground">
-                Lawyer registration
-              </Link>
-              <Link to="/login" className="hover:text-foreground">
-                {translate("lawyerAdminLogin")}
-              </Link>
+              <p className="mt-4 max-w-xs text-xs leading-relaxed text-slate-600">
+                India&apos;s legal-services platform connecting citizens with bar-verified advocates —
+                matched to your case type and tracked from filing to resolution.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <a
+                  href="mailto:support@closeurcase.in"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#d4af37]/30 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-600 shadow-sm transition-colors hover:border-[#d4af37]/60 hover:text-[#a9853f]"
+                >
+                  <Mail className="h-3.5 w-3.5" />
+                  support@closeurcase.in
+                </a>
+                <Link
+                  to="/"
+                  hash="contact"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#d4af37]/30 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-600 shadow-sm transition-colors hover:border-[#d4af37]/60 hover:text-[#a9853f]"
+                >
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  Contact us
+                </Link>
+              </div>
+              <p className="mt-4 inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+                Every advocate is verified by our team
+              </p>
+            </div>
+
+            {/* For citizens */}
+            <div>
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#a9853f]">
+                For citizens
+              </h3>
+              <ul className="mt-3 space-y-2 text-xs text-slate-600">
+                <li>
+                  <Link to="/citizen-login" className="transition-colors hover:text-[#a9853f]">
+                    File a case
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/citizen-login" className="transition-colors hover:text-[#a9853f]">
+                    Find a lawyer
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/citizen-login" className="transition-colors hover:text-[#a9853f]">
+                    Track your case
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/citizen-login" className="transition-colors hover:text-[#a9853f]">
+                    Auto-Assign &amp; subscriptions
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* For lawyers */}
+            <div>
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#a9853f]">
+                For lawyers
+              </h3>
+              <ul className="mt-3 space-y-2 text-xs text-slate-600">
+                <li>
+                  <Link to="/lawyer-register" className="transition-colors hover:text-[#a9853f]">
+                    Lawyer registration
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/login" className="transition-colors hover:text-[#a9853f]">
+                    {translate("lawyerAdminLogin")}
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/" hash="about" className="transition-colors hover:text-[#a9853f]">
+                    About CloseUrCase
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Popular practice areas */}
+            <div>
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#a9853f]">
+                Practice areas
+              </h3>
+              <ul className="mt-3 grid grid-cols-1 gap-2 text-xs text-slate-600">
+                {LAWYER_PRACTICE_AREAS.slice(0, 6).map((area) => (
+                  <li key={area.category}>
+                    <Link
+                      to="/citizen-login"
+                      search={{ area: area.category }}
+                      className="group inline-flex items-center gap-1 transition-colors hover:text-[#a9853f]"
+                    >
+                      {area.category}
+                      <ArrowUpRight className="h-3 w-3 -translate-x-1 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
-          <p className="mt-6 text-center text-xs text-muted-foreground">
-            © 2026 CloseUrCase. All rights reserved.
-          </p>
+
+          <div className="mt-10 flex flex-col gap-3 border-t border-slate-200/70 pt-6 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
+            <p className="text-xs text-slate-500">© 2026 CloseUrCase. All rights reserved.</p>
+            <Link
+              to="/citizen-login"
+              className="text-xs font-semibold hover:underline"
+              style={{ color: "var(--md-extended-color-citizen)" }}
+            >
+              {translate("citizenLoginLabel")}
+            </Link>
+            <p className="text-[11px] text-slate-400">
+              Not a law firm. Using this site does not create an attorney–client relationship.
+            </p>
+          </div>
         </div>
       </footer>
     </div>

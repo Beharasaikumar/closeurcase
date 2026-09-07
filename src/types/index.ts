@@ -91,7 +91,7 @@ export interface Lawyer {
   ifscCode?: string;
 }
 
-export type SubscriptionPlanId = "monthly" | "yearly";
+export type SubscriptionPlanId = "free" | "monthly" | "yearly";
 
 /** A citizen's Auto-Assign subscription — created when they pay for a plan
  * on the "Find a Lawyer" wizard's admin-assign step. */
@@ -113,6 +113,23 @@ export interface Subscription {
 export type PaymentSource = "commission" | "subscription";
 
 export type PaymentStatus = "Completed" | "Processing";
+
+export type WithdrawalStatus = "Pending" | "Approved" | "Rejected";
+
+export interface WithdrawalRequest {
+  id: string;
+  lawyerId: string;
+  lawyerName: string;
+  amount: number;
+  requestedAt: string;
+  status: WithdrawalStatus;
+  bankName: string;
+  accountNumber: string;
+  ifscCode: string;
+  processedAt?: string;
+  referenceId?: string;
+  rejectionReason?: string;
+}
 
 /** A single money movement on the platform — a citizen paying for a
  * consultation or an Auto-Assign subscription, or the platform's commission

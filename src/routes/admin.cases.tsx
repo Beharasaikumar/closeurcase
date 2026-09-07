@@ -224,7 +224,7 @@ function CasesPage() {
                   {/* Parties / Assigned People Grid */}
                   <div className="grid grid-cols-1 gap-2.5 rounded-xl border border-border/50 bg-background/70 p-3 sm:grid-cols-2 text-xs shadow-2xs">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <UserAvatar name={r.citizenName} size="sm" />
+                      <UserAvatar name={r.citizenName} size="sm" role="citizen" />
                       <div className="min-w-0 flex-1">
                         <div className="text-[10px] uppercase font-extrabold text-muted-foreground tracking-wider">
                           Citizen / Petitioner
@@ -244,7 +244,7 @@ function CasesPage() {
                     <div className="flex items-center gap-2.5 min-w-0 border-t border-border/40 sm:border-t-0 sm:border-l sm:border-border/40 sm:pl-3 pt-2 sm:pt-0">
                       {r.lawyerName ? (
                         <>
-                          <UserAvatar name={r.lawyerName} size="sm" />
+                          <UserAvatar name={r.lawyerName} size="sm" role="lawyer" />
                           <div className="min-w-0 flex-1">
                             <div className="text-[10px] uppercase font-extrabold text-muted-foreground tracking-wider">
                               Assigned Advocate

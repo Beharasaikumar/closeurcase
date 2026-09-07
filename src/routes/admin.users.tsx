@@ -99,7 +99,7 @@ function UsersPage() {
       <div className="flex h-full flex-col rounded-xl border border-border bg-surface p-3.5 shadow-2xs transition-all hover:border-primary/40 hover:shadow-sm sm:p-4">
         <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
           <div className="flex min-w-0 flex-1 items-start gap-3">
-            <UserAvatar name={r.name} size="sm" />
+            <UserAvatar name={r.name} size="sm" role="citizen" />
             <div className="min-w-0 space-y-1">
               <div className="line-clamp-2 text-sm font-bold text-foreground sm:text-[15px]">
                 {r.name}

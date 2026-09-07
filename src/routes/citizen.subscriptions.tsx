@@ -9,8 +9,8 @@ import {
   ShieldCheck,
   Zap,
   Crown,
-  Check,
   Calendar,
+  Star,
 } from "lucide-react";
 import { PageHeader } from "@/components/app/PageHeader";
 import { SegmentedControl } from "@/components/app/SegmentedControl";
@@ -21,8 +21,82 @@ import {
   getSubscriptions,
   subscribeToStore,
 } from "@/data/appStore";
-import { SUBSCRIPTION_PLANS } from "@/data/subscriptionPlans";
+import { FREE_PLAN, SUBSCRIPTION_PLANS } from "@/data/subscriptionPlans";
 import type { Payment, Subscription, SubscriptionPlanId } from "@/types";
+
+interface TierConfig {
+  tierName: string;
+  badgeText: string;
+  cardClasses: string;
+  badgeClasses: string;
+  iconBgClasses: string;
+  iconColorClasses: string;
+  titleColorClasses: string;
+  featureCheckClasses: string;
+  dividerClasses: string;
+  buttonVariant: "filled" | "outlined";
+  buttonStyle?: CSSProperties;
+  buttonClass?: string;
+}
+
+const TIER_THEMES: Record<string, TierConfig> = {
+  free: {
+    tierName: "Bronze Tier",
+    badgeText: "BRONZE TIER",
+    cardClasses:
+      "border-2 border-[#8B5E3C]/60 dark:border-[#A06830]/70 bg-gradient-to-b from-[#8B5E3C]/10 via-[#8B5E3C]/5 to-card dark:from-[#7A4B1B]/30 dark:via-card dark:to-card p-6 rounded-3xl shadow-sm hover:border-[#8B5E3C] hover:shadow-md transition-all",
+    badgeClasses: "bg-[#7A4B1B] text-white font-extrabold shadow-xs border border-[#A06830]/50",
+    iconBgClasses: "bg-[#7A4B1B] text-white shadow-md border border-[#A06830]",
+    iconColorClasses: "text-white fill-white",
+    titleColorClasses: "text-[#7A4B1B] dark:text-[#D4A373] font-extrabold text-2xl",
+    featureCheckClasses: "text-[#8B5E3C] dark:text-[#D4A373]",
+    dividerClasses: "border-border text-foreground font-bold",
+    buttonVariant: "outlined",
+    buttonClass: "border-2 border-[#8B5E3C] dark:border-[#A06830] text-[#7A4B1B] dark:text-[#D4A373] font-extrabold hover:bg-[#7A4B1B] hover:text-white transition-all",
+  },
+  monthly: {
+    tierName: "Silver Tier",
+    badgeText: "SILVER • POPULAR",
+    cardClasses:
+      "border-2 border-slate-400 dark:border-slate-500 bg-gradient-to-b from-slate-200/50 via-slate-100/20 to-card dark:from-slate-900/60 dark:via-card dark:to-card p-6 rounded-3xl shadow-md hover:border-slate-500 hover:shadow-lg transition-all",
+    badgeClasses: "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-950 font-extrabold shadow-xs",
+    iconBgClasses: "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-950 shadow-md",
+    iconColorClasses: "text-white dark:text-slate-950 fill-current",
+    titleColorClasses: "text-slate-900 dark:text-slate-100 font-extrabold text-2xl",
+    featureCheckClasses: "text-slate-700 dark:text-slate-300",
+    dividerClasses: "border-border text-foreground font-bold",
+    buttonVariant: "filled",
+    buttonStyle: {
+      "--md-filled-button-container-color": "#1e293b",
+      "--md-filled-button-label-text-color": "#ffffff",
+      "--md-filled-button-hover-label-text-color": "#ffffff",
+      "--md-filled-button-pressed-label-text-color": "#ffffff",
+      "--md-filled-button-focus-label-text-color": "#ffffff",
+    } as CSSProperties,
+    buttonClass: "dark:bg-slate-100 dark:text-slate-950 font-extrabold shadow-sm",
+  },
+  yearly: {
+    tierName: "Gold Tier",
+    badgeText: "GOLD • SAVE 17%",
+    cardClasses:
+      "border-2 border-amber-400 dark:border-yellow-400 bg-gradient-to-b from-amber-400/20 via-amber-400/5 to-card dark:from-amber-950/40 dark:via-card dark:to-card p-6 rounded-3xl shadow-lg hover:border-yellow-400 hover:shadow-xl transition-all",
+    badgeClasses: "bg-amber-500 dark:bg-yellow-400 text-slate-950 font-black shadow-xs",
+    iconBgClasses: "bg-amber-500 dark:bg-yellow-400 text-slate-950 shadow-md shadow-amber-500/20",
+    iconColorClasses: "text-slate-950 fill-slate-950",
+    titleColorClasses: "text-amber-700 dark:text-yellow-400 font-extrabold text-2xl",
+    featureCheckClasses: "text-amber-500 dark:text-yellow-400",
+    dividerClasses: "border-border text-foreground font-bold",
+    buttonVariant: "filled",
+    buttonStyle: {
+      "--md-filled-button-container-color": "#eab308",
+      "--md-filled-button-label-text-color": "#0f172a",
+      "--md-filled-button-hover-label-text-color": "#0f172a",
+      "--md-filled-button-pressed-label-text-color": "#0f172a",
+      "--md-filled-button-focus-label-text-color": "#0f172a",
+    } as CSSProperties,
+    buttonClass: "bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-black hover:brightness-110 shadow-md",
+  },
+};
 
 const CITIZEN_ID = "u_001";
 
@@ -51,6 +125,19 @@ const vipManageButtonStyle: CSSProperties = {
   "--md-outlined-button-focus-label-text-color": "#ffffff",
   "--md-outlined-button-outline-color": "rgba(255,255,255,0.3)",
   "--md-outlined-button-hover-state-layer-color": "#ffffff",
+} as CSSProperties;
+
+/** Inverted filled button for the highlighted "Popular" plan card, whose
+ * body is `bg-primary`: an on-primary (white) container with a primary
+ * label, both pulled from the M3 theme tokens. Same escape-hatch pattern as
+ * `vipManageButtonStyle`. */
+const popularButtonStyle: CSSProperties = {
+  "--md-filled-button-container-color": "var(--md-sys-color-on-primary)",
+  "--md-filled-button-label-text-color": "var(--md-sys-color-primary)",
+  "--md-filled-button-hover-label-text-color": "var(--md-sys-color-primary)",
+  "--md-filled-button-pressed-label-text-color": "var(--md-sys-color-primary)",
+  "--md-filled-button-focus-label-text-color": "var(--md-sys-color-primary)",
+  "--md-filled-button-hover-state-layer-color": "var(--md-sys-color-primary)",
 } as CSSProperties;
 
 const CONSULTATION_STATUS_STYLE: Record<Payment["status"], string> = {
@@ -184,129 +271,107 @@ export function MySubscriptions() {
 
       {/* ── SUBSCRIPTION PLANS GRID ─────────────────────────────────── */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-extrabold text-foreground flex items-center gap-2">
-              <CreditCard className="h-4.5 w-4.5 text-primary" />
-              Available Plans
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Select or upgrade your Auto-Assign plan for priority lawyer matching.
-            </p>
-          </div>
+        <div>
+          <h2 className="text-base font-extrabold text-foreground flex items-center gap-2">
+            <CreditCard className="h-4.5 w-4.5 text-primary" />
+            Available Plans
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Start free, or pick an Auto-Assign plan for priority lawyer matching.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          {SUBSCRIPTION_PLANS.map((plan) => {
-            const isCurrent = activePlanId === plan.id;
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {[FREE_PLAN, ...SUBSCRIPTION_PLANS].map((plan) => {
+            const isFree = plan.id === "free";
+            const isCurrent = isFree ? !activePlanId : activePlanId === plan.id;
             const isSubscribing = subscribingPlan === plan.id;
-            const isYearly = plan.id === "yearly" || plan.badge;
+            const theme = TIER_THEMES[plan.id] || TIER_THEMES.free;
 
             return (
               <Card
                 key={plan.id}
                 variant="outlined"
-                className={`relative overflow-hidden p-6 rounded-3xl transition-all duration-300 flex flex-col justify-between ${
-                  isCurrent
-                    ? isYearly
-                      ? "border-emerald-500 ring-2 ring-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-transparent shadow-xl"
-                      : "border-indigo-500 ring-2 ring-indigo-500/30 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent shadow-xl"
-                    : "border-border bg-card hover:border-primary/50 hover:shadow-lg"
-                }`}
+                className={`relative flex h-full flex-col p-6 rounded-3xl transition-all duration-300 ${theme.cardClasses}`}
               >
-                {/* Top Corner Ribbon Banner */}
-                {plan.badge && (
-                  <div className="absolute top-0 right-0">
-                    <span className="inline-block bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 text-white text-[9.5px] font-black tracking-widest px-4 py-1 rounded-bl-2xl shadow-md uppercase">
-                      🔥 {plan.badge}
-                    </span>
+                {/* Circle Star Icon & Tier Badge */}
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-full ${theme.iconBgClasses}`}>
+                    <Star className={`h-5 w-5 ${theme.iconColorClasses}`} />
                   </div>
-                )}
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-[10px] font-black tracking-wider uppercase ${
-                        isYearly
-                          ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                          : "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20"
-                      }`}
-                    >
-                      {isYearly ? "ANNUAL PASS" : "FLEXIBLE PLAN"}
-                    </span>
-                    {isCurrent && (
-                      <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
-                        <CheckCircle2 className="h-3.5 w-3.5" /> Current Plan
-                      </span>
-                    )}
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg font-black text-foreground">{plan.label}</h3>
-                    <div className="mt-1 flex items-baseline gap-1">
-                      <span className="text-3xl font-black text-foreground">₹{plan.price}</span>
-                      <span className="text-xs font-semibold text-muted-foreground">
-                        {plan.cadence}
-                      </span>
-                      {isYearly && (
-                        <span className="ml-2 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded-md">
-                          Save 17% (~₹416/mo)
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {plan.description}
-                  </p>
-
-                  {/* Plan Features Checklist */}
-                  <div className="space-y-2 pt-2 border-t border-border/50 text-xs">
-                    <div className="flex items-center gap-2 font-medium text-foreground/90">
-                      <span className={`flex h-4 w-4 items-center justify-center rounded-full text-white ${isYearly ? 'bg-emerald-500' : 'bg-indigo-500'}`}>
-                        <Check className="h-2.5 w-2.5" />
-                      </span>
-                      <span>Auto-dispatch to top verified specialists</span>
-                    </div>
-                    <div className="flex items-center gap-2 font-medium text-foreground/90">
-                      <span className={`flex h-4 w-4 items-center justify-center rounded-full text-white ${isYearly ? 'bg-emerald-500' : 'bg-indigo-500'}`}>
-                        <Check className="h-2.5 w-2.5" />
-                      </span>
-                      <span>Priority admin allocation & case tracking</span>
-                    </div>
-                    <div className="flex items-center gap-2 font-medium text-foreground/90">
-                      <span className={`flex h-4 w-4 items-center justify-center rounded-full text-white ${isYearly ? 'bg-emerald-500' : 'bg-indigo-500'}`}>
-                        <Check className="h-2.5 w-2.5" />
-                      </span>
-                      <span>{isYearly ? "2 Months FREE + Priority Support" : "Cancel anytime with 1 click"}</span>
-                    </div>
-                  </div>
+                  <span className={`rounded-full px-3 py-1 text-[10px] tracking-wider ${theme.badgeClasses}`}>
+                    {theme.badgeText}
+                  </span>
                 </div>
 
-                <div className="pt-5">
+                {/* Audience */}
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-semibold text-muted-foreground">
+                    {plan.audience}
+                  </span>
+                </div>
+
+                <h3 className={`mt-2 text-xl font-black ${theme.titleColorClasses}`}>
+                  {plan.label}
+                </h3>
+
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                  {plan.description}
+                </p>
+
+                <div className="mt-4 flex items-baseline gap-1.5">
+                  <span className="text-4xl font-black text-foreground">
+                    {isFree ? "Free" : `₹${plan.price}`}
+                  </span>
+                  {plan.cadence && (
+                    <span className="text-sm font-semibold text-muted-foreground">
+                      {plan.cadence}
+                    </span>
+                  )}
+                </div>
+
+                <div className={`mt-5 mb-3 border-t pt-4 text-xs font-bold ${theme.dividerClasses}`}>
+                  What's included
+                </div>
+
+                <ul className="space-y-2.5">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-2.5 text-xs">
+                      <CheckCircle2 className={`mt-px h-4 w-4 shrink-0 ${theme.featureCheckClasses}`} />
+                      <span className="text-foreground font-medium">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="mt-auto pt-6">
                   <Button
-                    className={`w-full h-10 text-xs font-bold rounded-xl transition-all ${
-                      isCurrent
-                        ? "border-border text-muted-foreground cursor-default"
-                        : isYearly
-                          ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 text-white hover:opacity-95 shadow-md shadow-emerald-500/20"
-                          : "bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-500 text-white hover:opacity-95 shadow-md shadow-indigo-500/20"
-                    }`}
-                    variant={isCurrent ? "outlined" : "filled"}
-                    disabled={isCurrent || isSubscribing}
+                    className={`w-full h-10 text-xs font-bold rounded-xl ${theme.buttonClass ?? ""}`}
+                    variant={isCurrent || isFree ? "outlined" : theme.buttonVariant}
+                    style={
+                      theme.buttonStyle
+                        ? isCurrent
+                          ? vipManageButtonStyle
+                          : theme.buttonStyle
+                        : undefined
+                    }
+                    disabled={isCurrent || isFree || isSubscribing}
                     onClick={() => handleSubscribe(plan.id, plan.label, plan.price)}
                   >
                     {isSubscribing ? (
                       <span className="flex items-center justify-center gap-2">
-                        <CircularProgress indeterminate ariaLabel="Subscribing" className="h-4 w-4 text-white" />
-                        Processing Subscription…
+                        <CircularProgress
+                          indeterminate
+                          ariaLabel="Subscribing"
+                          className="h-4 w-4"
+                        />
+                        Processing…
                       </span>
                     ) : isCurrent ? (
-                      "Active Membership"
+                      "Current plan"
+                    ) : isFree ? (
+                      "Included"
                     ) : (
-                      <span className="flex items-center justify-center gap-1.5">
-                        <Zap className="h-3.5 w-3.5" /> Subscribe Now
-                      </span>
+                      "Get started"
                     )}
                   </Button>
                 </div>

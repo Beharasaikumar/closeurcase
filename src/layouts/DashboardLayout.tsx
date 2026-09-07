@@ -403,7 +403,7 @@ export function DashboardLayout({
                   onClick={() => setProfileOpen((v) => !v)}
                   className="flex cursor-pointer items-center gap-2 rounded-[var(--md-sys-shape-corner-full)] px-2 py-1.5 text-sm transition-colors hover:bg-[var(--md-sys-color-on-surface)]/8"
                 >
-                  <UserAvatar name={userName} photoUrl={photoUrl} size="sm" />
+                  <UserAvatar name={userName} photoUrl={photoUrl} size="sm" role={role} />
                   <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
                 </button>
 
@@ -415,7 +415,7 @@ export function DashboardLayout({
                     />
                     <div className="absolute right-0 top-full z-50 mt-1 w-56 rounded-[var(--md-sys-shape-corner-medium)] bg-[var(--md-sys-color-surface-container)] shadow-[var(--md-sys-elevation-level2)]">
                       <div className="flex items-center gap-2.5 border-b border-[var(--md-sys-color-outline-variant)] px-4 py-3">
-                        <UserAvatar name={userName} photoUrl={photoUrl} size="md" />
+                        <UserAvatar name={userName} photoUrl={photoUrl} size="md" role={role} />
                         <div className="min-w-0">
                           <div className="truncate text-sm font-semibold text-foreground">
                             {userName}

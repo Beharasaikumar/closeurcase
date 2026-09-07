@@ -49,7 +49,7 @@ export function LawyerProfileCard({
   return (
     <div className={`space-y-6 ${className}`}>
       <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:text-left">
-        <UserAvatar name={lawyer.name} photoUrl={lawyer.photoUrl} size="lg" />
+        <UserAvatar name={lawyer.name} photoUrl={lawyer.photoUrl} size="lg" role="lawyer" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
             <h2 className="text-lg font-bold text-foreground">{lawyer.name}</h2>

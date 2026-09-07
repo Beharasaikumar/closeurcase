@@ -93,17 +93,6 @@ export function CourtExplainer() {
                         </div>
                       ))}
                     </div>
-                    <Link to="/citizen-login">
-                      <Button
-                        variant="filled"
-                        style={goldButtonStyle}
-                        className="!rounded-full font-semibold transition-transform active:scale-[0.98]"
-                        trailingIcon
-                        icon={<ArrowRight className="h-4 w-4" />}
-                      >
-                        {court.ctaLabel}
-                      </Button>
-                    </Link>
                   </div>
                 )}
               </Card>
