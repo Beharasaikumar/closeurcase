@@ -205,6 +205,7 @@
   md-filled-text-field,
   md-outlined-select,
   md-filled-select {
+    min-width: 0;
     --md-outlined-field-top-space: 6px;
     --md-outlined-field-bottom-space: 6px;
     --md-outlined-field-leading-space: 12px;

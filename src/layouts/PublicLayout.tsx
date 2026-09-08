@@ -1,9 +1,19 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
-import { ArrowUpRight, ChevronDown, LogIn, Mail, Menu, MessageCircle, ShieldCheck, X } from "lucide-react";
+import {
+  ArrowUpRight,
+  ChevronDown,
+  Info,
+  LogIn,
+  Mail,
+  Menu,
+  MessageCircle,
+  Phone,
+  ShieldCheck,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CitizenLoginButton } from "@/components/app/CitizenLoginButton";
 import { CitizenLanguageButtons } from "@/features/citizen/CitizenLanguageButtons";
 import { PublicNav } from "@/components/app/PublicNav";
 import { LAWYER_PRACTICE_AREAS } from "@/components/app/lawyerPracticeAreas";
@@ -201,6 +211,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
         <div className="space-y-3 px-4 py-4">
           <CitizenLanguageButtons size="sm" showLabel={false} />
 
+          {/* Find a Lawyer — expandable */}
           <div className="overflow-hidden rounded-xl border border-border bg-background">
             <button
               type="button"
@@ -248,7 +259,9 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                               <div key={spec.case_type}>
                                 <button
                                   type="button"
-                                  onClick={() => setOpenSpecName(isSpecOpen ? null : spec.case_type)}
+                                  onClick={() =>
+                                    setOpenSpecName(isSpecOpen ? null : spec.case_type)
+                                  }
                                   className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-xs font-medium text-foreground hover:bg-muted"
                                 >
                                   {spec.case_type}
@@ -290,8 +303,8 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               </div>
             </div>
           </div>
-          </div>
 
+          {/* Government Services — expandable */}
           <div className="overflow-hidden rounded-xl border border-border bg-background">
             <button
               type="button"
@@ -349,29 +362,42 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                 })}
               </div>
             </div>
-
-          <Link
-            to="/"
-            hash="about"
-            onClick={closeMobileMenu}
-            className="block w-full text-center rounded-xl border border-border bg-background px-4 py-3 text-sm font-semibold text-foreground hover:bg-muted"
-          >
-            About
-          </Link>
-
-          <div onClick={closeMobileMenu}>
-            <CitizenLoginButton label="File a Case" className={goldCitizenButtonClass} />
           </div>
 
-          <Link
-            to="/"
-            hash="contact"
-            onClick={closeMobileMenu}
-            className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#d4af37]/70 bg-[#f5ecd2] px-4 py-3 text-sm font-semibold text-[#8a6d2f] hover:bg-[#eedfae]"
-          >
-            <MessageCircle className="h-4 w-4" />
-            Contact Us
-          </Link>
+          {/* Actions — one consistent full-width pill each */}
+          <div className="space-y-2.5 pt-1">
+            <Link
+              to="/citizen-login"
+              onClick={closeMobileMenu}
+              className={cn(
+                "flex h-11 w-full items-center justify-center gap-2 rounded-full px-6 text-sm font-semibold transition-opacity hover:opacity-90 active:opacity-80",
+                goldCitizenButtonClass,
+              )}
+            >
+              <Phone className="h-4 w-4 shrink-0" aria-hidden />
+              File a Case
+            </Link>
+
+            <Link
+              to="/"
+              hash="contact"
+              onClick={closeMobileMenu}
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-full border border-[#d4af37]/70 bg-[#f5ecd2] px-6 text-sm font-semibold text-[#8a6d2f] transition-colors hover:bg-[#eedfae]"
+            >
+              <MessageCircle className="h-4 w-4 shrink-0" aria-hidden />
+              Contact Us
+            </Link>
+
+            <Link
+              to="/"
+              hash="about"
+              onClick={closeMobileMenu}
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-full border border-border bg-background px-6 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+            >
+              <Info className="h-4 w-4 shrink-0" aria-hidden />
+              About
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -394,8 +420,8 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                 </span>
               </Link>
               <p className="mt-4 max-w-xs text-xs leading-relaxed text-slate-600">
-                India&apos;s legal-services platform connecting citizens with bar-verified advocates —
-                matched to your case type and tracked from filing to resolution.
+                India&apos;s legal-services platform connecting citizens with bar-verified advocates
+                — matched to your case type and tracked from filing to resolution.
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 <a

@@ -25,6 +25,7 @@ export function Select({
   supportingText,
   className,
   style,
+  ariaLabel,
 }: {
   label?: string;
   value: string;
@@ -38,6 +39,7 @@ export function Select({
   className?: string;
   /** Escape hatch for one-off shape/size overrides, same pattern as Button/TextField. */
   style?: CSSProperties;
+  ariaLabel?: string;
 }) {
   const selectRef = useRef<MdOutlinedSelect | null>(null);
 
@@ -77,13 +79,14 @@ export function Select({
     <MdOutlinedSelectEl
       ref={selectRef}
       label={label}
+      aria-label={ariaLabel || label}
       value={value}
       disabled={disabled}
       required={required}
       error={error}
       errorText={errorText}
       supportingText={supportingText}
-      className={className}
+      className={className ?? "w-full"}
       style={style}
       // "popover" hoists the menu into the top layer: it is never clipped by an
       // overflow/scroll ancestor, and Material's positioner is free to flip it

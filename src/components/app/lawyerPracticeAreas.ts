@@ -1,11 +1,15 @@
 import type { LegalCategory } from "@/types";
+import { getPracticeAreaTree } from "@/data/appStore";
 
-/* Full practice-area → specialization → legal-service taxonomy for the
-   "Find a Lawyer" mega-menu (desktop) and drawer accordion (mobile). These
-   are marketing labels for browsing only, not tied to the app's internal
-   LegalCategory enum — every leaf link just routes into the citizen login
-   flow, the same way the rest of the public CTAs do. Shared by PublicNav
-   (desktop) and PublicLayout (mobile) so the two stay in sync. */
+/* Practice-area → specialization → legal-service taxonomy for the
+   "Find a Lawyer" mega-menu (desktop), drawer accordion (mobile), the landing
+   explorer, and the lawyer/citizen practice-area pickers.
+
+   The source of truth is now the admin-managed Data Management → Categories
+   list: `LAWYER_PRACTICE_AREAS` is derived from `getPracticeAreaTree()` at
+   module load, so admin edits flow through to every consumer. The
+   `LEGACY_LAWYER_PRACTICE_AREAS` array below is kept only as the seed those
+   defaults were built from / a fallback reference. */
 export interface LawyerSpecialization {
   case_type: string;
   legal_services: string[];
@@ -16,7 +20,7 @@ export interface LawyerPracticeArea {
   case_types: LawyerSpecialization[];
 }
 
-export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
+const LEGACY_LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
   {
     category: "Criminal Defense",
     case_types: [
@@ -493,7 +497,12 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
       },
       {
         case_type: "R.T.I",
-        legal_services: ["RTI Application", "RTI Appeal", "RTI Legal Consultation", "RTI Complaint"],
+        legal_services: [
+          "RTI Application",
+          "RTI Appeal",
+          "RTI Legal Consultation",
+          "RTI Complaint",
+        ],
       },
       {
         case_type: "Civil",
@@ -549,6 +558,16 @@ export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
     ],
   },
 ];
+
+/**
+ * The live taxonomy every consumer imports. Built from the admin-managed
+ * category list; falls back to the legacy seed if the store somehow yields
+ * nothing (e.g. every category deactivated).
+ */
+export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = (() => {
+  const tree = getPracticeAreaTree();
+  return tree.length > 0 ? tree : LEGACY_LAWYER_PRACTICE_AREAS;
+})();
 
 /* Bridges a taxonomy practice-area name into the app's internal LegalCategory
    enum — lawyers are still stored against a single flat `category`, so this

@@ -15,9 +15,12 @@ import type {
   VideoCall,
   WithdrawalRequest,
   CaseCategoryItem,
+  CaseSubCategoryItem,
   LanguageItem,
   CityItem,
   CourtItem,
+  StateItem,
+  CourtLevelItem,
 } from "@/types";
 import {
   categories as seedCategories,
@@ -43,10 +46,12 @@ const NOTES_KEY = "cuc_case_notes_v1";
 const SUBSCRIPTIONS_KEY = "cuc_subscriptions_v1";
 const PAYMENTS_KEY = "cuc_payments_v1";
 const LAWYER_RATINGS_KEY = "cuc_lawyer_ratings_v1";
-const CASE_CATEGORIES_KEY = "cuc_case_categories_v1";
+const CASE_CATEGORIES_KEY = "cuc_case_categories_v3";
 const LANGUAGES_KEY = "cuc_languages_v1";
-const CITIES_KEY = "cuc_cities_v1";
-const COURTS_KEY = "cuc_courts_v1";
+const CITIES_KEY = "cuc_cities_v2";
+const COURTS_KEY = "cuc_courts_v2";
+const STATES_KEY = "cuc_states_v1";
+const COURT_LEVELS_KEY = "cuc_court_levels_v1";
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
@@ -436,9 +441,7 @@ export function submitLawyerRating({
   const now = new Date().toISOString();
 
   const allRatings = getLawyerRatings();
-  const existingIndex = allRatings.findIndex(
-    (r) => r.caseId === caseId && r.lawyerId === lawyerId,
-  );
+  const existingIndex = allRatings.findIndex((r) => r.caseId === caseId && r.lawyerId === lawyerId);
   const existingRecord = existingIndex >= 0 ? allRatings[existingIndex] : undefined;
 
   const lawyers = getLawyers();
@@ -715,6 +718,25 @@ export function getSubscriptions(citizenId?: string): Subscription[] {
   return citizenId ? sorted.filter((s) => s.citizenId === citizenId) : sorted;
 }
 
+/** A citizen's membership tier, derived from their real subscription history —
+ * NOT a name hash. An active `yearly` plan is Gold, an active `monthly` plan
+ * is Silver, and everyone else (free, expired, cancelled, or no plan) is
+ * Bronze. Accepts a citizen id ("u_003") or a display name.
+ * Returns `null` for anyone who isn't a known citizen. */
+export function planTierForCitizen(idOrName: string): "gold" | "silver" | "bronze" | null {
+  const key = idOrName.trim();
+  const citizen = key.startsWith("u_")
+    ? seedCitizens.find((c) => c.id === key)
+    : seedCitizens.find((c) => c.name.toLowerCase() === key.toLowerCase());
+  if (!citizen) return null;
+
+  const subs = getSubscriptions(citizen.id);
+  const active = subs.find((s) => s.status === "Active");
+  if (active?.planId === "yearly") return "gold";
+  if (active?.planId === "monthly") return "silver";
+  return "bronze";
+}
+
 export function addSubscription(
   sub: Omit<Subscription, "id" | "startedAt" | "status">,
 ): Subscription {
@@ -753,23 +775,25 @@ export function getPayments(lawyerId?: string): Payment[] {
 const WITHDRAWALS_KEY = "cuc_withdrawals_v3";
 
 const seedWithdrawals: WithdrawalRequest[] = [
+  // Adv. Swathi Reddy (l_001) — the demo lawyer; a settled payout from CS-22418.
   {
     id: "w_101",
     lawyerId: "l_001",
-    lawyerName: "Sai Teja Reddy",
+    lawyerName: "Swathi Reddy",
     amount: 12240,
     requestedAt: "2026-09-02",
     status: "Approved",
     bankName: "HDFC Bank Ltd",
     accountNumber: "•••• 4829",
     ifscCode: "HDFC0001234",
-    processedAt: "2026-09-02",
+    processedAt: "2026-09-03",
     referenceId: "TXN_94820194",
   },
+  // Srinivas Chowdary (l_002) — pending; matches the ₹8,500 admin notification.
   {
     id: "w_102",
     lawyerId: "l_002",
-    lawyerName: "Ananya Sharma",
+    lawyerName: "Srinivas Chowdary",
     amount: 8500,
     requestedAt: "2026-09-06",
     status: "Pending",
@@ -777,10 +801,11 @@ const seedWithdrawals: WithdrawalRequest[] = [
     accountNumber: "•••• 9102",
     ifscCode: "SBIN0004812",
   },
+  // Sailaja Naidu (l_003) — pending payout from the resolved divorce matter.
   {
     id: "w_103",
     lawyerId: "l_003",
-    lawyerName: "Rajesh Kumar",
+    lawyerName: "Sailaja Naidu",
     amount: 15400,
     requestedAt: "2026-09-07",
     status: "Pending",
@@ -788,16 +813,31 @@ const seedWithdrawals: WithdrawalRequest[] = [
     accountNumber: "•••• 3391",
     ifscCode: "ICIC0000281",
   },
+  // Venkatesh Rao (l_004) — pending.
   {
     id: "w_104",
     lawyerId: "l_004",
-    lawyerName: "Meera Nair",
-    amount: 22000,
+    lawyerName: "Venkatesh Rao",
+    amount: 16800,
     requestedAt: "2026-09-07",
     status: "Pending",
     bankName: "Axis Bank",
     accountNumber: "•••• 7714",
     ifscCode: "UTIB0001092",
+  },
+  // Suresh Kumar (l_018) — an earlier rejected request (stale bank details).
+  {
+    id: "w_105",
+    lawyerId: "l_018",
+    lawyerName: "Suresh Kumar",
+    amount: 6800,
+    requestedAt: "2026-08-24",
+    status: "Rejected",
+    bankName: "Union Bank of India",
+    accountNumber: "•••• 5567",
+    ifscCode: "UBIN0553441",
+    processedAt: "2026-08-26",
+    rejectionReason: "Account name mismatch — please re-submit with updated bank proof.",
   },
 ];
 
@@ -861,7 +901,10 @@ export function approveWithdrawalRequest(id: string): WithdrawalRequest | undefi
   return approvedReq;
 }
 
-export function rejectWithdrawalRequest(id: string, reason?: string): WithdrawalRequest | undefined {
+export function rejectWithdrawalRequest(
+  id: string,
+  reason?: string,
+): WithdrawalRequest | undefined {
   const current = load<WithdrawalRequest[]>(WITHDRAWALS_KEY, seedWithdrawals);
   let rejectedReq: WithdrawalRequest | undefined;
 
@@ -890,159 +933,707 @@ export function rejectWithdrawalRequest(id: string, reason?: string): Withdrawal
 
 /* ── DATA MANAGEMENT STORE (CRUD for Categories, Languages, Cities, Courts) ── */
 
+/**
+ * Master case taxonomy — the single source of truth for the public "Find a
+ * Lawyer" menu (via `getPracticeAreaTree()` / `lawyerPracticeAreas.ts`) and the
+ * admin Data Management → Categories tab. Three tiers: category → sub-category
+ * → legal services. The nine browse practice areas plus Cyber/Tax/Environmental
+ * for internal lawyer/case classification.
+ */
 export const DEFAULT_CASE_CATEGORIES: CaseCategoryItem[] = [
   {
     id: "cat_1",
-    name: "Criminal",
+    name: "Criminal Defense",
     code: "CRIM",
-    description: "Bail matters, criminal trials, IPC/BNS offenses, and white collar defense",
+    description: "Bail, trials, appeals, and white-collar defence across criminal courts",
     subCategories: [
-      "Anticipatory Bail",
-      "Criminal Trial",
-      "Cyber Crime",
-      "Fraud Case",
-      "POCSO Act",
-      "Anti Corruption",
-      "PMLA Matter",
-      "Narcotics / NDPS",
+      {
+        name: "Anticipatory Bail",
+        services: [
+          "File Anticipatory Bail Application",
+          "Anticipatory Bail Hearing",
+          "Anticipatory Bail Appeal",
+        ],
+      },
+      {
+        name: "Criminal",
+        services: [
+          "File Criminal Case",
+          "Criminal Defense",
+          "Criminal Case Consultation",
+          "Criminal Appeal",
+          "Criminal Revision",
+        ],
+      },
+      {
+        name: "Cyber Crime",
+        services: [
+          "Cyber Crime Complaint",
+          "Cyber Fraud Case",
+          "Online Harassment Case",
+          "Cyber Crime Defense",
+          "Cyber Crime Investigation Assistance",
+        ],
+      },
+      {
+        name: "Fraud Case",
+        services: [
+          "File Fraud Case",
+          "Fraud Case Defense",
+          "Financial Fraud Complaint",
+          "Fraud Case Appeal",
+        ],
+      },
+      {
+        name: "Litigation",
+        services: [
+          "Civil Litigation",
+          "Criminal Litigation",
+          "Court Representation",
+          "File Lawsuit",
+          "Litigation Consultation",
+        ],
+      },
+      {
+        name: "POCSO Act",
+        services: [
+          "POCSO Case Filing",
+          "POCSO Case Defense",
+          "POCSO Bail Application",
+          "POCSO Case Representation",
+          "POCSO Appeal",
+        ],
+      },
+      {
+        name: "Anti Corruption",
+        services: [
+          "Anti Corruption Complaint",
+          "Anti Corruption Case Defense",
+          "Vigilance Case",
+          "Anti Corruption Litigation",
+        ],
+      },
+      {
+        name: "PMLA",
+        services: [
+          "PMLA Case Defense",
+          "PMLA Bail Application",
+          "PMLA Property Attachment Matter",
+          "PMLA Case Representation",
+          "PMLA Appeal",
+        ],
+      },
     ],
     active: true,
   },
   {
     id: "cat_2",
-    name: "Civil",
-    code: "CIV",
-    description: "Contracts, recovery of money, torts, and civil dispute resolution",
+    name: "Corporate Law",
+    code: "CORP",
+    description: "Arbitration, company law, NCLT, insolvency, IP, and commercial contracts",
     subCategories: [
-      "Money Recovery",
-      "Breach of Contract",
-      "Injunction Suit",
-      "Arbitration",
-      "Defamation",
-      "Commercial Dispute",
-      "Legal Documentation",
+      {
+        name: "Arbitration",
+        services: [
+          "Arbitration Consultation",
+          "File Arbitration Case",
+          "Arbitration Representation",
+          "Arbitration Award Challenge",
+          "Arbitration Appeal",
+        ],
+      },
+      {
+        name: "Startup",
+        services: [
+          "Startup Legal Consultation",
+          "Business Registration",
+          "Founder Agreement",
+          "Shareholder Agreement",
+          "Startup Compliance",
+        ],
+      },
+      {
+        name: "Corporate",
+        services: [
+          "Corporate Legal Consultation",
+          "Company Law Compliance",
+          "Corporate Dispute",
+          "Board and Shareholder Matters",
+          "Corporate Representation",
+        ],
+      },
+      {
+        name: "Breach of Contract",
+        services: [
+          "Contract Review",
+          "Breach of Contract Notice",
+          "Breach of Contract Case",
+          "Contract Dispute Resolution",
+          "Contract Litigation",
+        ],
+      },
+      {
+        name: "NCLT",
+        services: [
+          "NCLT Case Filing",
+          "NCLT Representation",
+          "Company Petition",
+          "NCLT Appeal",
+          "Corporate Insolvency Matter",
+        ],
+      },
+      {
+        name: "Bankruptcy / Insolvency",
+        services: [
+          "Insolvency Consultation",
+          "Insolvency Proceedings",
+          "Bankruptcy Proceedings",
+          "IBC Case Filing",
+          "Insolvency Representation",
+        ],
+      },
+      {
+        name: "Patent",
+        services: [
+          "Patent Search",
+          "Patent Application",
+          "Patent Registration",
+          "Patent Infringement Case",
+          "Patent Opposition",
+        ],
+      },
+      {
+        name: "Media and Entertainment",
+        services: [
+          "Media Legal Consultation",
+          "Entertainment Contract",
+          "Copyright Dispute",
+          "Defamation Matter",
+          "Media Litigation",
+        ],
+      },
+      {
+        name: "Trademark & Copyright",
+        services: [
+          "Trademark Search",
+          "Trademark Registration",
+          "Trademark Infringement",
+          "Copyright Registration",
+          "Copyright Infringement",
+        ],
+      },
+      {
+        name: "Documentation",
+        services: [
+          "Legal Document Drafting",
+          "Agreement Drafting",
+          "Contract Drafting",
+          "Document Review",
+          "Legal Documentation",
+        ],
+      },
     ],
     active: true,
   },
   {
     id: "cat_3",
-    name: "Property",
-    code: "PROP",
-    description: "Land titles, partition suits, RERA disputes, and real estate litigation",
+    name: "Family Law",
+    code: "FAM",
+    description: "Divorce, custody, maintenance, wills, and domestic relations",
     subCategories: [
-      "Property Dispute",
-      "Landlord & Tenant",
-      "RERA Matters",
-      "Title Verification",
-      "Partition Suit",
-      "Succession Certificate",
-      "Wills / Trusts",
+      {
+        name: "Wills / Trusts",
+        services: [
+          "Will Drafting",
+          "Will Registration",
+          "Will Review",
+          "Trust Deed Drafting",
+          "Trust Registration",
+        ],
+      },
+      {
+        name: "Child Custody",
+        services: [
+          "Child Custody Case",
+          "Child Custody Petition",
+          "Child Visitation Matter",
+          "Child Custody Dispute",
+          "Child Custody Appeal",
+        ],
+      },
+      {
+        name: "Muslim Law",
+        services: [
+          "Muslim Marriage Matter",
+          "Muslim Divorce Matter",
+          "Muslim Personal Law Consultation",
+          "Muslim Inheritance Matter",
+          "Muslim Family Dispute",
+        ],
+      },
+      {
+        name: "Domestic Violence",
+        services: [
+          "Domestic Violence Complaint",
+          "Domestic Violence Case",
+          "Protection Order",
+          "Domestic Violence Defense",
+          "Domestic Violence Appeal",
+        ],
+      },
+      {
+        name: "Succession Certificate",
+        services: [
+          "Succession Certificate Application",
+          "Succession Certificate Case",
+          "Succession Certificate Consultation",
+          "Succession Certificate Appeal",
+        ],
+      },
+      {
+        name: "Divorce",
+        services: [
+          "File for Divorce",
+          "Reply / Send Legal Notice for Divorce",
+          "Contest Divorce Case",
+          "Divorce Appeal",
+          "Mutual Consent Divorce",
+          "Contested Divorce",
+          "Divorce Settlement",
+        ],
+      },
+      {
+        name: "Family",
+        services: [
+          "Family Dispute",
+          "Family Settlement",
+          "Maintenance Matter",
+          "Family Court Representation",
+          "Family Legal Consultation",
+        ],
+      },
+      {
+        name: "Court Marriage",
+        services: [
+          "Court Marriage Registration",
+          "Marriage Registration",
+          "Special Marriage Act Registration",
+          "Court Marriage Documentation",
+        ],
+      },
+      {
+        name: "Dowry Case",
+        services: [
+          "Dowry Complaint",
+          "Dowry Harassment Case",
+          "Dowry Case Defense",
+          "Dowry Case Representation",
+          "Dowry Case Appeal",
+        ],
+      },
     ],
     active: true,
   },
   {
     id: "cat_4",
-    name: "Family",
-    code: "FAM",
-    description: "Divorce, child custody, maintenance, and domestic relations",
+    name: "Banking & Finance",
+    code: "BANK",
+    description: "Cheque bounce, debt recovery, banking disputes, GST, and customs",
     subCategories: [
-      "Divorce",
-      "Child Custody",
-      "Mutual Consent Divorce",
-      "Domestic Violence",
-      "Maintenance & Alimony",
-      "Court Marriage",
-      "Muslim Law",
-      "Family Settlement",
+      {
+        name: "Cheque Bounce",
+        services: [
+          "Cheque Bounce Legal Notice",
+          "File Cheque Bounce Case",
+          "Cheque Bounce Case Defense",
+          "Cheque Bounce Settlement",
+          "Cheque Bounce Appeal",
+        ],
+      },
+      {
+        name: "Recovery",
+        services: [
+          "Money Recovery Notice",
+          "Debt Recovery Case",
+          "Loan Recovery Matter",
+          "Recovery Suit",
+          "Debt Settlement",
+        ],
+      },
+      {
+        name: "Tax",
+        services: [
+          "Tax Consultation",
+          "Income Tax Matter",
+          "Tax Notice Reply",
+          "Tax Dispute",
+          "Tax Appeal",
+        ],
+      },
+      {
+        name: "Banking / Finance",
+        services: [
+          "Banking Dispute",
+          "Loan Dispute",
+          "Banking Legal Notice",
+          "Financial Agreement Review",
+          "Banking Litigation",
+        ],
+      },
+      {
+        name: "GST",
+        services: [
+          "GST Registration",
+          "GST Notice Reply",
+          "GST Compliance",
+          "GST Dispute",
+          "GST Appeal",
+        ],
+      },
+      {
+        name: "Customs & Central Excise",
+        services: [
+          "Customs Consultation",
+          "Customs Dispute",
+          "Customs Notice Reply",
+          "Central Excise Matter",
+          "Customs Appeal",
+        ],
+      },
     ],
     active: true,
   },
   {
     id: "cat_5",
-    name: "Consumer",
+    name: "Consumer Law",
     code: "CONS",
-    description: "Consumer forum complaints, deficiency of service, and unfair trade practices",
+    description: "Consumer forum complaints, insurance, medical negligence, and motor accidents",
     subCategories: [
-      "Consumer Court Dispute",
-      "Medical Negligence",
-      "Insurance Claim",
-      "Builder / Project Delay",
-      "Deficiency of Service",
-      "Product Liability",
+      {
+        name: "Insurance",
+        services: [
+          "Insurance Claim Dispute",
+          "Insurance Claim Rejection",
+          "Insurance Legal Notice",
+          "Insurance Consumer Case",
+          "Insurance Appeal",
+        ],
+      },
+      {
+        name: "Medical Negligence",
+        services: [
+          "Medical Negligence Consultation",
+          "Medical Negligence Complaint",
+          "Medical Negligence Case",
+          "Medical Negligence Consumer Case",
+          "Medical Negligence Defense",
+        ],
+      },
+      {
+        name: "Motor Accident",
+        services: [
+          "Motor Accident Claim",
+          "Motor Accident Compensation",
+          "Motor Accident Case",
+          "Motor Accident Tribunal Matter",
+          "Motor Accident Appeal",
+        ],
+      },
+      {
+        name: "Consumer Court",
+        services: [
+          "Consumer Complaint",
+          "Consumer Legal Notice",
+          "Consumer Court Representation",
+          "Consumer Dispute",
+          "Consumer Court Appeal",
+        ],
+      },
     ],
     active: true,
   },
   {
     id: "cat_6",
-    name: "Cyber",
-    code: "CYB",
-    description: "Cybercrime, IT Act offenses, digital fraud, and online privacy",
+    name: "Higher Courts",
+    code: "HCRT",
+    description: "Supreme Court, High Court, writs, SLPs, and tribunal representation",
     subCategories: [
-      "Cyber Crime Complaint",
-      "Online Harassment",
-      "Financial Cyber Fraud",
-      "Data Theft & Privacy",
-      "IT Act Offenses",
-      "Social Media Impersonation",
+      {
+        name: "Armed Forces Tribunal",
+        services: [
+          "AFT Case Filing",
+          "AFT Representation",
+          "Service Matter Appeal",
+          "Armed Forces Legal Consultation",
+        ],
+      },
+      {
+        name: "Supreme Court",
+        services: [
+          "Supreme Court Case Filing",
+          "Supreme Court Representation",
+          "Special Leave Petition (SLP)",
+          "Supreme Court Appeal",
+          "Supreme Court Legal Consultation",
+        ],
+      },
+      {
+        name: "High Court",
+        services: [
+          "High Court Case Filing",
+          "High Court Representation",
+          "Writ Petition",
+          "High Court Appeal",
+          "High Court Bail Application",
+          "High Court Legal Consultation",
+        ],
+      },
     ],
     active: true,
   },
   {
     id: "cat_7",
-    name: "Corporate",
-    code: "CORP",
-    description: "NCLT matters, company law, mergers, and corporate contracts",
+    name: "International Law",
+    code: "INTL",
+    description: "Immigration, cross-border disputes, and NRI legal matters",
     subCategories: [
-      "NCLT Matters",
-      "Company Incorporation",
-      "Insolvency & Bankruptcy (IBC)",
-      "Mergers & Acquisitions",
-      "Shareholder Agreements",
-      "Corporate Due Diligence",
+      {
+        name: "Immigration",
+        services: [
+          "Immigration Consultation",
+          "Visa Legal Assistance",
+          "Immigration Application",
+          "Immigration Appeal",
+          "Immigration Dispute",
+        ],
+      },
+      {
+        name: "International Law",
+        services: [
+          "International Legal Consultation",
+          "Cross Border Dispute",
+          "International Contract Matter",
+          "International Arbitration",
+          "International Litigation",
+        ],
+      },
+      {
+        name: "NRI",
+        services: [
+          "NRI Legal Consultation",
+          "NRI Property Matter",
+          "NRI Family Dispute",
+          "NRI Documentation",
+          "NRI Power of Attorney",
+        ],
+      },
     ],
     active: true,
   },
   {
     id: "cat_8",
-    name: "Labour",
+    name: "Labour & Civil Matters",
     code: "LAB",
-    description: "Industrial disputes, employment contracts, PF, and workplace claims",
+    description: "Employment disputes, service matters, RTI, and civil suits",
     subCategories: [
-      "Industrial Disputes",
-      "Employment Agreements",
-      "Wrongful Termination",
-      "PF & Gratuity Claims",
-      "Workplace Harassment / POSH",
-      "Labour Court Matters",
+      {
+        name: "Labour & Service",
+        services: [
+          "Employment Dispute",
+          "Wrongful Termination Matter",
+          "Salary / Wage Dispute",
+          "Service Matter",
+          "Labour Court Case",
+        ],
+      },
+      {
+        name: "R.T.I",
+        services: ["RTI Application", "RTI Appeal", "RTI Legal Consultation", "RTI Complaint"],
+      },
+      {
+        name: "Civil",
+        services: [
+          "Civil Suit",
+          "Civil Dispute",
+          "Civil Litigation",
+          "Civil Appeal",
+          "Civil Legal Notice",
+        ],
+      },
     ],
     active: true,
   },
   {
     id: "cat_9",
-    name: "Tax",
-    code: "TAX",
-    description: "Direct/indirect tax appeals, GST disputes, and income tax tribunals",
+    name: "Property Law",
+    code: "PROP",
+    description: "Land titles, landlord-tenant, RERA, and real-estate litigation",
     subCategories: [
-      "Income Tax Appeals",
-      "GST Disputes & Filings",
-      "Customs & Central Excise",
-      "Tax Assessment Notices",
-      "Cheque Bounce (Sec 138)",
-      "Debt Recovery Tribunal (DRT)",
+      {
+        name: "Landlord/Tenant",
+        services: [
+          "Landlord / Tenant Dispute",
+          "Rent Agreement",
+          "Eviction Matter",
+          "Rent Recovery",
+          "Tenant Rights Matter",
+          "Landlord Rights Matter",
+        ],
+      },
+      {
+        name: "Property",
+        services: [
+          "Property Dispute",
+          "Property Documentation",
+          "Property Verification",
+          "Property Sale Agreement",
+          "Transfer of Ownership",
+          "Property Registration",
+          "Illegal Possession",
+          "Illegal Construction",
+          "Ancestral Property Dispute",
+        ],
+      },
+      {
+        name: "RERA",
+        services: [
+          "RERA Complaint",
+          "RERA Case Filing",
+          "Builder Delay Case",
+          "Builder Fraud Case",
+          "Property Possession Dispute",
+          "RERA Appeal",
+        ],
+      },
     ],
     active: true,
   },
   {
     id: "cat_10",
+    name: "Cyber",
+    code: "CYB",
+    description: "Cybercrime, IT Act offences, digital fraud, and online privacy",
+    subCategories: [
+      {
+        name: "Cyber Crime Complaint",
+        services: [
+          "File Cyber Crime Complaint",
+          "Cyber Crime FIR Assistance",
+          "Cyber Cell Representation",
+        ],
+      },
+      {
+        name: "Online Harassment",
+        services: [
+          "Online Harassment Complaint",
+          "Stalking / Threats Case",
+          "Takedown Request",
+          "John Doe Injunction",
+        ],
+      },
+      {
+        name: "Financial Cyber Fraud",
+        services: [
+          "UPI / Card Fraud Recovery",
+          "Bank Liability Representation",
+          "Cyber Fraud FIR & Follow-up",
+        ],
+      },
+      {
+        name: "Data Theft & Privacy",
+        services: [
+          "Data Breach Response",
+          "Privacy Violation Notice",
+          "Data Protection Compliance",
+        ],
+      },
+      {
+        name: "IT Act Offenses",
+        services: ["IT Act Case Filing", "IT Act Defense", "IT Act Appeal"],
+      },
+      {
+        name: "Social Media Impersonation",
+        services: [
+          "Impersonation Complaint",
+          "Profile Takedown Request",
+          "Defamation & Impersonation Suit",
+        ],
+      },
+    ],
+    active: true,
+  },
+  {
+    id: "cat_11",
+    name: "Tax",
+    code: "TAX",
+    description: "Direct/indirect tax appeals, GST disputes, and income-tax tribunals",
+    subCategories: [
+      {
+        name: "Income Tax Appeals",
+        services: [
+          "CIT(A) Appeal Filing",
+          "ITAT Representation",
+          "Stay Application",
+          "Rectification Petition",
+        ],
+      },
+      {
+        name: "GST Disputes & Filings",
+        services: ["GST SCN Reply", "GST Appeal", "Input Tax Credit Dispute", "GST Refund Claim"],
+      },
+      {
+        name: "Customs & Central Excise",
+        services: ["Customs SCN Reply", "CESTAT Appeal", "Duty Drawback Matter"],
+      },
+      {
+        name: "Tax Assessment Notices",
+        services: ["Reassessment Notice Reply", "Scrutiny Assessment Support", "Assessment Appeal"],
+      },
+      {
+        name: "Cheque Bounce (Sec 138)",
+        services: ["Statutory Notice", "Section 138 Complaint", "Section 138 Defense"],
+      },
+      {
+        name: "Debt Recovery Tribunal (DRT)",
+        services: ["DRT Application", "SARFAESI Objection", "DRAT Appeal"],
+      },
+    ],
+    active: true,
+  },
+  {
+    id: "cat_12",
     name: "Environmental",
     code: "ENV",
-    description: "NGT proceedings, pollution control violations, and clearances",
+    description: "NGT proceedings, pollution-control violations, and clearances",
     subCategories: [
-      "National Green Tribunal (NGT)",
-      "Pollution Control Board Matters",
-      "Environmental Impact Clearance",
-      "Forest & Wildlife Regulations",
-      "Waste Management Compliance",
+      {
+        name: "National Green Tribunal (NGT)",
+        services: ["NGT Original Application", "NGT Representation", "NGT Appeal"],
+      },
+      {
+        name: "Pollution Control Board Matters",
+        services: ["Consent to Establish / Operate", "Closure Notice Reply", "PCB Appeal"],
+      },
+      {
+        name: "Environmental Impact Clearance",
+        services: [
+          "EIA Clearance Application",
+          "Clearance Condition Compliance",
+          "Clearance Challenge",
+        ],
+      },
+      {
+        name: "Forest & Wildlife Regulations",
+        services: ["Forest Clearance Matter", "Wildlife Permit Matter", "Encroachment Defense"],
+      },
+      {
+        name: "Waste Management Compliance",
+        services: [
+          "Waste Rules Compliance Advice",
+          "Violation Notice Reply",
+          "Remediation Plan Support",
+        ],
+      },
     ],
     active: true,
   },
@@ -1067,7 +1658,7 @@ export const DEFAULT_CITIES: CityItem[] = [
   { id: "city_1", name: "Hyderabad", state: "Telangana", tier: "Tier 1", active: true },
   { id: "city_2", name: "Bengaluru", state: "Karnataka", tier: "Tier 1", active: true },
   { id: "city_3", name: "Mumbai", state: "Maharashtra", tier: "Tier 1", active: true },
-  { id: "city_4", name: "Delhi", state: "Delhi NCR", tier: "Tier 1", active: true },
+  { id: "city_4", name: "New Delhi", state: "Delhi", tier: "Tier 1", active: true },
   { id: "city_5", name: "Chennai", state: "Tamil Nadu", tier: "Tier 1", active: true },
   { id: "city_6", name: "Kolkata", state: "West Bengal", tier: "Tier 1", active: true },
   { id: "city_7", name: "Pune", state: "Maharashtra", tier: "Tier 1", active: true },
@@ -1076,40 +1667,228 @@ export const DEFAULT_CITIES: CityItem[] = [
   { id: "city_10", name: "Vijayawada", state: "Andhra Pradesh", tier: "Tier 2", active: true },
   { id: "city_11", name: "Jaipur", state: "Rajasthan", tier: "Tier 2", active: true },
   { id: "city_12", name: "Lucknow", state: "Uttar Pradesh", tier: "Tier 2", active: true },
-  { id: "city_13", name: "Chandigarh", state: "Punjab & Haryana", tier: "Tier 2", active: true },
+  { id: "city_13", name: "Chandigarh", state: "Chandigarh", tier: "Tier 2", active: true },
   { id: "city_14", name: "Kochi", state: "Kerala", tier: "Tier 2", active: true },
   { id: "city_15", name: "Indore", state: "Madhya Pradesh", tier: "Tier 2", active: true },
 ];
 
 export const DEFAULT_COURTS: CourtItem[] = [
-  { id: "crt_1", name: "Supreme Court of India", level: "Supreme Court", state: "Delhi", city: "New Delhi", active: true },
-  { id: "crt_2", name: "High Court for the State of Telangana", level: "High Court", state: "Telangana", city: "Hyderabad", active: true },
-  { id: "crt_3", name: "High Court of Andhra Pradesh", level: "High Court", state: "Andhra Pradesh", city: "Amaravati", active: true },
-  { id: "crt_4", name: "High Court of Karnataka", level: "High Court", state: "Karnataka", city: "Bengaluru", active: true },
-  { id: "crt_5", name: "Bombay High Court", level: "High Court", state: "Maharashtra", city: "Mumbai", active: true },
-  { id: "crt_6", name: "Delhi High Court", level: "High Court", state: "Delhi", city: "New Delhi", active: true },
-  { id: "crt_7", name: "Madras High Court", level: "High Court", state: "Tamil Nadu", city: "Chennai", active: true },
-  { id: "crt_8", name: "Calcutta High Court", level: "High Court", state: "West Bengal", city: "Kolkata", active: true },
-  { id: "crt_9", name: "City Civil and Sessions Court, Hyderabad", level: "District Court", state: "Telangana", city: "Hyderabad", active: true },
-  { id: "crt_10", name: "City Civil Court, Bengaluru", level: "District Court", state: "Karnataka", city: "Bengaluru", active: true },
-  { id: "crt_11", name: "National Company Law Tribunal (NCLT) Hyderabad", level: "Tribunal", state: "Telangana", city: "Hyderabad", active: true },
-  { id: "crt_12", name: "National Green Tribunal (NGT) Southern Zone", level: "Tribunal", state: "Tamil Nadu", city: "Chennai", active: true },
-  { id: "crt_13", name: "Central Administrative Tribunal (CAT) Hyderabad", level: "Tribunal", state: "Telangana", city: "Hyderabad", active: true },
+  {
+    id: "crt_1",
+    name: "Supreme Court of India",
+    level: "Supreme Court",
+    state: "Delhi",
+    city: "New Delhi",
+    active: true,
+  },
+  {
+    id: "crt_2",
+    name: "High Court for the State of Telangana",
+    level: "High Court",
+    state: "Telangana",
+    city: "Hyderabad",
+    active: true,
+  },
+  {
+    id: "crt_3",
+    name: "High Court of Andhra Pradesh",
+    level: "High Court",
+    state: "Andhra Pradesh",
+    city: "Amaravati",
+    active: true,
+  },
+  {
+    id: "crt_4",
+    name: "High Court of Karnataka",
+    level: "High Court",
+    state: "Karnataka",
+    city: "Bengaluru",
+    active: true,
+  },
+  {
+    id: "crt_5",
+    name: "Bombay High Court",
+    level: "High Court",
+    state: "Maharashtra",
+    city: "Mumbai",
+    active: true,
+  },
+  {
+    id: "crt_6",
+    name: "Delhi High Court",
+    level: "High Court",
+    state: "Delhi",
+    city: "New Delhi",
+    active: true,
+  },
+  {
+    id: "crt_7",
+    name: "Madras High Court",
+    level: "High Court",
+    state: "Tamil Nadu",
+    city: "Chennai",
+    active: true,
+  },
+  {
+    id: "crt_8",
+    name: "Calcutta High Court",
+    level: "High Court",
+    state: "West Bengal",
+    city: "Kolkata",
+    active: true,
+  },
+  {
+    id: "crt_9",
+    name: "City Civil and Sessions Court, Hyderabad",
+    level: "District Court",
+    state: "Telangana",
+    city: "Hyderabad",
+    active: true,
+  },
+  {
+    id: "crt_10",
+    name: "City Civil Court, Bengaluru",
+    level: "District Court",
+    state: "Karnataka",
+    city: "Bengaluru",
+    active: true,
+  },
+  {
+    id: "crt_11",
+    name: "National Company Law Tribunal (NCLT) Hyderabad",
+    level: "Tribunal",
+    state: "Telangana",
+    city: "Hyderabad",
+    active: true,
+  },
+  {
+    id: "crt_12",
+    name: "National Green Tribunal (NGT) Southern Zone",
+    level: "Tribunal",
+    state: "Tamil Nadu",
+    city: "Chennai",
+    active: true,
+  },
+  {
+    id: "crt_13",
+    name: "Central Administrative Tribunal (CAT) Hyderabad",
+    level: "Tribunal",
+    state: "Telangana",
+    city: "Hyderabad",
+    active: true,
+  },
+];
+
+export const DEFAULT_STATES: StateItem[] = [
+  { id: "st_1", name: "Andhra Pradesh", code: "AP", active: true },
+  { id: "st_2", name: "Arunachal Pradesh", code: "AR", active: true },
+  { id: "st_3", name: "Assam", code: "AS", active: true },
+  { id: "st_4", name: "Bihar", code: "BR", active: true },
+  { id: "st_5", name: "Chhattisgarh", code: "CG", active: true },
+  { id: "st_6", name: "Goa", code: "GA", active: true },
+  { id: "st_7", name: "Gujarat", code: "GJ", active: true },
+  { id: "st_8", name: "Haryana", code: "HR", active: true },
+  { id: "st_9", name: "Himachal Pradesh", code: "HP", active: true },
+  { id: "st_10", name: "Jharkhand", code: "JH", active: true },
+  { id: "st_11", name: "Karnataka", code: "KA", active: true },
+  { id: "st_12", name: "Kerala", code: "KL", active: true },
+  { id: "st_13", name: "Madhya Pradesh", code: "MP", active: true },
+  { id: "st_14", name: "Maharashtra", code: "MH", active: true },
+  { id: "st_15", name: "Manipur", code: "MN", active: true },
+  { id: "st_16", name: "Meghalaya", code: "ML", active: true },
+  { id: "st_17", name: "Mizoram", code: "MZ", active: true },
+  { id: "st_18", name: "Nagaland", code: "NL", active: true },
+  { id: "st_19", name: "Odisha", code: "OD", active: true },
+  { id: "st_20", name: "Punjab", code: "PB", active: true },
+  { id: "st_21", name: "Rajasthan", code: "RJ", active: true },
+  { id: "st_22", name: "Sikkim", code: "SK", active: true },
+  { id: "st_23", name: "Tamil Nadu", code: "TN", active: true },
+  { id: "st_24", name: "Telangana", code: "TS", active: true },
+  { id: "st_25", name: "Tripura", code: "TR", active: true },
+  { id: "st_26", name: "Uttar Pradesh", code: "UP", active: true },
+  { id: "st_27", name: "Uttarakhand", code: "UK", active: true },
+  { id: "st_28", name: "West Bengal", code: "WB", active: true },
+  { id: "st_29", name: "Andaman & Nicobar Islands", code: "AN", active: true },
+  { id: "st_30", name: "Chandigarh", code: "CH", active: true },
+  { id: "st_31", name: "Dadra & Nagar Haveli and Daman & Diu", code: "DN", active: true },
+  { id: "st_32", name: "Delhi", code: "DL", active: true },
+  { id: "st_33", name: "Jammu & Kashmir", code: "JK", active: true },
+  { id: "st_34", name: "Ladakh", code: "LA", active: true },
+  { id: "st_35", name: "Lakshadweep", code: "LD", active: true },
+  { id: "st_36", name: "Puducherry", code: "PY", active: true },
+];
+
+export const DEFAULT_COURT_LEVELS: CourtLevelItem[] = [
+  { id: "clv_1", name: "Supreme Court", code: "SC", active: true },
+  { id: "clv_2", name: "High Court", code: "HC", active: true },
+  { id: "clv_3", name: "District Court", code: "DC", active: true },
+  { id: "clv_4", name: "Tribunal", code: "TRB", active: true },
+  { id: "clv_5", name: "Consumer Commission", code: "CDRC", active: true },
+  { id: "clv_6", name: "Family Court", code: "FC", active: true },
+  { id: "clv_7", name: "Labour Court", code: "LC", active: true },
 ];
 
 // --- Case Categories CRUD ---
+
+/** Normalize a stored `subCategories` value to the tier-2/tier-3 shape.
+ * Tolerates the pre-v3 `string[]` form and stray malformed entries. */
+function normalizeSubCategories(raw: unknown): CaseSubCategoryItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((entry): CaseSubCategoryItem | null => {
+      if (typeof entry === "string") {
+        return entry.trim() ? { name: entry.trim(), services: [] } : null;
+      }
+      if (entry && typeof entry === "object") {
+        const name = String((entry as { name?: unknown }).name ?? "").trim();
+        if (!name) return null;
+        const svc = (entry as { services?: unknown }).services;
+        const services = Array.isArray(svc) ? svc.map((x) => String(x).trim()).filter(Boolean) : [];
+        return { name, services };
+      }
+      return null;
+    })
+    .filter((x): x is CaseSubCategoryItem => x !== null);
+}
+
 export function getCaseCategories(): CaseCategoryItem[] {
   const loaded = load<CaseCategoryItem[]>(CASE_CATEGORIES_KEY, DEFAULT_CASE_CATEGORIES);
   let changed = false;
   const hydrated = loaded.map((cat) => {
-    if (!cat.subCategories || cat.subCategories.length === 0) {
+    const normalized = normalizeSubCategories(cat.subCategories);
+
+    // Back-fill an empty sub-category list from the matching default (covers
+    // rows migrated from a shape that had no sub-categories).
+    if (normalized.length === 0) {
       const match = DEFAULT_CASE_CATEGORIES.find(
-        (d) => d.name.toLowerCase() === cat.name.toLowerCase() || d.code === cat.code
+        (d) => d.name.toLowerCase() === cat.name.toLowerCase() || d.code === cat.code,
       );
-      if (match?.subCategories && match.subCategories.length > 0) {
+      if (match?.subCategories?.length) {
         changed = true;
         return { ...cat, subCategories: match.subCategories };
       }
+    }
+
+    // If a migrated sub-category lost its services, restore them from the
+    // matching default sub-category by name.
+    const defMatch = DEFAULT_CASE_CATEGORIES.find(
+      (d) => d.name.toLowerCase() === cat.name.toLowerCase() || d.code === cat.code,
+    );
+    const withServices = normalized.map((sc) => {
+      if (sc.services.length > 0) return sc;
+      const defSc = defMatch?.subCategories?.find(
+        (d) => d.name.toLowerCase() === sc.name.toLowerCase(),
+      );
+      if (defSc?.services.length) {
+        changed = true;
+        return { ...sc, services: [...defSc.services] };
+      }
+      return sc;
+    });
+
+    if (changed || JSON.stringify(withServices) !== JSON.stringify(cat.subCategories ?? [])) {
+      changed = true;
+      return { ...cat, subCategories: withServices };
     }
     return cat;
   });
@@ -1119,7 +1898,27 @@ export function getCaseCategories(): CaseCategoryItem[] {
   return hydrated;
 }
 
-export function saveCaseCategory(item: Omit<CaseCategoryItem, "id"> & { id?: string }): CaseCategoryItem {
+/** Public "Find a Lawyer" taxonomy view, derived from the active managed
+ * categories. Same shape the mega-menu / pickers have always consumed:
+ * `{ category, case_types: [{ case_type, legal_services }] }`. */
+export function getPracticeAreaTree(): {
+  category: string;
+  case_types: { case_type: string; legal_services: string[] }[];
+}[] {
+  return getCaseCategories()
+    .filter((c) => c.active)
+    .map((c) => ({
+      category: c.name,
+      case_types: normalizeSubCategories(c.subCategories).map((sc) => ({
+        case_type: sc.name,
+        legal_services: sc.services,
+      })),
+    }));
+}
+
+export function saveCaseCategory(
+  item: Omit<CaseCategoryItem, "id"> & { id?: string },
+): CaseCategoryItem {
   const current = getCaseCategories();
   const now = new Date().toISOString().slice(0, 10);
   let saved: CaseCategoryItem;
@@ -1254,10 +2053,81 @@ export function deleteCourt(id: string): boolean {
   return false;
 }
 
+// --- States CRUD ---
+export function getStates(): StateItem[] {
+  return load<StateItem[]>(STATES_KEY, DEFAULT_STATES);
+}
+
+export function saveState(item: Omit<StateItem, "id"> & { id?: string }): StateItem {
+  const current = getStates();
+  const now = new Date().toISOString().slice(0, 10);
+  let saved: StateItem;
+
+  if (item.id && current.some((s) => s.id === item.id)) {
+    saved = { ...item, id: item.id, updatedAt: now } as StateItem;
+    const next = current.map((s) => (s.id === item.id ? saved : s));
+    save(STATES_KEY, next);
+  } else {
+    saved = {
+      ...item,
+      id: item.id || `st_${Date.now()}`,
+      updatedAt: now,
+    } as StateItem;
+    save(STATES_KEY, [saved, ...current]);
+  }
+  return saved;
+}
+
+export function deleteState(id: string): boolean {
+  const current = getStates();
+  const filtered = current.filter((s) => s.id !== id);
+  if (filtered.length !== current.length) {
+    save(STATES_KEY, filtered);
+    return true;
+  }
+  return false;
+}
+
+// --- Court Levels CRUD ---
+export function getCourtLevels(): CourtLevelItem[] {
+  return load<CourtLevelItem[]>(COURT_LEVELS_KEY, DEFAULT_COURT_LEVELS);
+}
+
+export function saveCourtLevel(item: Omit<CourtLevelItem, "id"> & { id?: string }): CourtLevelItem {
+  const current = getCourtLevels();
+  const now = new Date().toISOString().slice(0, 10);
+  let saved: CourtLevelItem;
+
+  if (item.id && current.some((l) => l.id === item.id)) {
+    saved = { ...item, id: item.id, updatedAt: now } as CourtLevelItem;
+    const next = current.map((l) => (l.id === item.id ? saved : l));
+    save(COURT_LEVELS_KEY, next);
+  } else {
+    saved = {
+      ...item,
+      id: item.id || `clv_${Date.now()}`,
+      updatedAt: now,
+    } as CourtLevelItem;
+    save(COURT_LEVELS_KEY, [saved, ...current]);
+  }
+  return saved;
+}
+
+export function deleteCourtLevel(id: string): boolean {
+  const current = getCourtLevels();
+  const filtered = current.filter((l) => l.id !== id);
+  if (filtered.length !== current.length) {
+    save(COURT_LEVELS_KEY, filtered);
+    return true;
+  }
+  return false;
+}
+
 export function resetDataManagementToDefaults() {
   save(CASE_CATEGORIES_KEY, DEFAULT_CASE_CATEGORIES);
   save(LANGUAGES_KEY, DEFAULT_LANGUAGES);
   save(CITIES_KEY, DEFAULT_CITIES);
   save(COURTS_KEY, DEFAULT_COURTS);
+  save(STATES_KEY, DEFAULT_STATES);
+  save(COURT_LEVELS_KEY, DEFAULT_COURT_LEVELS);
 }
-

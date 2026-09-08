@@ -102,13 +102,17 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
   );
 
   // ID Proof File
-  const [idProofFileName, setIdProofFileName] = useState(lawyer.idProofFileName || (lawyer.idProofUrl ? "ID_Proof_Verified.pdf" : ""));
+  const [idProofFileName, setIdProofFileName] = useState(
+    lawyer.idProofFileName || (lawyer.idProofUrl ? "ID_Proof_Verified.pdf" : ""),
+  );
   const [idProofUrl, setIdProofUrl] = useState(lawyer.idProofUrl || "");
   const idProofInputRef = useRef<HTMLInputElement>(null);
 
   // Languages & Courts
   const [languages, setLanguages] = useState<string[]>(lawyer.languages || ["English", "Telugu"]);
-  const [courts, setCourts] = useState<string[]>(lawyer.courts || ["High Court of Telangana", "District & Sessions Court, Visakhapatnam"]);
+  const [courts, setCourts] = useState<string[]>(
+    lawyer.courts || ["High Court of Telangana", "District & Sessions Court, Visakhapatnam"],
+  );
 
   // Awards
   const [awards, setAwards] = useState<LawyerAward[]>(lawyer.awards || []);
@@ -206,8 +210,8 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
       selectedServicesMulti.length > 0
         ? selectedServicesMulti
         : availableLegalServices.length > 0
-        ? [availableLegalServices[0]]
-        : ["General Practice"];
+          ? [availableLegalServices[0]]
+          : ["General Practice"];
 
     setSelectedPracticeEntries((prev) => {
       const next = [...prev];
@@ -255,7 +259,9 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
         },
         () => {
           setCurrentLocation((prev) =>
-            prev.includes("Visakhapatnam") ? "Hyderabad, Telangana" : "Visakhapatnam, Andhra Pradesh",
+            prev.includes("Visakhapatnam")
+              ? "Hyderabad, Telangana"
+              : "Visakhapatnam, Andhra Pradesh",
           );
           setIsLocating(false);
         },
@@ -270,7 +276,10 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
   const handleAddAward = () => {
     const t = awardTitle.trim();
     if (!t) return;
-    setAwards((prev) => [...prev, { title: t, year: awardYear.trim() || new Date().getFullYear().toString() }]);
+    setAwards((prev) => [
+      ...prev,
+      { title: t, year: awardYear.trim() || new Date().getFullYear().toString() },
+    ]);
     setAwardTitle("");
     setAwardYear("");
   };
@@ -290,11 +299,13 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
 
     const primaryPractice = selectedPracticeEntries[0]?.practiceArea || "Civil Law";
     const category = mapPracticeAreaToCategory(primaryPractice);
-    const specializations = Array.from(new Set(selectedPracticeEntries.map((pe) => pe.specialization)));
-    const legalServices = Array.from(new Set(selectedPracticeEntries.map((pe) => pe.legalService)));
-    const practiceAreas = Array.from(new Set(selectedPracticeEntries.map((pe) => pe.practiceArea))).map(
-      (name, i) => ({ name, proficiency: Math.max(65, 95 - i * 5) }),
+    const specializations = Array.from(
+      new Set(selectedPracticeEntries.map((pe) => pe.specialization)),
     );
+    const legalServices = Array.from(new Set(selectedPracticeEntries.map((pe) => pe.legalService)));
+    const practiceAreas = Array.from(
+      new Set(selectedPracticeEntries.map((pe) => pe.practiceArea)),
+    ).map((name, i) => ({ name, proficiency: Math.max(65, 95 - i * 5) }));
 
     updateLawyerProfile(lawyer.id, {
       name,
@@ -322,17 +333,18 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
       ...(bankDetailsLocked
         ? {}
         : {
-            bankName: bankName.trim(),
-            accountNumber: accountNumber.trim(),
-            ifscCode: ifscCode.trim().toUpperCase(),
-          }),
+          bankName: bankName.trim(),
+          accountNumber: accountNumber.trim(),
+          ifscCode: ifscCode.trim().toUpperCase(),
+        }),
     });
 
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
 
-  const isFirm = roleTitle.toLowerCase().includes("firm") || roleTitle.toLowerCase().includes("organisation");
+  const isFirm =
+    roleTitle.toLowerCase().includes("firm") || roleTitle.toLowerCase().includes("organisation");
 
   return (
     <div className="space-y-6 pb-12">
@@ -373,22 +385,20 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
                 <button
                   type="button"
                   onClick={() => setRoleTitle("Advocate")}
-                  className={`px-3 py-1 text-xs font-semibold rounded-full border transition-all cursor-pointer ${
-                    !isFirm
+                  className={`px-3 py-1 text-xs font-semibold rounded-full border transition-all cursor-pointer ${!isFirm
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border/60 bg-muted/50 text-muted-foreground hover:bg-muted"
-                  }`}
+                    }`}
                 >
                   Individual Lawyer
                 </button>
                 <button
                   type="button"
                   onClick={() => setRoleTitle("Law Firm / Organisation")}
-                  className={`px-3 py-1 text-xs font-semibold rounded-full border transition-all cursor-pointer ${
-                    isFirm
+                  className={`px-3 py-1 text-xs font-semibold rounded-full border transition-all cursor-pointer ${isFirm
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border/60 bg-muted/50 text-muted-foreground hover:bg-muted"
-                  }`}
+                    }`}
                 >
                   Law Firm / Organisation
                 </button>
@@ -425,18 +435,18 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
               <IndianRupee className="h-4 w-4 text-primary" /> Availability & Consultation Pricing
             </h3>
             <span
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
-                availabilityStatus === "Active"
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${availabilityStatus === "Active"
                   ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                   : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
-              }`}
+                }`}
             >
               <span
-                className={`h-2 w-2 rounded-full ${
-                  availabilityStatus === "Active" ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
-                }`}
+                className={`h-2 w-2 rounded-full ${availabilityStatus === "Active" ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                  }`}
               />
-              {availabilityStatus === "Active" ? "Active for Consultations" : "Inactive / Out of Office"}
+              {availabilityStatus === "Active"
+                ? "Active for Consultations"
+                : "Inactive / Out of Office"}
             </span>
           </div>
 
@@ -452,11 +462,10 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
                   onClick={() => {
                     if (availabilityStatus !== "Active") setPendingStatus("Active");
                   }}
-                  className={`flex items-center justify-center gap-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-                    availabilityStatus === "Active"
+                  className={`flex items-center justify-center gap-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${availabilityStatus === "Active"
                       ? "bg-surface text-emerald-600 dark:text-emerald-400 shadow-xs border border-emerald-500/30"
                       : "text-muted-foreground hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   <span className="h-2 w-2 rounded-full bg-emerald-500" />
                   Active
@@ -466,18 +475,18 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
                   onClick={() => {
                     if (availabilityStatus !== "Inactive") setPendingStatus("Inactive");
                   }}
-                  className={`flex items-center justify-center gap-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-                    availabilityStatus === "Inactive"
+                  className={`flex items-center justify-center gap-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${availabilityStatus === "Inactive"
                       ? "bg-surface text-amber-600 dark:text-amber-400 shadow-xs border border-amber-500/30"
                       : "text-muted-foreground hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   <span className="h-2 w-2 rounded-full bg-amber-500" />
                   Inactive
                 </button>
               </div>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                When set to <strong>Active</strong>, your advocate profile will be listed in citizen law hub search results for case assignments.
+                When set to <strong>Active</strong>, your advocate profile will be listed in citizen
+                law hub search results for case assignments.
               </p>
             </div>
 
@@ -496,7 +505,8 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
                 className="w-full font-mono font-bold"
               />
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                This fee will be displayed to citizens picking an advocate during case filing, and the final payment amount will update accordingly.
+                This fee will be displayed to citizens picking an advocate during case filing, and
+                the final payment amount will update accordingly.
               </p>
             </div>
           </div>
@@ -676,7 +686,9 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
                   </IconButton>
                 </div>
               ) : (
-                <span className="text-xs text-muted-foreground">Aadhaar, Bar ID, or PAN (PDF/JPG up to 5MB)</span>
+                <span className="text-xs text-muted-foreground">
+                  Aadhaar, Bar ID, or PAN (PDF/JPG up to 5MB)
+                </span>
               )}
             </div>
             <input
@@ -691,12 +703,21 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
 
         {/* Multi-Tier Practice Areas & Legal Services */}
         <div className="space-y-4 rounded-2xl border border-border/80 bg-surface/95 p-5 shadow-2xs sm:p-6">
-          <div className="border-b border-border/60 pb-3">
+          <div className="flex items-center justify-between border-b border-border/60 pb-3">
             <h3 className="text-sm font-bold text-foreground uppercase tracking-wide flex items-center gap-2">
               <Briefcase className="h-4 w-4 text-primary" /> Practice Areas & Legal Services
             </h3>
+              <Button
+              type="button"
+              variant="filled"
+              icon={<Plus className="h-3.5 w-3.5" />}
+              onClick={handleAddPracticeEntries}
+              className="justify-self-end shadow-xs"
+            >
+              Add to Active Practice Areas
+            </Button>
           </div>
-
+          
           <div className="grid grid-cols-1 gap-3">
             <Select
               label="Practice Area"
@@ -763,16 +784,6 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
                 </div>
               </div>
             )}
-
-            <Button
-              type="button"
-              variant="filled"
-              icon={<Plus className="h-3.5 w-3.5" />}
-              onClick={handleAddPracticeEntries}
-              className="w-full shadow-xs"
-            >
-              Add to Active Practice Areas
-            </Button>
 
             {practiceError && (
               <p className="text-xs font-medium text-destructive">{practiceError}</p>
@@ -908,8 +919,7 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
                   className="flex items-center justify-between gap-2 rounded-xl border border-border/60 bg-muted/30 px-3.5 py-2 text-xs"
                 >
                   <span className="font-semibold text-foreground">
-                    {a.title}{" "}
-                    <span className="font-normal text-muted-foreground">({a.year})</span>
+                    {a.title} <span className="font-normal text-muted-foreground">({a.year})</span>
                   </span>
                   <IconButton
                     onClick={() => setAwards((prev) => prev.filter((_, x) => x !== i))}
@@ -1001,9 +1011,7 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
               ? "Setting your profile to Inactive will temporarily hide you from citizen law hub search results and pause new case assignments until you reactivate."
               : "Activating your profile will make you visible in citizen law hub search results for immediate case assignments."
           }
-          confirmLabel={
-            pendingStatus === "Inactive" ? "Set Inactive" : "Reactivate Profile"
-          }
+          confirmLabel={pendingStatus === "Inactive" ? "Set Inactive" : "Reactivate Profile"}
           cancelLabel="Cancel"
           variant="warning"
           onConfirm={() => {

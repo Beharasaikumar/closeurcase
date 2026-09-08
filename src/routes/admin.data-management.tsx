@@ -1,21 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/app/PageHeader";
-import { CardPagination } from "@/components/app/CardPagination";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
-import { SegmentedControl } from "@/components/app/SegmentedControl";
 import {
   Card,
+  Divider,
   TextField,
+  Select,
   Button,
   IconButton,
-  Dialog,
-  DialogHeader,
-  DialogTitle,
-  DialogContent,
-  DialogFooter,
-  Switch,
+  InputChip,
+  Tabs,
 } from "@/components/m3";
+import { Toggle } from "@/components/app/Toggle";
 import {
   getCaseCategories,
   saveCaseCategory,
@@ -29,6 +26,12 @@ import {
   getCourts,
   saveCourt,
   deleteCourt,
+  getStates,
+  saveState,
+  deleteState,
+  getCourtLevels,
+  saveCourtLevel,
+  deleteCourtLevel,
   subscribeToStore,
   resetDataManagementToDefaults,
 } from "@/data/appStore";
@@ -37,1045 +40,924 @@ import type {
   LanguageItem,
   CityItem,
   CourtItem,
+  StateItem,
+  CourtLevelItem,
 } from "@/types";
-import {
-  Folder,
-  Languages,
-  Building2,
-  Scale,
-  Plus,
-  Pencil,
-  Trash2,
-  Search,
-  RotateCcw,
-  CheckCircle2,
-  XCircle,
-  MapPin,
-  FileText,
-  ChevronDown,
-  X,
-  Tag,
-} from "lucide-react";
+import { Plus, Pencil, Trash2, Search, X, Check } from "lucide-react";
 
 export const Route = createFileRoute("/admin/data-management")({
   head: () => ({ meta: [{ title: "Data Management — CloseUrCase Admin" }] }),
   component: AdminDataManagementPage,
 });
 
-type TabType = "categories" | "languages" | "cities" | "courts";
+type TabType = "categories" | "languages" | "states" | "cities" | "courts" | "courtLevels";
 
-const COURT_LEVEL_OPTIONS = [
-  { value: "Supreme Court", label: "Supreme Court" },
-  { value: "High Court", label: "High Court" },
-  { value: "District Court", label: "District Court" },
-  { value: "Tribunal", label: "Tribunal" },
-];
+/* ────────────────────────────────────────────────────────────────────────────
+ * A row of master data is edited in place, not in a modal. Each entity type
+ * declares its fields, how a collapsed row reads, and which fields the search
+ * box matches — everything else (list, row, inline editor) is generic.
+ * ──────────────────────────────────────────────────────────────────────────── */
 
-const CITY_TIER_OPTIONS = [
+type FieldKind = "text" | "select" | "chips" | "tree";
+
+interface FieldDef {
+  key: string;
+  label: string;
+  /** "chips" — a flat string[] editor. "tree" — a two-level editor of
+   * `{ name, services: string[] }[]` (sub-category → legal services). */
+  kind: FieldKind;
+  required?: boolean;
+  /** For kind === "select". */
+  options?: { value: string; label: string }[];
+  /** Uppercase + trim on save (codes). */
+  upper?: boolean;
+  placeholder?: string;
+}
+
+type SubCat = { name: string; services: string[] };
+const subCats = (v: unknown): SubCat[] =>
+  Array.isArray(v)
+    ? v
+      .map((e) =>
+        typeof e === "string"
+          ? { name: e, services: [] }
+          : e && typeof e === "object"
+            ? {
+              name: String((e as SubCat).name ?? ""),
+              services: Array.isArray((e as SubCat).services)
+                ? (e as SubCat).services.map(String)
+                : [],
+            }
+            : { name: "", services: [] },
+      )
+      .filter((e) => e.name)
+    : [];
+
+/** Every entity is handled through this loose shape — the config functions
+ * below narrow each one back to its real type at the call site. */
+type Row = { id: string; active: boolean;[key: string]: unknown };
+
+interface EntityConfig {
+  singular: string;
+  plural: string;
+  get: () => Row[];
+  save: (item: Record<string, unknown> & { active: boolean }) => void;
+  remove: (id: string) => void;
+  fields: FieldDef[];
+  /** Blank form values for a new row. */
+  empty: Record<string, unknown>;
+  /** Collapsed-row title. */
+  primary: (item: Row) => string;
+  /** Collapsed-row muted subtitle. */
+  secondary: (item: Row) => string;
+  /** Lowercased haystack for the search box. */
+  haystack: (item: Row) => string;
+}
+
+const CITY_TIERS = [
   { value: "Tier 1", label: "Tier 1" },
   { value: "Tier 2", label: "Tier 2" },
   { value: "Tier 3", label: "Tier 3" },
 ];
 
-export function AdminDataManagementPage() {
-  const [activeTab, setActiveTab] = useState<TabType>("categories");
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
-  const [courtLevelFilter, setCourtLevelFilter] = useState<string>("all");
+const s = (v: unknown) => String(v ?? "");
+const list = (v: unknown) => (Array.isArray(v) ? (v as string[]) : []);
 
-  // Pagination states
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(9);
+const CONFIG: Record<TabType, EntityConfig> = {
+  categories: {
+    singular: "Category",
+    plural: "categories",
+    get: getCaseCategories as unknown as () => Row[],
+    save: (i) => saveCaseCategory(i as Omit<CaseCategoryItem, "id"> & { id?: string }),
+    remove: deleteCaseCategory,
+    fields: [
+      {
+        key: "name",
+        label: "Name",
+        kind: "text",
+        required: true,
+        placeholder: "e.g. Intellectual Property",
+      },
+      {
+        key: "code",
+        label: "Code",
+        kind: "text",
+        required: true,
+        upper: true,
+        placeholder: "e.g. IP",
+      },
+      { key: "description", label: "Description", kind: "text", placeholder: "Short summary" },
+      { key: "subCategories", label: "Sub-categories & legal services", kind: "tree" },
+    ],
+    empty: { name: "", code: "", description: "", subCategories: [] },
+    primary: (i) => s(i.name),
+    secondary: (i) => {
+      const sc = subCats(i.subCategories);
+      const svc = sc.reduce((n, x) => n + x.services.length, 0);
+      return `${s(i.code)} · ${sc.length} sub-categories · ${svc} services`;
+    },
+    haystack: (i) =>
+      [
+        s(i.name),
+        s(i.code),
+        s(i.description),
+        ...subCats(i.subCategories).flatMap((x) => [x.name, ...x.services]),
+      ]
+        .join(" ")
+        .toLowerCase(),
+  },
+  languages: {
+    singular: "Language",
+    plural: "languages",
+    get: getLanguages as unknown as () => Row[],
+    save: (i) => saveLanguage(i as Omit<LanguageItem, "id"> & { id?: string }),
+    remove: deleteLanguage,
+    fields: [
+      {
+        key: "name",
+        label: "Name (English)",
+        kind: "text",
+        required: true,
+        placeholder: "e.g. French",
+      },
+      { key: "nativeName", label: "Native script", kind: "text", placeholder: "e.g. Français" },
+      {
+        key: "code",
+        label: "ISO code",
+        kind: "text",
+        required: true,
+        upper: true,
+        placeholder: "e.g. FR",
+      },
+    ],
+    empty: { name: "", nativeName: "", code: "" },
+    primary: (i) => s(i.name),
+    secondary: (i) => `${s(i.nativeName) || "—"} · ${s(i.code)}`,
+    haystack: (i) => [s(i.name), s(i.nativeName), s(i.code)].join(" ").toLowerCase(),
+  },
+  states: {
+    singular: "State",
+    plural: "states",
+    get: getStates as unknown as () => Row[],
+    save: (i) => saveState(i as Omit<StateItem, "id"> & { id?: string }),
+    remove: deleteState,
+    fields: [
+      {
+        key: "name",
+        label: "State / UT",
+        kind: "text",
+        required: true,
+        placeholder: "e.g. Telangana",
+      },
+      {
+        key: "code",
+        label: "Code",
+        kind: "text",
+        required: true,
+        upper: true,
+        placeholder: "e.g. TS",
+      },
+    ],
+    empty: { name: "", code: "" },
+    primary: (i) => s(i.name),
+    secondary: (i) => s(i.code),
+    haystack: (i) => [s(i.name), s(i.code)].join(" ").toLowerCase(),
+  },
+  cities: {
+    singular: "City",
+    plural: "cities",
+    get: getCities as unknown as () => Row[],
+    save: (i) => saveCity(i as Omit<CityItem, "id"> & { id?: string }),
+    remove: deleteCity,
+    fields: [
+      {
+        key: "name",
+        label: "City",
+        kind: "text",
+        required: true,
+        placeholder: "e.g. Visakhapatnam",
+      },
+      // options filled dynamically from the active States list at render time
+      { key: "state", label: "State / UT", kind: "select", required: true, options: [] },
+      { key: "tier", label: "Tier", kind: "select", options: CITY_TIERS },
+    ],
+    empty: { name: "", state: "", tier: "Tier 1" },
+    primary: (i) => s(i.name),
+    secondary: (i) => `${s(i.state)} · ${s(i.tier)}`,
+    haystack: (i) => [s(i.name), s(i.state), s(i.tier)].join(" ").toLowerCase(),
+  },
+  courts: {
+    singular: "Court",
+    plural: "courts",
+    get: getCourts as unknown as () => Row[],
+    save: (i) => saveCourt(i as Omit<CourtItem, "id"> & { id?: string }),
+    remove: deleteCourt,
+    fields: [
+      {
+        key: "name",
+        label: "Court name",
+        kind: "text",
+        required: true,
+        placeholder: "e.g. High Court of Judicature",
+      },
+      // options filled dynamically from the active Court Levels list
+      { key: "level", label: "Level", kind: "select", required: true, options: [] },
+      // options filled dynamically from the active States list
+      { key: "state", label: "State / UT", kind: "select", required: true, options: [] },
+      { key: "city", label: "City (optional)", kind: "text", placeholder: "e.g. Hyderabad" },
+    ],
+    empty: { name: "", level: "", state: "", city: "" },
+    primary: (i) => s(i.name),
+    secondary: (i) => [s(i.level), s(i.city), s(i.state)].filter(Boolean).join(" · "),
+    haystack: (i) => [s(i.name), s(i.level), s(i.state), s(i.city)].join(" ").toLowerCase(),
+  },
+  courtLevels: {
+    singular: "Court Level",
+    plural: "court levels",
+    get: getCourtLevels as unknown as () => Row[],
+    save: (i) => saveCourtLevel(i as Omit<CourtLevelItem, "id"> & { id?: string }),
+    remove: deleteCourtLevel,
+    fields: [
+      {
+        key: "name",
+        label: "Level name",
+        kind: "text",
+        required: true,
+        placeholder: "e.g. High Court",
+      },
+      {
+        key: "code",
+        label: "Code",
+        kind: "text",
+        required: true,
+        upper: true,
+        placeholder: "e.g. HC",
+      },
+    ],
+    empty: { name: "", code: "" },
+    primary: (i) => s(i.name),
+    secondary: (i) => s(i.code),
+    haystack: (i) => [s(i.name), s(i.code)].join(" ").toLowerCase(),
+  },
+};
 
-  // Store data states
-  const [categories, setCategories] = useState<CaseCategoryItem[]>(getCaseCategories);
-  const [languages, setLanguages] = useState<LanguageItem[]>(getLanguages);
-  const [cities, setCities] = useState<CityItem[]>(getCities);
-  const [courts, setCourts] = useState<CourtItem[]>(getCourts);
+const NEW_ROW_ID = "__new__";
 
-  // Sync with store changes
-  useEffect(() => {
-    const sync = () => {
-      setCategories(getCaseCategories());
-      setLanguages(getLanguages());
-      setCities(getCities());
-      setCourts(getCourts());
-    };
-    return subscribeToStore(sync);
-  }, []);
+/* ── Tier-2/tier-3 editor: sub-categories, each with a legal-services list ──── */
+function SubCategoryTree({
+  value,
+  onChange,
+}: {
+  value: SubCat[];
+  onChange: (next: SubCat[]) => void;
+}) {
+  const [newSub, setNewSub] = useState("");
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+  const [svcDraft, setSvcDraft] = useState("");
 
-  // Reset page when tab, search, or filters change
-  useEffect(() => {
-    setPage(1);
-  }, [activeTab, search, statusFilter, courtLevelFilter]);
-
-  // Modal / Form state
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-
-  // Category Form State
-  const [catName, setCatName] = useState("");
-  const [catCode, setCatCode] = useState("");
-  const [catDesc, setCatDesc] = useState("");
-  const [catSubCategories, setCatSubCategories] = useState<string[]>([]);
-  const [newSubCategoryInput, setNewSubCategoryInput] = useState("");
-  const [catActive, setCatActive] = useState(true);
-
-  // Sub-category handlers
-  const handleAddSubCategory = (value?: string) => {
-    const val = (value !== undefined ? value : newSubCategoryInput).trim();
-    if (!val) return;
-    if (!catSubCategories.some((s) => s.toLowerCase() === val.toLowerCase())) {
-      setCatSubCategories((prev) => [...prev, val]);
+  const addSub = () => {
+    const name = newSub.trim();
+    if (!name) return;
+    if (!value.some((sc) => sc.name.toLowerCase() === name.toLowerCase())) {
+      onChange([...value, { name, services: [] }]);
+      setOpenIdx(value.length);
     }
-    setNewSubCategoryInput("");
+    setNewSub("");
   };
 
-  const handleRemoveSubCategory = (indexToRemove: number) => {
-    setCatSubCategories((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  const renameSub = (idx: number, name: string) =>
+    onChange(value.map((sc, i) => (i === idx ? { ...sc, name } : sc)));
+
+  const removeSub = (idx: number) => {
+    onChange(value.filter((_, i) => i !== idx));
+    if (openIdx === idx) setOpenIdx(null);
   };
 
-  // Language Form State
-  const [langName, setLangName] = useState("");
-  const [langNative, setLangNative] = useState("");
-  const [langCode, setLangCode] = useState("");
-  const [langActive, setLangActive] = useState(true);
-
-  // City Form State
-  const [cityName, setCityName] = useState("");
-  const [cityState, setCityState] = useState("");
-  const [cityTier, setCityTier] = useState<"Tier 1" | "Tier 2" | "Tier 3">("Tier 1");
-  const [cityActive, setCityActive] = useState(true);
-
-  // Court Form State
-  const [courtName, setCourtName] = useState("");
-  const [courtLevel, setCourtLevel] = useState<"Supreme Court" | "High Court" | "District Court" | "Tribunal">("High Court");
-  const [courtState, setCourtState] = useState("");
-  const [courtCity, setCourtCity] = useState("");
-  const [courtActive, setCourtActive] = useState(true);
-
-  // Form error state
-  const [formError, setFormError] = useState("");
-
-  // Delete Confirm State
-  const [deleteTarget, setDeleteTarget] = useState<{
-    id: string;
-    name: string;
-    type: TabType;
-  } | null>(null);
-
-  // Reset confirmation state
-  const [confirmResetOpen, setConfirmResetOpen] = useState(false);
-
-  // Switch tab helper
-  const handleTabChange = (tab: TabType) => {
-    setActiveTab(tab);
-    setSearch("");
-    setStatusFilter("all");
-    setCourtLevelFilter("all");
+  const addSvc = (idx: number) => {
+    const v = svcDraft.trim();
+    if (!v) return;
+    onChange(
+      value.map((sc, i) =>
+        i === idx && !sc.services.some((s2) => s2.toLowerCase() === v.toLowerCase())
+          ? { ...sc, services: [...sc.services, v] }
+          : sc,
+      ),
+    );
+    setSvcDraft("");
   };
 
-  // Open Create Dialog
-  const handleOpenCreate = () => {
-    setEditingId(null);
-    setFormError("");
-    if (activeTab === "categories") {
-      setCatName("");
-      setCatCode("");
-      setCatDesc("");
-      setCatSubCategories([]);
-      setNewSubCategoryInput("");
-      setCatActive(true);
-    } else if (activeTab === "languages") {
-      setLangName("");
-      setLangNative("");
-      setLangCode("");
-      setLangActive(true);
-    } else if (activeTab === "cities") {
-      setCityName("");
-      setCityState("");
-      setCityTier("Tier 1");
-      setCityActive(true);
-    } else {
-      setCourtName("");
-      setCourtLevel("High Court");
-      setCourtState("");
-      setCourtCity("");
-      setCourtActive(true);
-    }
-    setModalOpen(true);
-  };
-
-  // Open Edit Dialog
-  const handleOpenEdit = (id: string) => {
-    setEditingId(id);
-    setFormError("");
-    if (activeTab === "categories") {
-      const item = categories.find((c) => c.id === id);
-      if (item) {
-        setCatName(item.name);
-        setCatCode(item.code);
-        setCatDesc(item.description);
-        setCatSubCategories(item.subCategories ? [...item.subCategories] : []);
-        setNewSubCategoryInput("");
-        setCatActive(item.active);
-      }
-    } else if (activeTab === "languages") {
-      const item = languages.find((l) => l.id === id);
-      if (item) {
-        setLangName(item.name);
-        setLangNative(item.nativeName);
-        setLangCode(item.code);
-        setLangActive(item.active);
-      }
-    } else if (activeTab === "cities") {
-      const item = cities.find((c) => c.id === id);
-      if (item) {
-        setCityName(item.name);
-        setCityState(item.state);
-        setCityTier(item.tier);
-        setCityActive(item.active);
-      }
-    } else {
-      const item = courts.find((c) => c.id === id);
-      if (item) {
-        setCourtName(item.name);
-        setCourtLevel(item.level);
-        setCourtState(item.state);
-        setCourtCity(item.city || "");
-        setCourtActive(item.active);
-      }
-    }
-    setModalOpen(true);
-  };
-
-  // Handle Form Submit
-  const handleSaveItem = () => {
-    if (activeTab === "categories") {
-      if (!catName.trim()) {
-        setFormError("Category name is required.");
-        return;
-      }
-      if (!catCode.trim()) {
-        setFormError("Category code is required.");
-        return;
-      }
-      saveCaseCategory({
-        id: editingId ?? undefined,
-        name: catName.trim(),
-        code: catCode.trim().toUpperCase(),
-        description: catDesc.trim(),
-        subCategories: catSubCategories,
-        active: catActive,
-      });
-    } else if (activeTab === "languages") {
-      if (!langName.trim()) {
-        setFormError("Language name is required.");
-        return;
-      }
-      if (!langCode.trim()) {
-        setFormError("Language code is required.");
-        return;
-      }
-      saveLanguage({
-        id: editingId ?? undefined,
-        name: langName.trim(),
-        nativeName: langNative.trim() || langName.trim(),
-        code: langCode.trim().toUpperCase(),
-        active: langActive,
-      });
-    } else if (activeTab === "cities") {
-      if (!cityName.trim()) {
-        setFormError("City name is required.");
-        return;
-      }
-      if (!cityState.trim()) {
-        setFormError("State is required.");
-        return;
-      }
-      saveCity({
-        id: editingId ?? undefined,
-        name: cityName.trim(),
-        state: cityState.trim(),
-        tier: cityTier,
-        active: cityActive,
-      });
-    } else {
-      if (!courtName.trim()) {
-        setFormError("Court name is required.");
-        return;
-      }
-      if (!courtState.trim()) {
-        setFormError("State is required.");
-        return;
-      }
-      saveCourt({
-        id: editingId ?? undefined,
-        name: courtName.trim(),
-        level: courtLevel,
-        state: courtState.trim(),
-        city: courtCity.trim() || undefined,
-        active: courtActive,
-      });
-    }
-    setModalOpen(false);
-  };
-
-  // Handle Delete Confirm
-  const handleConfirmDelete = () => {
-    if (!deleteTarget) return;
-    if (deleteTarget.type === "categories") {
-      deleteCaseCategory(deleteTarget.id);
-    } else if (deleteTarget.type === "languages") {
-      deleteLanguage(deleteTarget.id);
-    } else if (deleteTarget.type === "cities") {
-      deleteCity(deleteTarget.id);
-    } else {
-      deleteCourt(deleteTarget.id);
-    }
-    setDeleteTarget(null);
-  };
-
-  // Filtered rows
-  const filteredCategories = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return categories.filter((c) => {
-      if (statusFilter === "active" && !c.active) return false;
-      if (statusFilter === "inactive" && c.active) return false;
-      if (!q) return true;
-      return (
-        c.name.toLowerCase().includes(q) ||
-        c.code.toLowerCase().includes(q) ||
-        c.description.toLowerCase().includes(q) ||
-        c.subCategories?.some((s) => s.toLowerCase().includes(q))
-      );
-    });
-  }, [categories, search, statusFilter]);
-
-  const filteredLanguages = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return languages.filter((l) => {
-      if (statusFilter === "active" && !l.active) return false;
-      if (statusFilter === "inactive" && l.active) return false;
-      if (!q) return true;
-      return (
-        l.name.toLowerCase().includes(q) ||
-        l.nativeName.toLowerCase().includes(q) ||
-        l.code.toLowerCase().includes(q)
-      );
-    });
-  }, [languages, search, statusFilter]);
-
-  const filteredCities = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return cities.filter((c) => {
-      if (statusFilter === "active" && !c.active) return false;
-      if (statusFilter === "inactive" && c.active) return false;
-      if (!q) return true;
-      return (
-        c.name.toLowerCase().includes(q) ||
-        c.state.toLowerCase().includes(q) ||
-        c.tier.toLowerCase().includes(q)
-      );
-    });
-  }, [cities, search, statusFilter]);
-
-  const filteredCourts = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return courts.filter((c) => {
-      if (statusFilter === "active" && !c.active) return false;
-      if (statusFilter === "inactive" && c.active) return false;
-      if (courtLevelFilter !== "all" && c.level !== courtLevelFilter) return false;
-      if (!q) return true;
-      return (
-        c.name.toLowerCase().includes(q) ||
-        c.level.toLowerCase().includes(q) ||
-        c.state.toLowerCase().includes(q) ||
-        (c.city && c.city.toLowerCase().includes(q))
-      );
-    });
-  }, [courts, search, statusFilter, courtLevelFilter]);
-
-  // Tab Item Label Helper
-  const getTabTitle = () => {
-    switch (activeTab) {
-      case "categories":
-        return "Case Category";
-      case "languages":
-        return "Language";
-      case "cities":
-        return "City";
-      case "courts":
-        return "Court";
-    }
-  };
-
-  // Status Chip Badge renderer
-  const renderStatus = (active: boolean) => (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-        active
-          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-          : "bg-muted text-muted-foreground border border-border"
-      }`}
-    >
-      {active ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
-      {active ? "Active" : "Inactive"}
-    </span>
-  );
-
-  // Pagination calculations based on active tab
-  const activeItemsCount =
-    activeTab === "categories"
-      ? filteredCategories.length
-      : activeTab === "languages"
-        ? filteredLanguages.length
-        : activeTab === "cities"
-          ? filteredCities.length
-          : filteredCourts.length;
-
-  const totalPages = Math.max(1, Math.ceil(activeItemsCount / pageSize));
-  const safePage = Math.min(page, totalPages);
-  const startIdx = (safePage - 1) * pageSize;
-
-  const paginatedCategories = filteredCategories.slice(startIdx, startIdx + pageSize);
-  const paginatedLanguages = filteredLanguages.slice(startIdx, startIdx + pageSize);
-  const paginatedCities = filteredCities.slice(startIdx, startIdx + pageSize);
-  const paginatedCourts = filteredCourts.slice(startIdx, startIdx + pageSize);
+  const removeSvc = (idx: number, sIdx: number) =>
+    onChange(
+      value.map((sc, i) =>
+        i === idx ? { ...sc, services: sc.services.filter((_, j) => j !== sIdx) } : sc,
+      ),
+    );
 
   return (
-    <div className="w-full space-y-6">
-      {/* ── Page Header ── */}
-      <PageHeader
-        title="Data Management"
-        description="Configure master categories, languages, cities, and courts for lawyers and citizens across CloseUrCase."
-        actions={
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Button
-              variant="outlined"
-              onClick={() => setConfirmResetOpen(true)}
-              icon={<RotateCcw className="h-4 w-4" />}
-              className="flex-1 sm:flex-initial text-xs"
-            >
-              Reset Defaults
-            </Button>
-            <Button
-              variant="filled"
-              onClick={handleOpenCreate}
-              icon={<Plus className="h-4 w-4" />}
-              className="flex-1 sm:flex-initial text-xs"
-            >
-              Add {getTabTitle()}
-            </Button>
-          </div>
-        }
-      />
-
-      {/* ── Category Switcher Tabs ── */}
-      <div className="w-full overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <SegmentedControl<TabType>
-          value={activeTab}
-          onChange={handleTabChange}
-          options={[
-            { value: "categories", label: `Case Categories (${categories.length})` },
-            { value: "languages", label: `Languages (${languages.length})` },
-            { value: "cities", label: `Cities (${cities.length})` },
-            { value: "courts", label: `Courts (${courts.length})` },
-          ]}
-        />
-      </div>
-
-      {/* ── Search & Filter Toolbar ── */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 w-full">
-        <div className="w-full sm:max-w-xs md:max-w-sm">
+    <div className="space-y-2">
+      <div className="flex items-end gap-2">
+        <div className="flex-1">
           <TextField
-            value={search}
-            onChange={setSearch}
-            placeholder={`Search ${getTabTitle().toLowerCase()}s by name, code, or state...`}
-            leadingIcon={<Search className="h-4 w-4 text-muted-foreground" />}
+            label="Add sub-category"
+            value={newSub}
+            onChange={setNewSub}
+            placeholder="e.g. Anticipatory Bail — then press Enter"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addSub();
+              }
+            }}
           />
         </div>
-
-        <div
-          className={`grid ${
-            activeTab === "courts" ? "grid-cols-2" : "grid-cols-1"
-          } sm:flex sm:items-center gap-2 w-full sm:w-auto`}
-        >
-          {activeTab === "courts" && (
-            <div className="relative w-full sm:w-auto">
-              <select
-                value={courtLevelFilter}
-                onChange={(e) => setCourtLevelFilter(e.target.value)}
-                className="w-full sm:w-40 h-10 cursor-pointer appearance-none rounded-lg border border-border bg-card pl-3 pr-8 text-xs font-semibold text-foreground outline-hidden hover:bg-muted/40 focus:border-primary focus:ring-1 focus:ring-primary shadow-2xs transition-colors"
-              >
-                <option value="all">All Levels</option>
-                {COURT_LEVEL_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            </div>
-          )}
-
-          <div className="relative w-full sm:w-auto">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "inactive")}
-              className="w-full sm:w-36 h-10 cursor-pointer appearance-none rounded-lg border border-border bg-card pl-3 pr-8 text-xs font-semibold text-foreground outline-hidden hover:bg-muted/40 focus:border-primary focus:ring-1 focus:ring-primary shadow-2xs transition-colors"
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active Only</option>
-              <option value="inactive">Inactive Only</option>
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          </div>
-        </div>
+        <Button variant="tonal" onClick={addSub} disabled={!newSub.trim()}>
+          Add
+        </Button>
       </div>
 
-      {/* ── Cards Grid Display ── */}
-      {activeItemsCount === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-surface p-12 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted/60 text-muted-foreground mb-3">
-            <Search className="h-6 w-6" />
-          </div>
-          <p className="text-sm font-bold text-foreground">No {getTabTitle().toLowerCase()}s found</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Try adjusting your search query or filter options.
-          </p>
-        </div>
+      {value.length === 0 ? (
+        <p className="px-1 py-2 text-xs text-muted-foreground">
+          No sub-categories yet. Add one above, then open it to list its legal services.
+        </p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Case Category Cards */}
-          {activeTab === "categories" &&
-            paginatedCategories.map((row) => (
-              <Card
-                key={row.id}
-                variant="outlined"
-                className="flex flex-col justify-between p-4.5 bg-card hover:border-primary/40 transition-all shadow-2xs hover:shadow-xs"
-              >
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className="font-mono text-xs font-bold rounded-md bg-primary/10 text-primary px-2.5 py-1">
-                      {row.code}
-                    </span>
-                    {renderStatus(row.active)}
-                  </div>
-                  <div className="flex items-start gap-2.5">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <Folder className="h-5 w-5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-bold text-base text-foreground truncate">{row.name}</h3>
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
-                        {row.description || "No description provided."}
-                      </p>
-                    </div>
-                  </div>
+        <div className="divide-y divide-border rounded-lg border border-border">
+          {value.map((sc, idx) => {
+            const open = openIdx === idx;
+            return (
+              <div key={idx}>
+                <div className="flex items-center gap-2 px-2.5 py-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpenIdx(open ? null : idx);
+                      setSvcDraft("");
+                    }}
+                    className="text-xs font-semibold text-muted-foreground hover:text-foreground"
+                    aria-label={open ? "Collapse" : "Expand"}
+                  >
+                    {open ? "▾" : "▸"}
+                  </button>
+                  <input
+                    value={sc.name}
+                    onChange={(e) => renameSub(idx, e.target.value)}
+                    className="min-w-0 flex-1 rounded-md border border-transparent bg-transparent px-1.5 py-1 text-sm font-medium text-foreground hover:border-border focus:border-primary focus:outline-none"
+                  />
+                  <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                    {sc.services.length} svc
+                  </span>
+                  <IconButton ariaLabel="Remove sub-category" onClick={() => removeSub(idx)}>
+                    <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                  </IconButton>
+                </div>
 
-                  {/* Sub-Categories Tag Pills */}
-                  {row.subCategories && row.subCategories.length > 0 && (
-                    <div className="mt-3.5 pt-2.5 border-t border-border/60">
-                      <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground mb-1.5">
-                        <span className="flex items-center gap-1">
-                          <Tag className="h-3 w-3 text-primary/70" />
-                          Sub-Categories
-                        </span>
-                        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-foreground">
-                          {row.subCategories.length}
-                        </span>
+                {open && (
+                  <div className="space-y-2 bg-muted/30 px-3 pb-3 pt-1">
+                    <div className="flex items-end gap-2">
+                      <div className="flex-1">
+                        <TextField
+                          label="Add legal service"
+                          value={svcDraft}
+                          onChange={setSvcDraft}
+                          placeholder="e.g. File Anticipatory Bail Application"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              addSvc(idx);
+                            }
+                          }}
+                        />
                       </div>
-                      <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto pr-0.5">
-                        {row.subCategories.map((sub, sIdx) => (
-                          <span
-                            key={sIdx}
-                            className="inline-flex items-center rounded-md bg-secondary/80 text-secondary-foreground border border-border/70 px-2 py-0.5 text-[11px] font-medium leading-tight hover:bg-secondary transition-colors"
-                          >
-                            {sub}
-                          </span>
+                      <Button
+                        variant="tonal"
+                        onClick={() => addSvc(idx)}
+                        disabled={!svcDraft.trim()}
+                      >
+                        Add
+                      </Button>
+                    </div>
+                    {sc.services.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {sc.services.map((svc, sIdx) => (
+                          <InputChip
+                            key={`${svc}-${sIdx}`}
+                            label={svc}
+                            onRemove={() => removeSvc(idx, sIdx)}
+                          />
                         ))}
                       </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-border/80 flex items-center justify-between">
-                  <span className="text-[11px] text-muted-foreground font-medium">
-                    {row.updatedAt ? `Updated: ${row.updatedAt}` : "Master Record"}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <IconButton ariaLabel="Edit category" onClick={() => handleOpenEdit(row.id)}>
-                      <Pencil className="h-4 w-4 text-muted-foreground hover:text-primary" />
-                    </IconButton>
-                    <IconButton
-                      ariaLabel="Delete category"
-                      onClick={() => setDeleteTarget({ id: row.id, name: row.name, type: "categories" })}
-                    >
-                      <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                    </IconButton>
+                    ) : (
+                      <p className="text-[11px] text-muted-foreground italic">
+                        No legal services under this sub-category yet.
+                      </p>
+                    )}
                   </div>
-                </div>
-              </Card>
-            ))}
-
-          {/* Language Cards */}
-          {activeTab === "languages" &&
-            paginatedLanguages.map((row) => (
-              <Card
-                key={row.id}
-                variant="outlined"
-                className="flex flex-col justify-between p-4.5 bg-card hover:border-primary/40 transition-all shadow-2xs hover:shadow-xs"
-              >
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className="font-mono text-xs font-bold rounded-md bg-primary/10 text-primary px-2.5 py-1">
-                      {row.code}
-                    </span>
-                    {renderStatus(row.active)}
-                  </div>
-                  <div className="flex items-start gap-2.5">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <Languages className="h-5 w-5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-bold text-base text-foreground truncate">{row.name}</h3>
-                      <div className="mt-1 flex items-center gap-2">
-                        <span className="text-sm font-semibold text-primary">{row.nativeName}</span>
-                        <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">
-                          (Native Script)
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-border/80 flex items-center justify-between">
-                  <span className="text-[11px] text-muted-foreground font-medium">
-                    Language Pack
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <IconButton ariaLabel="Edit language" onClick={() => handleOpenEdit(row.id)}>
-                      <Pencil className="h-4 w-4 text-muted-foreground hover:text-primary" />
-                    </IconButton>
-                    <IconButton
-                      ariaLabel="Delete language"
-                      onClick={() => setDeleteTarget({ id: row.id, name: row.name, type: "languages" })}
-                    >
-                      <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                    </IconButton>
-                  </div>
-                </div>
-              </Card>
-            ))}
-
-          {/* City Cards */}
-          {activeTab === "cities" &&
-            paginatedCities.map((row) => (
-              <Card
-                key={row.id}
-                variant="outlined"
-                className="flex flex-col justify-between p-4.5 bg-card hover:border-primary/40 transition-all shadow-2xs hover:shadow-xs"
-              >
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className="inline-flex rounded-full bg-secondary/80 px-2.5 py-0.5 text-xs font-semibold text-secondary-foreground border border-border">
-                      {row.tier}
-                    </span>
-                    {renderStatus(row.active)}
-                  </div>
-                  <div className="flex items-start gap-2.5">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <Building2 className="h-5 w-5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-bold text-base text-foreground truncate">{row.name}</h3>
-                      <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                        <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />
-                        <span className="truncate">{row.state}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-border/80 flex items-center justify-between">
-                  <span className="text-[11px] text-muted-foreground font-medium">
-                    Jurisdiction Location
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <IconButton ariaLabel="Edit city" onClick={() => handleOpenEdit(row.id)}>
-                      <Pencil className="h-4 w-4 text-muted-foreground hover:text-primary" />
-                    </IconButton>
-                    <IconButton
-                      ariaLabel="Delete city"
-                      onClick={() => setDeleteTarget({ id: row.id, name: row.name, type: "cities" })}
-                    >
-                      <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                    </IconButton>
-                  </div>
-                </div>
-              </Card>
-            ))}
-
-          {/* Court Cards */}
-          {activeTab === "courts" &&
-            paginatedCourts.map((row) => {
-              const isSupreme = row.level === "Supreme Court";
-              const isHigh = row.level === "High Court";
-              return (
-                <Card
-                  key={row.id}
-                  variant="outlined"
-                  className="flex flex-col justify-between p-4.5 bg-card hover:border-primary/40 transition-all shadow-2xs hover:shadow-xs"
-                >
-                  <div>
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold border ${
-                          isSupreme
-                            ? "bg-purple-500/10 text-purple-600 border-purple-500/20"
-                            : isHigh
-                              ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
-                              : "bg-muted text-foreground border-border"
-                        }`}
-                      >
-                        {row.level}
-                      </span>
-                      {renderStatus(row.active)}
-                    </div>
-                    <div className="flex items-start gap-2.5">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                        <Scale className="h-5 w-5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="font-bold text-base text-foreground line-clamp-2 leading-snug">
-                          {row.name}
-                        </h3>
-                        <div className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground">
-                          <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />
-                          <span className="truncate">
-                            {row.city ? `${row.city}, ` : ""}
-                            {row.state}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 pt-3 border-t border-border/80 flex items-center justify-between">
-                    <span className="text-[11px] text-muted-foreground font-medium">
-                      eCourt Forum
-                    </span>
-                    <div className="flex items-center gap-1">
-                      <IconButton ariaLabel="Edit court" onClick={() => handleOpenEdit(row.id)}>
-                        <Pencil className="h-4 w-4 text-muted-foreground hover:text-primary" />
-                      </IconButton>
-                      <IconButton
-                        ariaLabel="Delete court"
-                        onClick={() => setDeleteTarget({ id: row.id, name: row.name, type: "courts" })}
-                      >
-                        <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                      </IconButton>
-                    </div>
-                  </div>
-                </Card>
-              );
-            })}
-        </div>
-      )}
-
-      {/* ── Card Pagination Bar ── */}
-      {activeItemsCount > pageSize && (
-        <div className="pt-2">
-          <CardPagination
-            page={safePage}
-            totalPages={totalPages}
-            onPageChange={setPage}
-            pageSize={pageSize}
-            onPageSizeChange={setPageSize}
-            pageSizeOptions={[9, 18, 27]}
-          />
-        </div>
-      )}
-
-      {/* ── Create / Edit Dialog ── */}
-      <Dialog open={modalOpen} onOpenChange={setModalOpen} maxWidth="580px">
-        <DialogHeader>
-          <DialogTitle>
-            {editingId ? `Edit ${getTabTitle()}` : `Add New ${getTabTitle()}`}
-          </DialogTitle>
-        </DialogHeader>
-
-        <DialogContent className="space-y-4 pt-3">
-          {formError && (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-2.5 text-xs text-destructive">
-              {formError}
-            </div>
-          )}
-
-          {/* Form Fields: Case Category */}
-          {activeTab === "categories" && (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="sm:col-span-2">
-                  <TextField
-                    label="Category Name *"
-                    value={catName}
-                    onChange={setCatName}
-                    placeholder="e.g. Intellectual Property"
-                    className="w-full"
-                    required
-                  />
-                </div>
-                <div className="sm:col-span-1">
-                  <TextField
-                    label="Short Code *"
-                    value={catCode}
-                    onChange={setCatCode}
-                    placeholder="e.g. IP"
-                    className="w-full"
-                    required
-                  />
-                </div>
+                )}
               </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
-              <TextField
-                label="Description"
-                value={catDesc}
-                onChange={setCatDesc}
-                placeholder="Brief summary of cases belonging to this category"
-                className="w-full"
-              />
+/* ── Inline editor for one row ──────────────────────────────────────────────── */
+function RowEditor({
+  fields,
+  values,
+  onChange,
+  onSave,
+  onCancel,
+  error,
+}: {
+  fields: FieldDef[];
+  values: Record<string, unknown>;
+  onChange: (key: string, value: unknown) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  error: string;
+}) {
+  const [chipDraft, setChipDraft] = useState("");
 
-              {/* Sub-Categories / Practice Areas */}
-              <div className="rounded-xl border border-border bg-muted/20 p-3.5 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-xs font-bold text-foreground">
-                      Sub-Categories / Practice Areas
-                    </label>
-                    <p className="text-[11px] text-muted-foreground">
-                      Specific case types matching landing page dropdowns
-                    </p>
-                  </div>
-                  <span className="rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-bold">
-                    {catSubCategories.length} {catSubCategories.length === 1 ? "type" : "types"}
-                  </span>
-                </div>
+  const chips = list(values.subCategories);
 
-                {/* Input with Add button */}
-                <div className="flex items-center gap-2">
+  const addChip = () => {
+    const v = chipDraft.trim();
+    if (!v) return;
+    if (!chips.some((c) => c.toLowerCase() === v.toLowerCase())) {
+      onChange("subCategories", [...chips, v]);
+    }
+    setChipDraft("");
+  };
+
+  return (
+    <div
+      className="space-y-3 px-3 pb-4 pt-1 sm:px-4"
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onCancel();
+      }}
+    >
+      {error && (
+        <p className="rounded-lg bg-destructive/10 px-2.5 py-2 text-xs font-medium text-destructive">
+          {error}
+        </p>
+      )}
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {fields.map((f) => {
+          if (f.kind === "tree") {
+            return (
+              <div key={f.key} className="sm:col-span-2 space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">{f.label}</label>
+                <SubCategoryTree
+                  value={subCats(values[f.key])}
+                  onChange={(next) => onChange(f.key, next)}
+                />
+              </div>
+            );
+          }
+
+          if (f.kind === "chips") {
+            return (
+              <div key={f.key} className="sm:col-span-2 space-y-2">
+                <div className="flex items-end gap-2">
                   <div className="flex-1">
                     <TextField
-                      value={newSubCategoryInput}
-                      onChange={setNewSubCategoryInput}
-                      placeholder="Add sub-category (e.g. Anticipatory Bail)"
-                      className="w-full"
+                      label={f.label}
+                      value={chipDraft}
+                      onChange={setChipDraft}
+                      placeholder="Add one, then press Enter"
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
-                          handleAddSubCategory();
+                          addChip();
                         }
                       }}
                     />
                   </div>
-                  <Button
-                    type="button"
-                    variant="tonal"
-                    onClick={() => handleAddSubCategory()}
-                    disabled={!newSubCategoryInput.trim()}
-                    className="shrink-0 h-10"
-                  >
-                    <Plus className="h-4 w-4 mr-1" /> Add
+                  <Button variant="tonal" onClick={addChip} disabled={!chipDraft.trim()}>
+                    Add
                   </Button>
                 </div>
-
-                {/* Sub-category chips */}
-                {catSubCategories.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5 pt-1 max-h-36 overflow-y-auto p-1">
-                    {catSubCategories.map((sub, idx) => (
-                      <span
-                        key={idx}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-card border border-border px-2.5 py-1 text-xs font-medium text-foreground shadow-2xs group hover:border-destructive/40 transition-colors"
-                      >
-                        <span>{sub}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveSubCategory(idx)}
-                          className="text-muted-foreground hover:text-destructive transition-colors p-0.5 rounded-full hover:bg-destructive/10 cursor-pointer"
-                          title={`Remove ${sub}`}
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </span>
+                {chips.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {chips.map((c, idx) => (
+                      <InputChip
+                        key={`${c}-${idx}`}
+                        label={c}
+                        onRemove={() =>
+                          onChange(
+                            "subCategories",
+                            chips.filter((_, i) => i !== idx),
+                          )
+                        }
+                      />
                     ))}
                   </div>
-                ) : (
-                  <p className="text-[11px] text-muted-foreground italic py-1">
-                    No sub-categories configured yet. Type a case type above and click Add or press Enter.
-                  </p>
                 )}
               </div>
+            );
+          }
 
-              <div className="flex items-center justify-between rounded-lg border border-border p-3">
-                <span className="text-sm font-medium text-foreground">Active Status</span>
-                <Switch selected={catActive} onChange={setCatActive} />
-              </div>
-            </>
-          )}
+          if (f.kind === "select") {
+            const opts = f.options ?? [];
+            return (
+              <Select
+                key={f.key}
+                label={f.required ? `${f.label} *` : f.label}
+                value={String(values[f.key] ?? "")}
+                onChange={(v) => onChange(f.key, v)}
+                options={
+                  f.required ? [{ value: "", label: `— Select ${f.label} —` }, ...opts] : opts
+                }
+              />
+            );
+          }
 
-          {/* Form Fields: Language */}
-          {activeTab === "languages" && (
-            <>
-              <TextField
-                label="Language Name (English) *"
-                value={langName}
-                onChange={setLangName}
-                placeholder="e.g. French"
-                required
-              />
-              <TextField
-                label="Native Script Name"
-                value={langNative}
-                onChange={setLangNative}
-                placeholder="e.g. Français"
-              />
-              <TextField
-                label="ISO Code *"
-                value={langCode}
-                onChange={setLangCode}
-                placeholder="e.g. FR"
-                required
-              />
-              <div className="flex items-center justify-between rounded-lg border border-border p-3">
-                <span className="text-sm font-medium text-foreground">Active Status</span>
-                <Switch selected={langActive} onChange={setLangActive} />
-              </div>
-            </>
-          )}
+          return (
+            <TextField
+              key={f.key}
+              label={f.required ? `${f.label} *` : f.label}
+              value={String(values[f.key] ?? "")}
+              onChange={(v) => onChange(f.key, v)}
+              placeholder={f.placeholder}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  onSave();
+                }
+              }}
+            />
+          );
+        })}
+      </div>
 
-          {/* Form Fields: City */}
-          {activeTab === "cities" && (
-            <>
-              <TextField
-                label="City Name *"
-                value={cityName}
-                onChange={setCityName}
-                placeholder="e.g. Visakhapatnam"
-                required
-              />
-              <TextField
-                label="State / Union Territory *"
-                value={cityState}
-                onChange={setCityState}
-                placeholder="e.g. Andhra Pradesh"
-                required
-              />
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-foreground">Tier Classification</label>
-                <div className="relative">
-                  <select
-                    value={cityTier}
-                    onChange={(e) => setCityTier(e.target.value as "Tier 1" | "Tier 2" | "Tier 3")}
-                    className="w-full h-12 cursor-pointer appearance-none rounded-lg border border-border bg-card px-3 pr-8 text-sm text-foreground outline-hidden focus:border-primary focus:ring-1 focus:ring-primary"
-                  >
-                    {CITY_TIER_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                </div>
-              </div>
-              <div className="flex items-center justify-between rounded-lg border border-border p-3">
-                <span className="text-sm font-medium text-foreground">Active Status</span>
-                <Switch selected={cityActive} onChange={setCityActive} />
-              </div>
-            </>
-          )}
+      <div className="flex items-center justify-end gap-2">
+        <Button variant="text" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button variant="filled" icon={<Check className="h-4 w-4" />} onClick={onSave}>
+          Save
+        </Button>
+      </div>
+    </div>
+  );
+}
 
-          {/* Form Fields: Court */}
-          {activeTab === "courts" && (
-            <>
-              <TextField
-                label="Court Name *"
-                value={courtName}
-                onChange={setCourtName}
-                placeholder="e.g. High Court of Judicature"
-                required
-              />
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-foreground">Court Level / Jurisdiction *</label>
-                <div className="relative">
-                  <select
-                    value={courtLevel}
-                    onChange={(e) => setCourtLevel(e.target.value as "Supreme Court" | "High Court" | "District Court" | "Tribunal")}
-                    className="w-full h-12 cursor-pointer appearance-none rounded-lg border border-border bg-card px-3 pr-8 text-sm text-foreground outline-hidden focus:border-primary focus:ring-1 focus:ring-primary"
-                  >
-                    {COURT_LEVEL_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                </div>
-              </div>
-              <TextField
-                label="State / Union Territory *"
-                value={courtState}
-                onChange={setCourtState}
-                placeholder="e.g. Telangana"
-                required
-              />
-              <TextField
-                label="City (Optional)"
-                value={courtCity}
-                onChange={setCourtCity}
-                placeholder="e.g. Hyderabad"
-              />
-              <div className="flex items-center justify-between rounded-lg border border-border p-3">
-                <span className="text-sm font-medium text-foreground">Active Status</span>
-                <Switch selected={courtActive} onChange={setCourtActive} />
-              </div>
-            </>
-          )}
-        </DialogContent>
+/* ── Page ──────────────────────────────────────────────────────────────────── */
+export function AdminDataManagementPage() {
+  const [tab, setTab] = useState<TabType>("categories");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
-        <DialogFooter className="flex items-center justify-end gap-2 pt-2">
-          <Button variant="outlined" onClick={() => setModalOpen(false)}>
-            Cancel
+  const [categories, setCategories] = useState<CaseCategoryItem[]>(getCaseCategories);
+  const [languages, setLanguages] = useState<LanguageItem[]>(getLanguages);
+  const [states, setStates] = useState<StateItem[]>(getStates);
+  const [cities, setCities] = useState<CityItem[]>(getCities);
+  const [courts, setCourts] = useState<CourtItem[]>(getCourts);
+  const [courtLevels, setCourtLevels] = useState<CourtLevelItem[]>(getCourtLevels);
+
+  useEffect(
+    () =>
+      subscribeToStore(() => {
+        setCategories(getCaseCategories());
+        setLanguages(getLanguages());
+        setStates(getStates());
+        setCities(getCities());
+        setCourts(getCourts());
+        setCourtLevels(getCourtLevels());
+      }),
+    [],
+  );
+
+  // Which row is open for editing (id, or NEW_ROW_ID for the add form).
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<Record<string, unknown>>({});
+  const [formError, setFormError] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deactivateTarget, setDeactivateTarget] = useState<{ id: string; name: string } | null>(
+    null,
+  );
+  const [confirmReset, setConfirmReset] = useState(false);
+
+  // Reset transient state whenever the tab or filters change.
+  useEffect(() => {
+    setEditingId(null);
+    setFormError("");
+  }, [tab]);
+
+  const baseCfg = CONFIG[tab];
+  const rows = { categories, languages, states, cities, courts, courtLevels }[
+    tab
+  ] as unknown as Row[];
+
+  // Cities and Courts pull their State / Level choices from the other managed
+  // lists, so their select fields are rebuilt each render from what's active.
+  const cfg = useMemo<EntityConfig>(() => {
+    if (tab !== "cities" && tab !== "courts") return baseCfg;
+    const stateOpts = states
+      .filter((st) => st.active)
+      .map((st) => ({ value: st.name, label: st.name }));
+    const levelOpts = courtLevels
+      .filter((lv) => lv.active)
+      .map((lv) => ({ value: lv.name, label: lv.name }));
+    return {
+      ...baseCfg,
+      fields: baseCfg.fields.map((f) => {
+        if (f.key === "state") return { ...f, options: stateOpts };
+        if (f.key === "level") return { ...f, options: levelOpts };
+        return f;
+      }),
+    };
+  }, [tab, baseCfg, states, courtLevels]);
+
+  const counts = {
+    categories: categories.length,
+    languages: languages.length,
+    states: states.length,
+    cities: cities.length,
+    courts: courts.length,
+    courtLevels: courtLevels.length,
+  };
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return rows.filter((r) => {
+      if (statusFilter === "active" && !r.active) return false;
+      if (statusFilter === "inactive" && r.active) return false;
+      if (!q) return true;
+      return cfg.haystack(r).includes(q);
+    });
+  }, [rows, search, statusFilter, cfg]);
+
+  const openEdit = (row: Row) => {
+    const values: Record<string, unknown> = {};
+    cfg.fields.forEach((f) => {
+      if (f.kind === "chips") values[f.key] = [...list(row[f.key])];
+      else if (f.kind === "tree")
+        values[f.key] = subCats(row[f.key]).map((sc) => ({ ...sc, services: [...sc.services] }));
+      else values[f.key] = row[f.key] ?? "";
+    });
+    setDraft(values);
+    setFormError("");
+    setEditingId(row.id);
+  };
+
+  const openAdd = () => {
+    setDraft({ ...cfg.empty });
+    setFormError("");
+    setEditingId(NEW_ROW_ID);
+  };
+
+  const handleSave = () => {
+    for (const f of cfg.fields) {
+      if (f.required && !String(draft[f.key] ?? "").trim()) {
+        setFormError(`${f.label} is required.`);
+        return;
+      }
+    }
+    const payload: Record<string, unknown> = { active: true };
+    if (editingId && editingId !== NEW_ROW_ID) {
+      payload.id = editingId;
+      const existing = rows.find((r) => r.id === editingId);
+      if (existing) payload.active = existing.active;
+    }
+    cfg.fields.forEach((f) => {
+      if (f.kind === "chips") {
+        payload[f.key] = draft[f.key] ?? [];
+      } else if (f.kind === "tree") {
+        payload[f.key] = subCats(draft[f.key])
+          .map((sc) => ({
+            name: sc.name.trim(),
+            services: sc.services.map((x) => x.trim()).filter(Boolean),
+          }))
+          .filter((sc) => sc.name);
+      } else {
+        let v = String(draft[f.key] ?? "").trim();
+        if (f.upper) v = v.toUpperCase();
+        payload[f.key] = v;
+      }
+    });
+    cfg.save(payload as Record<string, unknown> & { active: boolean });
+    setEditingId(null);
+  };
+
+  const setActive = (id: string, next: boolean) => {
+    const row = rows.find((r) => r.id === id);
+    if (!row) return;
+    const payload: Record<string, unknown> = { id, active: next };
+    cfg.fields.forEach((f) => {
+      payload[f.key] = row[f.key] ?? (f.kind === "chips" || f.kind === "tree" ? [] : "");
+    });
+    cfg.save(payload as Record<string, unknown> & { active: boolean });
+  };
+
+  // Turning a record off hides it from citizens/lawyers, so confirm first.
+  // Turning it back on is harmless and applies immediately.
+  const handleToggle = (row: Row) => {
+    if (row.active === true) {
+      setDeactivateTarget({ id: row.id, name: cfg.primary(row) });
+    } else {
+      setActive(row.id, true);
+    }
+  };
+
+  const tabItems: { value: TabType; label: string }[] = [
+    { value: "categories", label: `Categories (${counts.categories})` },
+    { value: "languages", label: `Languages (${counts.languages})` },
+    { value: "states", label: `States (${counts.states})` },
+    { value: "cities", label: `Cities (${counts.cities})` },
+    { value: "courts", label: `Courts (${counts.courts})` },
+    { value: "courtLevels", label: `Court Levels (${counts.courtLevels})` },
+  ];
+
+  return (
+    <div className="w-full space-y-4">
+      <PageHeader
+        title="Data Management"
+        description="Maintain the master categories, languages, states, cities, courts, and court levels used across CloseUrCase."
+        actions={
+          <Button variant="filled" icon={<Plus className="h-4 w-4" />} onClick={openAdd}>
+            Add {cfg.singular}
           </Button>
-          <Button variant="filled" onClick={handleSaveItem}>
-            {editingId ? "Save Changes" : "Create"}
-          </Button>
-        </DialogFooter>
-      </Dialog>
+        }
+      />
 
-      {/* ── Delete Confirmation Dialog ── */}
+      <Tabs value={tab} onChange={(v) => setTab(v as TabType)} tabs={tabItems} />
+
+      {/* Toolbar — stacks on mobile, one row from sm up */}
+      <div className="pt-2 flex flex-col gap-2.5 sm:flex-row sm:items-center">
+        <div className="sm:flex-1">
+          <TextField
+            type="search"
+            value={search}
+            onChange={setSearch}
+            placeholder={`Search ${cfg.plural}`}
+            leadingIcon={<Search className="h-4 w-4 text-muted-foreground" />}
+            className="w-full"
+          />
+        </div>
+        <div className="w-full sm:w-48">
+          <Select
+            ariaLabel="Filter by status"
+            value={statusFilter}
+            onChange={(v) => setStatusFilter(v as "all" | "active" | "inactive")}
+            options={[
+              { value: "all", label: "All statuses" },
+              { value: "active", label: "Active only" },
+              { value: "inactive", label: "Inactive only" },
+            ]}
+            className="w-full"
+          />
+        </div>
+      </div>
+
+      <Card variant="outlined" className="overflow-hidden">
+        {/* Add form (top of list) */}
+        {editingId === NEW_ROW_ID && (
+          <>
+            <div className="bg-muted/30 px-3 pt-3 text-xs font-bold uppercase tracking-wide text-muted-foreground sm:px-4">
+              New {cfg.singular}
+            </div>
+            <RowEditor
+              fields={cfg.fields}
+              values={draft}
+              onChange={(k, v) => setDraft((d) => ({ ...d, [k]: v }))}
+              onSave={handleSave}
+              onCancel={() => setEditingId(null)}
+              error={formError}
+            />
+            <Divider />
+          </>
+        )}
+
+        {filtered.length === 0 ? (
+          <div className="px-4 py-12 text-center">
+            <p className="text-sm font-semibold text-foreground">No {cfg.plural} found</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {search || statusFilter !== "all"
+                ? "Try clearing the search or status filter."
+                : `Add your first ${cfg.singular.toLowerCase()} with the button above.`}
+            </p>
+          </div>
+        ) : (
+          filtered.map((row, idx) => {
+            const isEditing = editingId === row.id;
+            const active = row.active === true;
+            return (
+              <div key={row.id}>
+                {idx > 0 && <Divider />}
+
+                {/* Collapsed row — text on its own line on mobile, controls below */}
+                <div className="flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center sm:gap-3 sm:px-4">
+                  <button
+                    type="button"
+                    onClick={() => (isEditing ? setEditingId(null) : openEdit(row))}
+                    className="min-w-0 flex-1 text-left"
+                  >
+                    <p className="truncate text-sm font-semibold text-foreground">
+                      {cfg.primary(row)}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">{cfg.secondary(row)}</p>
+                  </button>
+
+                  <div className="flex items-center justify-end gap-1.5 sm:gap-2">
+                    <span
+                      className="text-xs font-medium"
+                      style={{
+                        color: active
+                          ? "var(--md-extended-color-success)"
+                          : "var(--md-sys-color-on-surface-variant)",
+                      }}
+                    >
+                      {active ? "Active" : "Inactive"}
+                    </span>
+                    <Toggle
+                      checked={active}
+                      onChange={() => handleToggle(row)}
+                      ariaLabel={`Toggle status for ${cfg.primary(row)}`}
+                    />
+                    <IconButton
+                      ariaLabel={isEditing ? "Close editor" : "Edit"}
+                      onClick={() => (isEditing ? setEditingId(null) : openEdit(row))}
+                    >
+                      {isEditing ? (
+                        <X className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Pencil className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </IconButton>
+                    <IconButton
+                      ariaLabel="Delete"
+                      onClick={() => setDeleteTarget({ id: row.id, name: cfg.primary(row) })}
+                    >
+                      <Trash2 className="h-4 w-4 text-muted-foreground" />
+                    </IconButton>
+                  </div>
+                </div>
+
+                {/* Inline editor */}
+                {isEditing && (
+                  <div className="bg-muted/20">
+                    <RowEditor
+                      fields={cfg.fields}
+                      values={draft}
+                      onChange={(k, v) => setDraft((d) => ({ ...d, [k]: v }))}
+                      onSave={handleSave}
+                      onCancel={() => setEditingId(null)}
+                      error={formError}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </Card>
+
+      <div className="flex justify-end pt-1">
+        <Button variant="text" onClick={() => setConfirmReset(true)}>
+          Reset all to defaults
+        </Button>
+      </div>
+
       <ConfirmDialog
         open={deleteTarget !== null}
-        title={`Delete ${deleteTarget ? deleteTarget.name : "Item"}?`}
-        message={`Are you sure you want to delete "${deleteTarget?.name}"? This master data record will be permanently removed.`}
+        title={`Delete "${deleteTarget?.name ?? ""}"?`}
+        message="This master data record will be permanently removed."
         confirmLabel="Delete"
         variant="danger"
-        onConfirm={handleConfirmDelete}
+        onConfirm={() => {
+          if (deleteTarget) cfg.remove(deleteTarget.id);
+          setDeleteTarget(null);
+        }}
         onCancel={() => setDeleteTarget(null)}
       />
 
-      {/* ── Reset Confirmation Dialog ── */}
       <ConfirmDialog
-        open={confirmResetOpen}
-        title="Reset Master Data to Defaults?"
-        message="This will restore all default Case Categories, Languages, Cities, and Courts to their original seed records. Any custom additions will be cleared."
-        confirmLabel="Reset Everything"
+        open={deactivateTarget !== null}
+        title={`Deactivate "${deactivateTarget?.name ?? ""}"?`}
+        message={`This ${cfg.singular.toLowerCase()} will be hidden from citizens and lawyers until it is turned back on.`}
+        confirmLabel="Deactivate"
+        variant="warning"
+        onConfirm={() => {
+          if (deactivateTarget) setActive(deactivateTarget.id, false);
+          setDeactivateTarget(null);
+        }}
+        onCancel={() => setDeactivateTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={confirmReset}
+        title="Reset master data to defaults?"
+        message="All categories, languages, states, cities, courts, and court levels return to their original seed records. Custom additions and edits are cleared."
+        confirmLabel="Reset everything"
         variant="warning"
         onConfirm={() => {
           resetDataManagementToDefaults();
-          setConfirmResetOpen(false);
+          setConfirmReset(false);
         }}
-        onCancel={() => setConfirmResetOpen(false)}
+        onCancel={() => setConfirmReset(false)}
       />
     </div>
   );

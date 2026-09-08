@@ -404,12 +404,23 @@ export interface LawyerDocument {
 }
 
 /* ── Admin Data Management Master Interfaces ─────────────────────────────── */
+
+/** Tier-2 of the case taxonomy — a case type / specialization under a category
+ * (e.g. "Anticipatory Bail" under "Criminal Defense"), carrying its tier-3
+ * legal services (e.g. "File Anticipatory Bail Application"). */
+export interface CaseSubCategoryItem {
+  name: string;
+  services: string[];
+}
+
 export interface CaseCategoryItem {
   id: string;
   name: string;
   code: string;
   description: string;
-  subCategories?: string[];
+  /** Tier-2 sub-categories, each with a tier-3 service list. Older stored data
+   * may still hold a plain `string[]`; `getCaseCategories()` migrates it. */
+  subCategories?: CaseSubCategoryItem[];
   active: boolean;
   updatedAt?: string;
 }
@@ -435,10 +446,29 @@ export interface CityItem {
 export interface CourtItem {
   id: string;
   name: string;
-  level: "Supreme Court" | "High Court" | "District Court" | "Tribunal";
+  /** One of the managed Court Level names (see `CourtLevelItem`) — a plain
+   * string rather than a fixed union so levels can be added/removed by admins. */
+  level: string;
   state: string;
   city?: string;
   active: boolean;
   updatedAt?: string;
 }
 
+export interface StateItem {
+  id: string;
+  name: string;
+  /** Short code, e.g. "TS", "AP", "MH". */
+  code: string;
+  active: boolean;
+  updatedAt?: string;
+}
+
+export interface CourtLevelItem {
+  id: string;
+  name: string;
+  /** Short code, e.g. "SC", "HC", "DC", "TRB". */
+  code: string;
+  active: boolean;
+  updatedAt?: string;
+}
