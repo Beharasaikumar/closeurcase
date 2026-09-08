@@ -103,10 +103,13 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
   const [experienceYears, setExperienceYears] = useState(lawyer.experienceYears || 5);
   const [officeAddress, setOfficeAddress] = useState(lawyer.officeAddress || "");
   const [bio, setBio] = useState(lawyer.bio || "");
-  const [availabilityStatus, setAvailabilityStatus] = useState<"Active" | "Inactive">(
-    lawyer.availabilityStatus || "Active",
+  // Admin-controlled suspension locks the lawyer out of changing their own
+  // online/offline presence — the toggle greys out and reads "Suspended".
+  const suspended = lawyer.status === "Suspended";
+  const [availabilityStatus, setAvailabilityStatus] = useState<"Online" | "Offline">(
+    lawyer.availabilityStatus === "Offline" ? "Offline" : "Online",
   );
-  const [pendingStatus, setPendingStatus] = useState<"Active" | "Inactive" | null>(null);
+  const [pendingStatus, setPendingStatus] = useState<"Online" | "Offline" | null>(null);
   const [consultationFee, setConsultationFee] = useState<string>(
     String(lawyer.consultationFee ?? 1500),
   );
@@ -360,15 +363,16 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
       awards,
       idProofFileName,
       idProofUrl,
-      availabilityStatus,
+      // A suspended lawyer can't touch their presence — don't persist it.
+      ...(suspended ? {} : { availabilityStatus }),
       consultationFee: Number(consultationFee) || 1500,
       ...(bankDetailsLocked
         ? {}
         : {
-          bankName: bankName.trim(),
-          accountNumber: accountNumber.trim(),
-          ifscCode: ifscCode.trim().toUpperCase(),
-        }),
+            bankName: bankName.trim(),
+            accountNumber: accountNumber.trim(),
+            ifscCode: ifscCode.trim().toUpperCase(),
+          }),
     });
 
     setSaved(true);
@@ -396,6 +400,9 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
                 name={name}
                 defaultPhotoUrl={lawyer.photoUrl || "/lawyer-login.png"}
                 centered
+                status={
+                  suspended ? "suspended" : availabilityStatus === "Offline" ? "offline" : "online"
+                }
               />
             </div>
             <div className="space-y-2.5 text-center sm:text-left min-w-0 flex-1">
@@ -417,20 +424,22 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
                 <button
                   type="button"
                   onClick={() => setRoleTitle("Advocate")}
-                  className={`px-3 py-1 text-xs font-semibold rounded-full border transition-all cursor-pointer ${!isFirm
+                  className={`px-3 py-1 text-xs font-semibold rounded-full border transition-all cursor-pointer ${
+                    !isFirm
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border/60 bg-muted/50 text-muted-foreground hover:bg-muted"
-                    }`}
+                  }`}
                 >
                   Individual Lawyer
                 </button>
                 <button
                   type="button"
                   onClick={() => setRoleTitle("Law Firm / Organisation")}
-                  className={`px-3 py-1 text-xs font-semibold rounded-full border transition-all cursor-pointer ${isFirm
+                  className={`px-3 py-1 text-xs font-semibold rounded-full border transition-all cursor-pointer ${
+                    isFirm
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border/60 bg-muted/50 text-muted-foreground hover:bg-muted"
-                    }`}
+                  }`}
                 >
                   Law Firm / Organisation
                 </button>
@@ -467,59 +476,92 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
               <IndianRupee className="h-4 w-4 text-primary" /> Availability & Consultation Pricing
             </h3>
             <span
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${availabilityStatus === "Active"
-                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                  : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
-                }`}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
+                suspended
+                  ? "border-border bg-muted text-muted-foreground"
+                  : availabilityStatus === "Online"
+                    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                    : "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400"
+              }`}
             >
-              <span
-                className={`h-2 w-2 rounded-full ${availabilityStatus === "Active" ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+              {suspended ? (
+                <X className="h-3 w-3 stroke-3" />
+              ) : (
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    availabilityStatus === "Online" ? "animate-pulse bg-emerald-500" : "bg-red-500"
                   }`}
-              />
-              {availabilityStatus === "Active"
-                ? "Active for Consultations"
-                : "Inactive / Out of Office"}
+                />
+              )}
+              {suspended ? "Suspended" : availabilityStatus === "Online" ? "Online" : "Offline"}
             </span>
           </div>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            {/* Availability Status Toggle */}
+            {/* Availability Status Toggle — Online / Offline, or a locked
+                Suspended state the lawyer can't change (admin-only). */}
             <div className="space-y-2">
               <label className="block text-xs font-bold text-foreground uppercase tracking-wide">
                 Account Availability Status
               </label>
-              <div className="grid h-9 grid-cols-2 gap-2 rounded-xl border border-border bg-muted p-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (availabilityStatus !== "Active") setPendingStatus("Active");
-                  }}
-                  className={`flex items-center justify-center gap-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${availabilityStatus === "Active"
-                      ? "bg-surface text-emerald-600 dark:text-emerald-400 shadow-xs border border-emerald-500/30"
-                      : "text-muted-foreground hover:text-foreground"
-                    }`}
-                >
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                  Active
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (availabilityStatus !== "Inactive") setPendingStatus("Inactive");
-                  }}
-                  className={`flex items-center justify-center gap-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${availabilityStatus === "Inactive"
-                      ? "bg-surface text-amber-600 dark:text-amber-400 shadow-xs border border-amber-500/30"
-                      : "text-muted-foreground hover:text-foreground"
-                    }`}
-                >
-                  <span className="h-2 w-2 rounded-full bg-amber-500" />
-                  Inactive
-                </button>
-              </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                When set to <strong>Active</strong>, your advocate profile will be listed in citizen
-                law hub search results for case assignments.
-              </p>
+
+              {suspended ? (
+                <>
+                  <div className="grid h-9 grid-cols-2 gap-2 rounded-xl border border-border bg-muted p-1 opacity-60">
+                    <span className="flex items-center justify-center gap-2 rounded-lg text-xs font-extrabold text-muted-foreground">
+                      <span className="h-2 w-2 rounded-full bg-muted-foreground/50" />
+                      Online
+                    </span>
+                    <span className="flex items-center justify-center gap-2 rounded-lg border border-red-500/30 bg-surface text-xs font-extrabold text-red-600 dark:text-red-400">
+                      <X className="h-3.5 w-3.5 stroke-3" />
+                      Suspended
+                    </span>
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-red-600 dark:text-red-400">
+                    Your account has been <strong>suspended by an administrator</strong>. Your
+                    profile is hidden from citizens and your availability is locked until it is
+                    reinstated.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="grid h-9 grid-cols-2 gap-2 rounded-xl border border-border bg-muted p-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (availabilityStatus !== "Online") setPendingStatus("Online");
+                      }}
+                      className={`flex cursor-pointer items-center justify-center gap-2 rounded-lg text-xs font-extrabold transition-all ${
+                        availabilityStatus === "Online"
+                          ? "border border-emerald-500/30 bg-surface text-emerald-600 shadow-xs dark:text-emerald-400"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                      Online
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (availabilityStatus !== "Offline") setPendingStatus("Offline");
+                      }}
+                      className={`flex cursor-pointer items-center justify-center gap-2 rounded-lg text-xs font-extrabold transition-all ${
+                        availabilityStatus === "Offline"
+                          ? "border border-red-500/30 bg-surface text-red-600 shadow-xs dark:text-red-400"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <span className="h-2 w-2 rounded-full bg-red-500" />
+                      Offline
+                    </button>
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    When <strong>Online</strong>, your advocate profile is listed in citizen law hub
+                    search results, and a green dot shows on your photo everywhere. Offline shows a
+                    red dot and pauses new assignments.
+                  </p>
+                </>
+              )}
             </div>
 
             {/* Consultation Fee Input Field */}
@@ -590,13 +632,13 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
         <div className="space-y-4 rounded-2xl border border-border/80 bg-surface/95 p-5 shadow-2xs sm:p-6">
           <div className="border-b border-border/60 pb-3">
             <h3 className="text-sm font-bold text-foreground uppercase tracking-wide flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-primary" /> Location & Service Cities
+              <MapPin className="h-4 w-4 text-primary" /> Location & Service Districts
             </h3>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <TextField
-              label="Primary City / District"
+              label="Primary District"
               value={city}
               onChange={setCity}
               placeholder="e.g. Hyderabad, Visakhapatnam"
@@ -627,8 +669,8 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
           </div>
 
           <TagDropdownField
-            label="Service Cities"
-            placeholder="-- Select City to Add --"
+            label="Service Districts"
+            placeholder="-- Select District to Add --"
             options={managedCities.length > 0 ? managedCities : INDIAN_CITIES}
             values={cities}
             onAdd={(val) => {
@@ -739,7 +781,7 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
             <h3 className="text-sm font-bold text-foreground uppercase tracking-wide flex items-center gap-2">
               <Briefcase className="h-4 w-4 text-primary" /> Practice Areas & Legal Services
             </h3>
-              <Button
+            <Button
               type="button"
               variant="filled"
               icon={<Plus className="h-3.5 w-3.5" />}
@@ -749,7 +791,7 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
               Add to Active Practice Areas
             </Button>
           </div>
-          
+
           <div className="grid grid-cols-1 gap-3">
             <Select
               label="Practice Area"
@@ -1031,20 +1073,16 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
           </div>
         </div>
 
-        {/* Confirmation Dialog for Active / Inactive Availability Switch */}
+        {/* Confirmation Dialog for the Online / Offline availability switch */}
         <ConfirmDialog
           open={pendingStatus !== null}
-          title={
-            pendingStatus === "Inactive"
-              ? "Set Profile to Inactive?"
-              : "Reactivate Advocate Profile?"
-          }
+          title={pendingStatus === "Offline" ? "Go Offline?" : "Go Online?"}
           message={
-            pendingStatus === "Inactive"
-              ? "Setting your profile to Inactive will temporarily hide you from citizen law hub search results and pause new case assignments until you reactivate."
-              : "Activating your profile will make you visible in citizen law hub search results for immediate case assignments."
+            pendingStatus === "Offline"
+              ? "Going Offline hides you from citizen law hub search results and pauses new case assignments until you go back Online. A red dot will show on your photo everywhere."
+              : "Going Online lists you in citizen law hub search results for immediate case assignments. A green dot will show on your photo everywhere."
           }
-          confirmLabel={pendingStatus === "Inactive" ? "Set Inactive" : "Reactivate Profile"}
+          confirmLabel={pendingStatus === "Offline" ? "Go Offline" : "Go Online"}
           cancelLabel="Cancel"
           variant="warning"
           onConfirm={() => {
@@ -1127,9 +1165,7 @@ function CourtsDropdownField({
 
   const filteredCourts = useMemo(() => {
     const q = searchFilter.trim().toLowerCase();
-    return courtPool.filter(
-      (c) => !values.includes(c) && (q ? c.toLowerCase().includes(q) : true),
-    );
+    return courtPool.filter((c) => !values.includes(c) && (q ? c.toLowerCase().includes(q) : true));
   }, [searchFilter, values, courtPool]);
 
   const handleAddCourt = (courtName: string) => {

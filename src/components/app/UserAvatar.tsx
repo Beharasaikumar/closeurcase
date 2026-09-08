@@ -1,7 +1,13 @@
-import { Star } from "lucide-react";
+import { Star, X } from "lucide-react";
 import { avatarUrlFor } from "@/data/avatarPool";
 import { lawyers as MOCK_LAWYERS, citizens as MOCK_CITIZENS } from "@/data/mock";
-import { planTierForCitizen } from "@/data/appStore";
+import { getLawyers, planTierForCitizen } from "@/data/appStore";
+import {
+  lawyerPresence,
+  lawyerPresenceColor,
+  lawyerPresenceLabel,
+  type LawyerPresence,
+} from "@/lib/statusColors";
 
 const SIZE_CLASSES = {
   sm: "h-8 w-8",
@@ -54,6 +60,30 @@ const BADGE_SIZE_CLASSES = {
   lg: { badge: "h-6.5 w-6.5 -bottom-1 -right-1", star: "h-3.5 w-3.5" },
 };
 
+/** Online/offline presence dot, bottom-right of the avatar. */
+const PRESENCE_DOT_CLASSES = {
+  sm: "h-2.5 w-2.5 bottom-0 right-0",
+  md: "h-3 w-3 bottom-0 right-0",
+  lg: "h-4 w-4 bottom-0.5 right-0.5",
+};
+
+/** Suspended: a red circular X badge replaces the presence dot. */
+const PRESENCE_X_CLASSES = {
+  sm: { box: "h-3.5 w-3.5 -bottom-0.5 -right-0.5", icon: "h-2.5 w-2.5" },
+  md: { box: "h-4 w-4 -bottom-0.5 -right-0.5", icon: "h-3 w-3" },
+  lg: { box: "h-6 w-6 -bottom-1 -right-1", icon: "h-4 w-4" },
+};
+
+/** Resolve a lawyer's live presence from the store by name — lets every
+ * `<UserAvatar role="lawyer">` show the dot without the caller wiring it. An
+ * explicit `status` prop always wins over this. */
+function resolveLawyerPresence(name: string): LawyerPresence | null {
+  const key = name?.toLowerCase().trim();
+  if (!key) return null;
+  const rec = getLawyers().find((l) => l.name.toLowerCase().trim() === key);
+  return rec ? lawyerPresence(rec) : null;
+}
+
 // Built once from the real data so these lists never drift from mock.ts.
 const LAWYER_NAMES = new Set(MOCK_LAWYERS.map((l) => l.name.toLowerCase().trim()));
 const CITIZEN_NAMES = new Set(MOCK_CITIZENS.map((c) => c.name.toLowerCase().trim()));
@@ -101,6 +131,7 @@ export function UserAvatar({
   size = "md",
   role,
   planTier,
+  status,
   className = "",
 }: {
   name: string;
@@ -108,6 +139,10 @@ export function UserAvatar({
   size?: keyof typeof SIZE_CLASSES;
   role?: "citizen" | "lawyer" | "admin";
   planTier?: "bronze" | "silver" | "gold" | "free" | "monthly" | "yearly";
+  /** Lawyer presence indicator. Pass explicitly when a Lawyer object is in
+   * hand; otherwise, for `role="lawyer"`, it's resolved live from the store
+   * by name. Non-lawyers never get an indicator. */
+  status?: LawyerPresence;
   className?: string;
 }) {
   const sizeCls = SIZE_CLASSES[size];
@@ -116,13 +151,39 @@ export function UserAvatar({
   const tier = tierKey ? BADGE_CONFIGS[tierKey] : null;
   const badgeSize = BADGE_SIZE_CLASSES[size];
 
+  const presence: LawyerPresence | null =
+    status ?? (role === "lawyer" ? resolveLawyerPresence(name) : null);
+  const suspended = presence === "suspended";
+  const xSize = PRESENCE_X_CLASSES[size];
+
   return (
     <div className={`relative inline-flex shrink-0 ${sizeCls}`}>
       <img
         src={src}
         alt={name}
-        className={`h-full w-full rounded-full border border-border object-cover shadow-sm ${tier ? tier.ringCls : ""} ${className}`}
+        className={`h-full w-full rounded-full border border-border object-cover shadow-sm ${tier ? tier.ringCls : ""} ${suspended ? "opacity-70 grayscale" : ""} ${className}`}
       />
+
+      {presence && !suspended && (
+        <span
+          className={`absolute rounded-full border-2 border-background ${PRESENCE_DOT_CLASSES[size]}`}
+          style={{ backgroundColor: lawyerPresenceColor[presence] }}
+          title={lawyerPresenceLabel[presence]}
+          aria-label={lawyerPresenceLabel[presence]}
+        />
+      )}
+
+      {suspended && (
+        <span
+          className={`absolute flex items-center justify-center rounded-full border-2 border-background text-white ${xSize.box}`}
+          style={{ backgroundColor: lawyerPresenceColor.suspended }}
+          title="Suspended"
+          aria-label="Suspended"
+        >
+          <X className={`${xSize.icon} stroke-3`} />
+        </span>
+      )}
+
       {tier && (
         <div
           className={`absolute rounded-full flex items-center justify-center ${tier.badgeCls} ${badgeSize.badge}`}

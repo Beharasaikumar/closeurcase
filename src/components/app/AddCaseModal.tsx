@@ -349,14 +349,14 @@ export function AddCaseModal({
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <TextField
-                label="City"
+                label="District"
                 value={city}
                 onChange={setCity}
                 placeholder="e.g. Hyderabad"
                 className="w-full"
-                {...({ list: "add-case-cities-list" } as Record<string, unknown>)}
+                {...({ list: "add-case-districts-list" } as Record<string, unknown>)}
               />
-              <datalist id="add-case-cities-list">
+              <datalist id="add-case-districts-list">
                 {managedCities.map((cty) => (
                   <option key={cty} value={cty} />
                 ))}

@@ -305,7 +305,7 @@ export function ProfileForm({
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <TextField
-            label="City / District"
+            label="District"
             value={city}
             onChange={setCity}
             placeholder="e.g. Hyderabad, Visakhapatnam"

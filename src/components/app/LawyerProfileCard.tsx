@@ -97,26 +97,27 @@ export function LawyerProfileCard({
 
       {lawyer.bio && <p className="text-xs leading-relaxed text-muted-foreground">{lawyer.bio}</p>}
 
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <InfoRow
-          icon={<ScrollText className="h-3.5 w-3.5" />}
+          icon={<ScrollText className="h-4 w-4" />}
           label="Bar Reg. ID"
           value={lawyer.barId}
           mono
         />
-        <InfoRow icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={lawyer.email} />
-        <InfoRow icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={lawyer.phone} />
         <InfoRow
-          icon={<IndianRupee className="h-3.5 w-3.5" />}
+          icon={<IndianRupee className="h-4 w-4" />}
           label="Consultation Fee"
-          value={`₹${lawyer.consultationFee ?? 1500}`}
+          value={`₹${(lawyer.consultationFee ?? 1500).toLocaleString("en-IN")}`}
           mono
         />
+        <InfoRow icon={<Mail className="h-4 w-4" />} label="Email" value={lawyer.email} />
+        <InfoRow icon={<Phone className="h-4 w-4" />} label="Phone" value={lawyer.phone} />
         {lawyer.officeAddress && (
           <InfoRow
-            icon={<MapPin className="h-3.5 w-3.5" />}
+            icon={<MapPin className="h-4 w-4" />}
             label="Office Address"
             value={lawyer.officeAddress}
+            span
           />
         )}
       </div>
@@ -237,21 +238,32 @@ function InfoRow({
   label,
   value,
   mono,
+  span,
 }: {
   icon: ReactNode;
   label: string;
   value: string;
   mono?: boolean;
+  /** Full-width on >= sm (for long values like an office address). */
+  span?: boolean;
 }) {
   return (
-    <div className="flex items-start gap-2 rounded-lg border border-border/60 bg-background px-3 py-2 min-w-0">
-      <span className="mt-0.5 shrink-0 text-muted-foreground">{icon}</span>
+    <div
+      className={`flex min-w-0 items-center gap-3 rounded-xl border border-border/70 bg-linear-to-b from-surface to-muted/40 px-3.5 py-3 shadow-2xs transition-shadow hover:shadow-sm ${
+        span ? "sm:col-span-2" : ""
+      }`}
+    >
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/15">
+        {icon}
+      </span>
       <div className="min-w-0 flex-1">
-        <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
           {label}
         </div>
         <div
-          className={`truncate text-xs font-semibold text-foreground ${mono ? "font-mono" : ""}`}
+          className={`mt-0.5 text-[13px] font-semibold leading-snug wrap-break-word text-foreground ${
+            mono ? "font-mono" : ""
+          }`}
           title={value}
         >
           {value}

@@ -24,6 +24,31 @@ export const lawyerStatusColor: Record<Lawyer["status"], string> = {
   Rejected: "var(--md-sys-color-error)",
 };
 
+/** Display-level presence of a lawyer, shown as a dot / badge on their avatar
+ * everywhere. `suspended` is admin-driven (`status`) and always wins over the
+ * lawyer's own online/offline choice. */
+export type LawyerPresence = "online" | "offline" | "suspended";
+
+export function lawyerPresence(
+  lawyer: Pick<Lawyer, "status" | "availabilityStatus">,
+): LawyerPresence {
+  if (lawyer.status === "Suspended") return "suspended";
+  return lawyer.availabilityStatus === "Offline" ? "offline" : "online";
+}
+
+/** online = green, offline = red, suspended = red (paired with an X mark). */
+export const lawyerPresenceColor: Record<LawyerPresence, string> = {
+  online: "var(--md-extended-color-success)",
+  offline: "var(--md-sys-color-error)",
+  suspended: "var(--md-sys-color-error)",
+};
+
+export const lawyerPresenceLabel: Record<LawyerPresence, string> = {
+  online: "Online",
+  offline: "Offline",
+  suspended: "Suspended",
+};
+
 /** Fixed 8-swatch categorical palette for open-ended chart series (case
  * categories, registration trend lines) that don't map to a fixed status
  * enum, so caseStatusColor/lawyerStatusColor don't apply. Centralized here

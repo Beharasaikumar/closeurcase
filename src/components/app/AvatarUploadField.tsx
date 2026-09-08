@@ -8,6 +8,7 @@ import {
   subscribeToStore,
 } from "@/data/appStore";
 import type { UserRole } from "@/types";
+import type { LawyerPresence } from "@/lib/statusColors";
 
 const MAX_SIZE_BYTES = 5 * 1024 * 1024;
 
@@ -16,9 +17,12 @@ export function AvatarUploadField({
   name,
   defaultPhotoUrl,
   centered = false,
+  status,
 }: {
   role: UserRole;
   name: string;
+  /** Lawyer presence indicator, forwarded to the avatar (see UserAvatar). */
+  status?: LawyerPresence;
   /** Shown until the user uploads their own photo — overrides the generic
    * name-hashed avatar fallback for seed profiles where that hash picks a
    * mismatched photo. */
@@ -69,7 +73,13 @@ export function AvatarUploadField({
   if (centered) {
     return (
       <div className="flex flex-col items-center gap-3 text-center">
-        <UserAvatar name={name} photoUrl={photoUrl ?? defaultPhotoUrl} size="lg" role={role} />
+        <UserAvatar
+          name={name}
+          photoUrl={photoUrl ?? defaultPhotoUrl}
+          size="lg"
+          role={role}
+          status={status}
+        />
         <div className="space-y-1.5">
           <div className="flex flex-wrap items-center justify-center gap-2">
             <button

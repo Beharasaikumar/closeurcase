@@ -122,12 +122,12 @@ export function FindLawyerWizard() {
   const matchedAreaObj = useMemo(() => {
     if (initialAreaParam) {
       return LAWYER_PRACTICE_AREAS.find(
-        (pa) => pa.category.toLowerCase() === initialAreaParam.toLowerCase()
+        (pa) => pa.category.toLowerCase() === initialAreaParam.toLowerCase(),
       );
     }
     if (initialSpecParam) {
       return LAWYER_PRACTICE_AREAS.find((pa) =>
-        pa.case_types.some((ct) => ct.case_type.toLowerCase() === initialSpecParam.toLowerCase())
+        pa.case_types.some((ct) => ct.case_type.toLowerCase() === initialSpecParam.toLowerCase()),
       );
     }
     return undefined;
@@ -139,7 +139,7 @@ export function FindLawyerWizard() {
     if (!matchedAreaObj) return undefined;
     if (initialSpecParam) {
       return matchedAreaObj.case_types.find(
-        (ct) => ct.case_type.toLowerCase() === initialSpecParam.toLowerCase()
+        (ct) => ct.case_type.toLowerCase() === initialSpecParam.toLowerCase(),
       );
     }
     return undefined;
@@ -245,10 +245,10 @@ export function FindLawyerWizard() {
       ? cnr.trim().length > 0
       : path === "new"
         ? hasNewCaseContent &&
-        knowsCaseType !== null &&
-        (knowsCaseType === true
-          ? hasManualCategoryPick
-          : hasDescriptionText && (isAiAnalyzed || predictedCategory !== null))
+          knowsCaseType !== null &&
+          (knowsCaseType === true
+            ? hasManualCategoryPick
+            : hasDescriptionText && (isAiAnalyzed || predictedCategory !== null))
         : false);
 
   // Tells the citizen exactly what's missing when Continue is disabled,
@@ -331,7 +331,7 @@ export function FindLawyerWizard() {
   }
 
   const approvedLawyers = useMemo(
-    () => getLawyers().filter((l) => l.status === "Approved" && l.availabilityStatus !== "Inactive"),
+    () => getLawyers().filter((l) => l.status === "Approved" && l.availabilityStatus !== "Offline"),
     [],
   );
 
@@ -459,38 +459,38 @@ export function FindLawyerWizard() {
 
       const timeline = isExistingClosed
         ? [
-          {
-            id: "t1",
-            status: "Closed" as CaseStatus,
-            at: today,
-            time,
-            note: `Existing case (CNR ${cnr.trim()}) linked as already closed`,
-          },
-        ]
-        : [
-          {
-            id: "t1",
-            status: "Submitted" as CaseStatus,
-            at: today,
-            time,
-            note: "Case filed via Find a Lawyer",
-          },
-          lawyer
-            ? {
-              id: "t2",
-              status: "Assigned" as CaseStatus,
+            {
+              id: "t1",
+              status: "Closed" as CaseStatus,
               at: today,
               time,
-              note: `Assigned to ${lawyer.name}`,
-            }
-            : {
-              id: "t2",
+              note: `Existing case (CNR ${cnr.trim()}) linked as already closed`,
+            },
+          ]
+        : [
+            {
+              id: "t1",
               status: "Submitted" as CaseStatus,
               at: today,
               time,
-              note: "Auto-assign requested — pending admin allocation",
+              note: "Case filed via Find a Lawyer",
             },
-        ];
+            lawyer
+              ? {
+                  id: "t2",
+                  status: "Assigned" as CaseStatus,
+                  at: today,
+                  time,
+                  note: `Assigned to ${lawyer.name}`,
+                }
+              : {
+                  id: "t2",
+                  status: "Submitted" as CaseStatus,
+                  at: today,
+                  time,
+                  note: "Auto-assign requested — pending admin allocation",
+                },
+          ];
 
       const newCase: LegalCase = {
         id,
@@ -581,12 +581,13 @@ export function FindLawyerWizard() {
               return (
                 <li key={s.key} className="flex items-center gap-2 sm:flex-1">
                   <span
-                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${isCurrent
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+                      isCurrent
                         ? "bg-primary text-primary-foreground"
                         : isDone
                           ? "bg-primary/15 text-primary"
                           : "bg-muted text-muted-foreground"
-                      }`}
+                    }`}
                   >
                     {isDone ? <CheckCircle2 className="h-3 w-3" /> : i + 1}
                   </span>
@@ -675,8 +676,9 @@ export function FindLawyerWizard() {
                     setPath("existing");
                     setClientNameTouched(true);
                   }}
-                  className={`p-3 sm:p-4 ${path === "existing" ? "border-primary ring-1 ring-primary bg-primary/5" : ""
-                    }`}
+                  className={`p-3 sm:p-4 ${
+                    path === "existing" ? "border-primary ring-1 ring-primary bg-primary/5" : ""
+                  }`}
                 >
                   <div className="flex items-start gap-2.5">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -691,20 +693,22 @@ export function FindLawyerWizard() {
                               <button
                                 type="button"
                                 onClick={() => setExistingCaseStatus("Pending")}
-                                className={`rounded-md px-2 py-1 text-[11px] font-semibold transition-all ${existingCaseStatus === "Pending"
+                                className={`rounded-md px-2 py-1 text-[11px] font-semibold transition-all ${
+                                  existingCaseStatus === "Pending"
                                     ? "bg-primary text-primary-foreground shadow-sm"
                                     : "text-muted-foreground hover:text-foreground"
-                                  }`}
+                                }`}
                               >
                                 Pending
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setExistingCaseStatus("Closed")}
-                                className={`rounded-md px-2 py-1 text-[11px] font-semibold transition-all ${existingCaseStatus === "Closed"
+                                className={`rounded-md px-2 py-1 text-[11px] font-semibold transition-all ${
+                                  existingCaseStatus === "Closed"
                                     ? "bg-primary text-primary-foreground shadow-sm"
                                     : "text-muted-foreground hover:text-foreground"
-                                  }`}
+                                }`}
                               >
                                 Closed
                               </button>
@@ -765,8 +769,9 @@ export function FindLawyerWizard() {
                     setPath("new");
                     setClientNameTouched(true);
                   }}
-                  className={`p-3 sm:p-4 ${path === "new" ? "border-primary ring-1 ring-primary bg-primary/5" : ""
-                    }`}
+                  className={`p-3 sm:p-4 ${
+                    path === "new" ? "border-primary ring-1 ring-primary bg-primary/5" : ""
+                  }`}
                 >
                   <div className="flex items-start gap-2.5">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -904,10 +909,11 @@ export function FindLawyerWizard() {
                             <button
                               type="button"
                               onClick={() => setKnowsCaseType(true)}
-                              className={`rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all ${knowsCaseType === true
+                              className={`rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all ${
+                                knowsCaseType === true
                                   ? "bg-primary text-primary-foreground shadow-sm"
                                   : "text-muted-foreground hover:text-foreground"
-                                }`}
+                              }`}
                             >
                               Yes
                             </button>
@@ -920,10 +926,11 @@ export function FindLawyerWizard() {
                                 setSelectedLegalServices([]);
                                 setIsAiAnalyzed(false);
                               }}
-                              className={`rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all ${knowsCaseType === false
+                              className={`rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all ${
+                                knowsCaseType === false
                                   ? "bg-primary text-primary-foreground shadow-sm"
                                   : "text-muted-foreground hover:text-foreground"
-                                }`}
+                              }`}
                             >
                               No
                             </button>
@@ -976,7 +983,10 @@ export function FindLawyerWizard() {
                         {knowsCaseType === false && (
                           <div className="mt-2">
                             {!isAiAnalyzed && !predictedCategory ? (
-                              <Card variant="outlined" className="p-3.5 bg-primary/5 border-primary/20 space-y-2">
+                              <Card
+                                variant="outlined"
+                                className="p-3.5 bg-primary/5 border-primary/20 space-y-2"
+                              >
                                 <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
                                   <div className="space-y-0.5">
                                     <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
@@ -984,7 +994,8 @@ export function FindLawyerWizard() {
                                       <span>Analyze Case with AI</span>
                                     </div>
                                     <p className="text-[11px] text-muted-foreground">
-                                      Click the button below to let our AI analyze your issue description and identify the legal category.
+                                      Click the button below to let our AI analyze your issue
+                                      description and identify the legal category.
                                     </p>
                                   </div>
                                   <Button
@@ -1001,7 +1012,11 @@ export function FindLawyerWizard() {
                                     }}
                                     icon={
                                       isInlineAnalyzing ? (
-                                        <CircularProgress indeterminate ariaLabel="Analyzing" className="h-3.5 w-3.5" />
+                                        <CircularProgress
+                                          indeterminate
+                                          ariaLabel="Analyzing"
+                                          className="h-3.5 w-3.5"
+                                        />
                                       ) : (
                                         <Sparkles className="h-3.5 w-3.5" />
                                       )
@@ -1013,12 +1028,16 @@ export function FindLawyerWizard() {
                                 </div>
                                 {!hasDescriptionText && (
                                   <p className="text-[10px] font-medium text-destructive">
-                                    Please describe your issue in a few words above before running the AI analysis.
+                                    Please describe your issue in a few words above before running
+                                    the AI analysis.
                                   </p>
                                 )}
                               </Card>
                             ) : (
-                              <Card variant="elevated" className="p-3.5 border-primary/30 bg-primary/5">
+                              <Card
+                                variant="elevated"
+                                className="p-3.5 border-primary/30 bg-primary/5"
+                              >
                                 <div className="flex items-start gap-3">
                                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                                     <Sparkles className="h-4.5 w-4.5" />
@@ -1049,10 +1068,20 @@ export function FindLawyerWizard() {
                                       </div>
                                     </div>
                                     <div className="text-sm font-bold text-foreground">
-                                      Looks like a {predictedCategory || predictCategory(description)} Law matter
+                                      Looks like a{" "}
+                                      {predictedCategory || predictCategory(description)} Law matter
                                     </div>
                                     <p className="text-[11px] text-muted-foreground leading-relaxed">
-                                      Based on your problem description, our AI analyzed your issue and identified it as <strong>{predictedCategory || predictCategory(description)} Law</strong>. We will prioritize <strong>{predictedCategory || predictCategory(description)} Law</strong> lawyers for your case.
+                                      Based on your problem description, our AI analyzed your issue
+                                      and identified it as{" "}
+                                      <strong>
+                                        {predictedCategory || predictCategory(description)} Law
+                                      </strong>
+                                      . We will prioritize{" "}
+                                      <strong>
+                                        {predictedCategory || predictCategory(description)} Law
+                                      </strong>{" "}
+                                      lawyers for your case.
                                     </p>
                                   </div>
                                 </div>
@@ -1132,13 +1161,13 @@ export function FindLawyerWizard() {
                     (selectedPracticeArea
                       ? mapPracticeAreaToCategory(selectedPracticeArea)
                       : null)) && (
-                      <div className="shrink-0">
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-primary px-3.5 py-1 text-xs font-black text-white shadow-md shadow-emerald-500/25 tracking-wide uppercase">
-                          <Sparkles className="h-3.5 w-3.5 text-white" />
-                          {predictedCategory || mapPracticeAreaToCategory(selectedPracticeArea)} Law
-                        </span>
-                      </div>
-                    )}
+                    <div className="shrink-0">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-primary px-3.5 py-1 text-xs font-black text-white shadow-md shadow-emerald-500/25 tracking-wide uppercase">
+                        <Sparkles className="h-3.5 w-3.5 text-white" />
+                        {predictedCategory || mapPracticeAreaToCategory(selectedPracticeArea)} Law
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Main VS Legal Arena Battle Box */}
@@ -1198,7 +1227,8 @@ export function FindLawyerWizard() {
 
                   {description.trim() && (
                     <div className="truncate max-w-md text-xs font-medium text-muted-foreground italic bg-background/60 px-3 py-1 rounded-xl border border-border/60">
-                      "{description.slice(0, 75)}{description.length > 75 ? "..." : ""}"
+                      "{description.slice(0, 75)}
+                      {description.length > 75 ? "..." : ""}"
                     </div>
                   )}
                 </div>
@@ -1210,27 +1240,33 @@ export function FindLawyerWizard() {
               <Card
                 variant="outlined"
                 onClick={() => setAssignMode("browse")}
-                className={`relative overflow-hidden p-5 sm:p-6 cursor-pointer transition-all duration-300 rounded-2xl ${assignMode === "browse"
+                className={`relative overflow-hidden p-5 sm:p-6 cursor-pointer transition-all duration-300 rounded-2xl ${
+                  assignMode === "browse"
                     ? "border-emerald-500 ring-2 ring-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-transparent shadow-lg shadow-emerald-500/10"
                     : "border-border bg-card hover:border-emerald-500/50 hover:bg-emerald-500/5 hover:shadow-md"
-                  }`}
+                }`}
               >
                 {/* Slanted Top-Right Corner Ribbon with Marquee Text */}
                 <div className="absolute top-0 right-0 w-32 h-32 overflow-hidden pointer-events-none z-10">
                   <div className="absolute top-4 -right-10 w-40 rotate-45 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 text-white text-[8.5px] font-black py-1 shadow-md shadow-emerald-900/30 border-b border-emerald-300/40 uppercase overflow-hidden">
                     <div className="animate-banner-marquee flex whitespace-nowrap items-center">
-                      <span className="shrink-0 pr-3">PAY AS YOU GO PAY AS YOU GO PAY AS YOU GO </span>
-                      <span className="shrink-0 pr-3">PAY AS YOU GO PAY AS YOU GO PAY AS YOU GO </span>
+                      <span className="shrink-0 pr-3">
+                        PAY AS YOU GO PAY AS YOU GO PAY AS YOU GO{" "}
+                      </span>
+                      <span className="shrink-0 pr-3">
+                        PAY AS YOU GO PAY AS YOU GO PAY AS YOU GO{" "}
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4 pr-16 sm:pr-20">
                   <div
-                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border transition-all ${assignMode === "browse"
+                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border transition-all ${
+                      assignMode === "browse"
                         ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 shadow-inner"
                         : "bg-primary/10 text-primary border-transparent"
-                      }`}
+                    }`}
                   >
                     <Users className="h-6 w-6" />
                   </div>
@@ -1255,10 +1291,11 @@ export function FindLawyerWizard() {
               <Card
                 variant="outlined"
                 onClick={() => setAssignMode("admin")}
-                className={`relative overflow-hidden p-5 sm:p-6 cursor-pointer transition-all duration-300 rounded-2xl ${assignMode === "admin"
+                className={`relative overflow-hidden p-5 sm:p-6 cursor-pointer transition-all duration-300 rounded-2xl ${
+                  assignMode === "admin"
                     ? "border-indigo-500 ring-2 ring-indigo-500/30 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent shadow-lg shadow-indigo-500/10"
                     : "border-border bg-card hover:border-indigo-500/50 hover:bg-indigo-500/5 hover:shadow-md"
-                  }`}
+                }`}
               >
                 {/* Slanted Top-Right Corner Ribbon with Marquee Text */}
                 <div className="absolute top-0 right-0 w-32 h-32 overflow-hidden pointer-events-none z-10">
@@ -1272,10 +1309,11 @@ export function FindLawyerWizard() {
 
                 <div className="flex items-start gap-4 pr-16 sm:pr-20">
                   <div
-                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border transition-all ${assignMode === "admin"
+                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border transition-all ${
+                      assignMode === "admin"
                         ? "bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border-indigo-500/30 shadow-inner"
                         : "bg-primary/10 text-primary border-transparent"
-                      }`}
+                    }`}
                   >
                     <Scale className="h-6 w-6" />
                   </div>
@@ -1289,8 +1327,8 @@ export function FindLawyerWizard() {
                       )}
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-                      Hand off to our legal admin team — we'll match & assign the best specialist for
-                      you.
+                      Hand off to our legal admin team — we'll match & assign the best specialist
+                      for you.
                     </p>
                   </div>
                 </div>
@@ -1303,12 +1341,13 @@ export function FindLawyerWizard() {
                 <p className="text-[11px] text-muted-foreground">
                   {locating
                     ? "Detecting your location…"
-                    : `Sorted by proximity to ${userCityLabel}${selectedPracticeArea
-                      ? ` and ${selectedSpecialization || selectedPracticeArea} expertise`
-                      : predictedCategory
-                        ? ` and ${predictedCategory} Law expertise`
-                        : ""
-                    }.`}
+                    : `Sorted by proximity to ${userCityLabel}${
+                        selectedPracticeArea
+                          ? ` and ${selectedSpecialization || selectedPracticeArea} expertise`
+                          : predictedCategory
+                            ? ` and ${predictedCategory} Law expertise`
+                            : ""
+                      }.`}
                 </p>
 
                 <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
@@ -1322,10 +1361,11 @@ export function FindLawyerWizard() {
                       <div
                         key={l.id}
                         onClick={() => setSelectedLawyerId(l.id)}
-                        className={`flex cursor-pointer items-center justify-between gap-2 rounded-xl border p-3 transition-all ${selectedLawyerId === l.id
+                        className={`flex cursor-pointer items-center justify-between gap-2 rounded-xl border p-3 transition-all ${
+                          selectedLawyerId === l.id
                             ? "border-emerald-500 bg-emerald-500/10 ring-1 ring-emerald-500 shadow-xs"
                             : "border-border bg-background hover:border-emerald-500/40"
-                          }`}
+                        }`}
                       >
                         <div className="flex min-w-0 items-center gap-3">
                           <UserAvatar name={l.name} size="sm" role="lawyer" />
@@ -1367,7 +1407,10 @@ export function FindLawyerWizard() {
             )}
 
             {assignMode === "admin" && (
-              <Card variant="elevated" className="p-5 sm:p-7 space-y-5 rounded-2xl border border-border/80 shadow-sm">
+              <Card
+                variant="elevated"
+                className="p-5 sm:p-7 space-y-5 rounded-2xl border border-border/80 shadow-sm"
+              >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
                   <div>
                     <h3 className="text-base font-extrabold text-foreground flex items-center gap-2">
@@ -1375,7 +1418,8 @@ export function FindLawyerWizard() {
                       Select Subscription Plan
                     </h3>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Our legal admin team matches and assigns your advocate instantly upon selection.
+                      Our legal admin team matches and assigns your advocate instantly upon
+                      selection.
                     </p>
                   </div>
                 </div>
@@ -1389,12 +1433,13 @@ export function FindLawyerWizard() {
                         key={plan.id}
                         variant="outlined"
                         onClick={() => setSubscriptionPlan(plan.id)}
-                        className={`relative overflow-hidden p-5 cursor-pointer transition-all duration-300 rounded-2xl flex flex-col justify-between ${isSelected
+                        className={`relative overflow-hidden p-5 cursor-pointer transition-all duration-300 rounded-2xl flex flex-col justify-between ${
+                          isSelected
                             ? isYearly
                               ? "border-emerald-500 ring-2 ring-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-transparent shadow-lg shadow-emerald-500/10"
                               : "border-indigo-500 ring-2 ring-indigo-500/30 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent shadow-lg shadow-indigo-500/10"
                             : "border-border bg-card hover:border-primary/40 hover:shadow-md"
-                          }`}
+                        }`}
                       >
                         {/* Top Badge Pill */}
                         {plan.badge && (
@@ -1408,23 +1453,27 @@ export function FindLawyerWizard() {
                         <div>
                           <div className="flex items-center justify-between gap-2">
                             <span
-                              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold tracking-wide uppercase ${isYearly
+                              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold tracking-wide uppercase ${
+                                isYearly
                                   ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                                   : "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20"
-                                }`}
+                              }`}
                             >
                               {isYearly ? "ANNUAL PASS" : "FLEXIBLE PLAN"}
                             </span>
                             {isSelected && (
                               <CheckCircle2
-                                className={`h-5 w-5 shrink-0 ${isYearly ? "text-emerald-500" : "text-indigo-500"
-                                  }`}
+                                className={`h-5 w-5 shrink-0 ${
+                                  isYearly ? "text-emerald-500" : "text-indigo-500"
+                                }`}
                               />
                             )}
                           </div>
 
                           <div className="mt-3">
-                            <div className="text-sm font-extrabold text-foreground">{plan.label}</div>
+                            <div className="text-sm font-extrabold text-foreground">
+                              {plan.label}
+                            </div>
                             <div className="mt-1 flex items-baseline gap-1">
                               <span className="text-2xl font-black text-foreground">
                                 ₹{plan.price}
@@ -1448,8 +1497,9 @@ export function FindLawyerWizard() {
                         <div className="mt-4 pt-3 border-t border-border/40 flex items-center justify-between text-[11px] font-semibold text-foreground/80">
                           <span className="flex items-center gap-1.5">
                             <ShieldCheck
-                              className={`h-3.5 w-3.5 ${isYearly ? "text-emerald-500" : "text-indigo-500"
-                                }`}
+                              className={`h-3.5 w-3.5 ${
+                                isYearly ? "text-emerald-500" : "text-indigo-500"
+                              }`}
                             />
                             Priority Admin Dispatch
                           </span>
@@ -1481,7 +1531,10 @@ export function FindLawyerWizard() {
 
         {/* ── STEP 3: mock payment passport ────────────────────────────── */}
         {step === "payment" && (
-          <Card variant="elevated" className="relative overflow-hidden rounded-2xl border border-primary/25 shadow-lg bg-card">
+          <Card
+            variant="elevated"
+            className="relative overflow-hidden rounded-2xl border border-primary/25 shadow-lg bg-card"
+          >
             {/* Top Accent Line */}
             <div className="h-1.5 w-full bg-gradient-to-r from-emerald-500 via-primary to-indigo-500" />
 
@@ -1497,7 +1550,8 @@ export function FindLawyerWizard() {
                       Case Registration & Payment Passport
                     </h3>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
-                      Review all verified details gathered from your case setup before final dispatch.
+                      Review all verified details gathered from your case setup before final
+                      dispatch.
                     </p>
                   </div>
                 </div>
@@ -1526,7 +1580,11 @@ export function FindLawyerWizard() {
                 <div className="shrink-0 flex items-center gap-2">
                   <span className="rounded-lg bg-background px-2.5 py-1 text-[11px] font-extrabold text-primary border border-primary/20 shadow-2xs flex items-center gap-1">
                     <Sparkles className="h-3 w-3" />
-                    {predictedCategory || (selectedPracticeArea ? mapPracticeAreaToCategory(selectedPracticeArea) : "General")} Law
+                    {predictedCategory ||
+                      (selectedPracticeArea
+                        ? mapPracticeAreaToCategory(selectedPracticeArea)
+                        : "General")}{" "}
+                    Law
                   </span>
                 </div>
               </div>
@@ -1545,9 +1603,13 @@ export function FindLawyerWizard() {
                       <FileSearch className="h-3.5 w-3.5" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-[10px] font-semibold text-muted-foreground">Filing Mode & Type</div>
+                      <div className="text-[10px] font-semibold text-muted-foreground">
+                        Filing Mode & Type
+                      </div>
                       <div className="text-xs font-extrabold text-foreground mt-0.5">
-                        {path === "existing" ? `Existing Case (CNR: ${cnr.trim() || "N/A"})` : "New Legal Case"}
+                        {path === "existing"
+                          ? `Existing Case (CNR: ${cnr.trim() || "N/A"})`
+                          : "New Legal Case"}
                       </div>
                     </div>
                   </div>
@@ -1558,7 +1620,9 @@ export function FindLawyerWizard() {
                       <MapPin className="h-3.5 w-3.5" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-[10px] font-semibold text-muted-foreground">Jurisdiction / Location</div>
+                      <div className="text-[10px] font-semibold text-muted-foreground">
+                        Jurisdiction / Location
+                      </div>
                       <div className="text-xs font-extrabold text-foreground mt-0.5">
                         {userCityLabel}
                       </div>
@@ -1571,7 +1635,9 @@ export function FindLawyerWizard() {
                       <Users className="h-3.5 w-3.5" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-[10px] font-semibold text-muted-foreground">Assigned Legal Advocate</div>
+                      <div className="text-[10px] font-semibold text-muted-foreground">
+                        Assigned Legal Advocate
+                      </div>
                       <div className="text-xs font-extrabold text-foreground mt-0.5 truncate">
                         {assignMode === "browse" && selectedLawyer
                           ? `${selectedLawyer.name} (${selectedLawyer.category} Specialist)`
@@ -1586,7 +1652,9 @@ export function FindLawyerWizard() {
                       <CreditCard className="h-3.5 w-3.5" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-[10px] font-semibold text-muted-foreground">Selected Plan / Billing</div>
+                      <div className="text-[10px] font-semibold text-muted-foreground">
+                        Selected Plan / Billing
+                      </div>
                       <div className="text-xs font-extrabold text-foreground mt-0.5">
                         {assignMode === "admin" && selectedPlan
                           ? `${selectedPlan.label} (${selectedPlan.cadence})`
@@ -1602,15 +1670,19 @@ export function FindLawyerWizard() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <div className="text-[10px] font-semibold text-muted-foreground">Case Issue Brief</div>
-                        {(images.length + documents.length) > 0 && (
+                        <div className="text-[10px] font-semibold text-muted-foreground">
+                          Case Issue Brief
+                        </div>
+                        {images.length + documents.length > 0 && (
                           <span className="text-[9px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                             📎 {images.length + documents.length} file(s) attached
                           </span>
                         )}
                       </div>
                       <div className="text-xs font-medium text-foreground/90 mt-0.5 italic leading-relaxed">
-                        {description.trim() ? `"${description}"` : "No extra issue description details added."}
+                        {description.trim()
+                          ? `"${description}"`
+                          : "No extra issue description details added."}
                       </div>
                     </div>
                   </div>
@@ -1625,7 +1697,9 @@ export function FindLawyerWizard() {
                 </div>
                 <div className="flex items-center justify-between text-muted-foreground">
                   <span>Priority Admin Matching & Dispatch</span>
-                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">Included (Free)</span>
+                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                    Included (Free)
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-muted-foreground">
                   <span>GST & Taxes</span>
@@ -1634,8 +1708,12 @@ export function FindLawyerWizard() {
 
                 <div className="pt-2 border-t border-primary/20 flex items-center justify-between">
                   <div>
-                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Total Payable Amount</div>
-                    <div className="text-[10px] text-muted-foreground">Instant confirmation upon payment</div>
+                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                      Total Payable Amount
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">
+                      Instant confirmation upon payment
+                    </div>
                   </div>
                   <div className="flex items-center gap-0.5 text-xl font-black text-primary">
                     <IndianRupee className="h-5 w-5" />
@@ -1814,8 +1892,9 @@ function MultiSelectField({
   return (
     <div className="relative">
       <span
-        className={`absolute -top-2 left-3 z-10 bg-surface px-1 text-[11px] transition-colors ${disabled ? "text-muted-foreground/50" : open ? "text-primary" : "text-muted-foreground"
-          }`}
+        className={`absolute -top-2 left-3 z-10 bg-surface px-1 text-[11px] transition-colors ${
+          disabled ? "text-muted-foreground/50" : open ? "text-primary" : "text-muted-foreground"
+        }`}
       >
         {label}
       </span>
@@ -1823,12 +1902,13 @@ function MultiSelectField({
         type="button"
         disabled={disabled}
         onClick={() => setOpen((o) => !o)}
-        className={`relative flex h-9 w-full items-center justify-between gap-2 rounded-[4px] border px-3 text-left text-sm outline-hidden transition-colors ${disabled
+        className={`relative flex h-9 w-full items-center justify-between gap-2 rounded-[4px] border px-3 text-left text-sm outline-hidden transition-colors ${
+          disabled
             ? "cursor-not-allowed border-border/50 bg-muted/30 text-muted-foreground/50"
             : open
               ? "cursor-pointer border-primary bg-background text-foreground ring-1 ring-primary"
               : "cursor-pointer border-border bg-background text-foreground hover:border-foreground/60"
-          }`}
+        }`}
       >
         <span className="block min-w-0 flex-1 truncate">{summary || "—"}</span>
         <ChevronDown
@@ -1850,10 +1930,11 @@ function MultiSelectField({
                   className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs hover:bg-muted/60"
                 >
                   <span
-                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border-2 transition-colors ${isChecked
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border-2 transition-colors ${
+                      isChecked
                         ? "border-primary bg-primary"
                         : "border-muted-foreground/50 bg-transparent"
-                      }`}
+                    }`}
                   >
                     {isChecked && (
                       <Check className="h-3 w-3 text-primary-foreground" strokeWidth={3} />

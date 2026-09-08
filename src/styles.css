@@ -154,11 +154,16 @@
 
   /* M3 elevation levels (box-shadow approximations) */
   --md-sys-elevation-level0: none;
-  --md-sys-elevation-level1: 0px 1px 2px 0px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
-  --md-sys-elevation-level2: 0px 1px 2px 0px rgba(0, 0, 0, 0.3), 0px 2px 6px 2px rgba(0, 0, 0, 0.15);
-  --md-sys-elevation-level3: 0px 1px 3px 0px rgba(0, 0, 0, 0.3), 0px 4px 8px 3px rgba(0, 0, 0, 0.15);
-  --md-sys-elevation-level4: 0px 2px 3px 0px rgba(0, 0, 0, 0.3), 0px 6px 10px 4px rgba(0, 0, 0, 0.15);
-  --md-sys-elevation-level5: 0px 4px 4px 0px rgba(0, 0, 0, 0.3), 0px 8px 12px 6px rgba(0, 0, 0, 0.15);
+  --md-sys-elevation-level1:
+    0px 1px 2px 0px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+  --md-sys-elevation-level2:
+    0px 1px 2px 0px rgba(0, 0, 0, 0.3), 0px 2px 6px 2px rgba(0, 0, 0, 0.15);
+  --md-sys-elevation-level3:
+    0px 1px 3px 0px rgba(0, 0, 0, 0.3), 0px 4px 8px 3px rgba(0, 0, 0, 0.15);
+  --md-sys-elevation-level4:
+    0px 2px 3px 0px rgba(0, 0, 0, 0.3), 0px 6px 10px 4px rgba(0, 0, 0, 0.15);
+  --md-sys-elevation-level5:
+    0px 4px 4px 0px rgba(0, 0, 0, 0.3), 0px 8px 12px 6px rgba(0, 0, 0, 0.15);
 
   /* @material/web's shadow-DOM stylesheets fall back to the literal string
      "Roboto" for every typescale token (--md-sys-typescale-*-font) when
@@ -189,13 +194,22 @@
   html {
     scroll-behavior: smooth;
   }
-  html, body {
+  html,
+  body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: "Montserrat", ui-sans-serif, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
-  h1, h2, h3, h4, h5, h6 { font-weight: 600; letter-spacing: -0.01em; }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
 
   /* M3 text fields/selects default to a spacious 56px-tall field (16px
      padding above + below the input). That reads as oversized in this
@@ -237,7 +251,9 @@
     background-color: var(--color-surface, #ffffff);
     border-radius: 12px;
     border: 1px solid var(--color-border, #e2e8f0);
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+    box-shadow:
+      0 10px 25px -5px rgba(0, 0, 0, 0.1),
+      0 8px 10px -6px rgba(0, 0, 0, 0.08);
     max-height: 280px;
   }
 
@@ -269,6 +285,26 @@
   .cuc-auth-form md-outlined-select {
     --md-outlined-field-top-space: 9px;
     --md-outlined-field-bottom-space: 9px;
+  }
+
+  /* The lawyer-registration wizard is a long, field-heavy flow that has to fit
+     a fixed-height screen — opt it back down to the dense (~36px) control so
+     every step fits without scrolling. Placed after the rule above so it wins
+     for this form. */
+  .cuc-reg-form md-outlined-text-field,
+  .cuc-reg-form md-outlined-select {
+    --md-outlined-field-top-space: 6px;
+    --md-outlined-field-bottom-space: 6px;
+  }
+
+  /* Action buttons that sit inline next to one of those 36px fields (send-code,
+     add-award). Pin their M3 container height to the same 36px so the button
+     box lines up flush with the field instead of overhanging it. The invisible
+     48px touch target M3 adds is unaffected, so tap size stays accessible. */
+  .cuc-field-action {
+    --md-outlined-button-container-height: 36px;
+    --md-filled-button-container-height: 36px;
+    --md-filled-tonal-button-container-height: 36px;
   }
 
   /* M3 chips (filter/assist/input/suggestion) default to a 32px-tall pill
@@ -326,20 +362,40 @@
    shadow element, not the host, so this list only covers components whose
    box model is host-level padding. (md-dialog has the same conflict on its
    centering `margin`, fixed separately below.) ─────────────────────────── */
-:is(md-elevated-button, md-filled-button, md-filled-tonal-button, md-outlined-button, md-text-button) {
+:is(
+  md-elevated-button,
+  md-filled-button,
+  md-filled-tonal-button,
+  md-outlined-button,
+  md-text-button
+) {
   padding-inline-start: var(--_leading-space, 24px);
   padding-inline-end: var(--_trailing-space, 24px);
   padding-block: calc(
-    (var(--_container-height, 40px) - max(var(--_label-text-line-height, 1.25rem), var(--_icon-size, 18px))) / 2
+    (
+        var(--_container-height, 40px) -
+          max(var(--_label-text-line-height, 1.25rem), var(--_icon-size, 18px))
+      ) /
+      2
   );
 }
-:is(md-elevated-button, md-filled-button, md-filled-tonal-button, md-outlined-button, md-text-button)[has-icon]:not(
-    [trailing-icon]
-  ) {
+:is(
+    md-elevated-button,
+    md-filled-button,
+    md-filled-tonal-button,
+    md-outlined-button,
+    md-text-button
+  )[has-icon]:not([trailing-icon]) {
   padding-inline-start: var(--_with-leading-icon-leading-space, 16px);
   padding-inline-end: var(--_with-leading-icon-trailing-space, 24px);
 }
-:is(md-elevated-button, md-filled-button, md-filled-tonal-button, md-outlined-button, md-text-button)[has-icon][trailing-icon] {
+:is(
+    md-elevated-button,
+    md-filled-button,
+    md-filled-tonal-button,
+    md-outlined-button,
+    md-text-button
+  )[has-icon][trailing-icon] {
   padding-inline-start: var(--_with-trailing-icon-leading-space, 24px);
   padding-inline-end: var(--_with-trailing-icon-trailing-space, 16px);
 }
@@ -399,7 +455,6 @@ md-dialog {
   }
 }
 
-
 @keyframes marquee-rtl {
   from {
     transform: translateX(0);
@@ -435,7 +490,8 @@ md-dialog {
 }
 
 .toggle-root:focus-visible {
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--md-extended-color-success, #006e2d) 30%, transparent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--md-extended-color-success, #006e2d) 30%, transparent);
 }
 
 .toggle-root[data-checked="true"] {
@@ -454,8 +510,10 @@ md-dialog {
   height: 14px;
   border-radius: 9999px;
   background: #ffffff;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
-  transition: left 0.2s ease, width 0.1s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition:
+    left 0.2s ease,
+    width 0.1s ease;
 }
 
 .toggle-root[data-checked="true"] .toggle-thumb {
@@ -604,4 +662,33 @@ md-dialog {
   animation: gold-radar-pulse 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
+/* Material's md-outlined-select renders its dropdown at full content height by
+   default, so a long option list (criminal specialisations, court lists…) runs
+   off the bottom of the viewport; Material then focuses the selected option,
+   and because the un-capped list isn't itself scrollable that focus scroll
+   bubbles up to <html> — which is what jerks the whole page sideways when a
+   dropdown opens. `part="menu"` is exposed by the select; capping its height
+   makes the inner `.items` (already `overflow:auto`) the scroller, so the list
+   stays on-screen and scrolls in place. This is the real fix for the shake. */
+md-outlined-select::part(menu),
+md-filled-select::part(menu) {
+  max-height: 15rem;
+}
 
+/* Reserve the scrollbar lane everywhere else so any scrollbar toggling
+   elsewhere can't shift the layout. */
+html {
+  scrollbar-gutter: stable;
+}
+
+/* On the auth/onboarding shell at lg+ the screen is a fixed-height panel
+   (`h-screen` + `overflow-hidden`) that genuinely never scrolls — and with the
+   dropdown menus capped above, nothing can force it to. Drop the reserved lane
+   there so the full-bleed illustration reaches the right edge instead of
+   leaving a blank ~15px strip. (Below lg there is no illustration and the page
+   scrolls normally, so `stable` stays.) */
+@media (min-width: 1024px) {
+  html:has([data-auth-shell]) {
+    scrollbar-gutter: auto;
+  }
+}

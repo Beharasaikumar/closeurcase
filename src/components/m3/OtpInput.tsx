@@ -92,7 +92,7 @@ export function OtpInput({
           onPaste={handlePaste}
           onFocus={(e) => e.target.select()}
           aria-label={`Digit ${i + 1} of ${length}`}
-          className={`h-14 w-12 sm:h-16 sm:w-14 rounded-(--md-sys-shape-corner-small) border-2 bg-(--md-sys-color-surface) text-center text-xl font-semibold text-(--md-sys-color-on-surface) outline-none transition-colors disabled:opacity-40 ${
+          className={`h-12 w-10 sm:h-16 sm:w-14 rounded-(--md-sys-shape-corner-small) border-2 bg-(--md-sys-color-surface) text-center text-lg font-semibold text-(--md-sys-color-on-surface) outline-none transition-colors disabled:opacity-40 sm:text-xl ${
             error
               ? "border-(--md-sys-color-error)"
               : "border-(--md-sys-color-outline-variant) focus:border-(--md-sys-color-primary)"

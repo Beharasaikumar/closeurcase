@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { PageHeader } from "@/components/app/PageHeader";
 import { DataTable } from "@/components/app/DataTable";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
@@ -28,6 +28,8 @@ import {
   ChevronDown,
   ChevronUp,
   Download,
+  Mail,
+  Send,
 } from "lucide-react";
 import {
   TextField,
@@ -77,6 +79,14 @@ export function LawyersPage() {
   const [attachmentsLawyer, setAttachmentsLawyer] = useState<Lawyer | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewFullScreen, setPreviewFullScreen] = useState(false);
+
+  // Compose-email popup
+  const [emailLawyer, setEmailLawyer] = useState<Lawyer | null>(null);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const openEmail = (r: Lawyer) => {
+    setEmailLawyer(r);
+    setEmailOpen(true);
+  };
 
   useEffect(() => {
     const sync = () => setRows(getLawyers());
@@ -265,6 +275,7 @@ export function LawyersPage() {
           onReject={(r) => setConfirmAction({ id: r.id, name: r.name, action: "Rejected" })}
           onViewProfile={openProfile}
           onViewAttachments={openAttachments}
+          onEmail={openEmail}
         />
       )}
 
@@ -485,7 +496,219 @@ export function LawyersPage() {
           </div>
         </div>
       )}
+
+      {/* COMPOSE EMAIL POPUP */}
+      <ComposeEmailDialog
+        open={emailOpen}
+        lawyer={emailLawyer}
+        onClose={() => setEmailOpen(false)}
+      />
     </div>
+  );
+}
+
+/**
+ * Gmail-style "New Message" compose popup. Frontend-only — there is no mail
+ * server, so Send records the attempt and shows a confirmation. Styled to read
+ * as a real email composition window: dark title bar, borderless To / Subject /
+ * body fields, an attach-files button, and a Send button.
+ */
+function ComposeEmailDialog({
+  open,
+  lawyer,
+  onClose,
+}: {
+  open: boolean;
+  lawyer: Lawyer | null;
+  onClose: () => void;
+}) {
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [pendingRemove, setPendingRemove] = useState<number | null>(null);
+  const [sent, setSent] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setSubject("Regarding your CloseUrCase lawyer registration");
+    setBody("");
+    setAttachments([]);
+    setPendingRemove(null);
+    setSent(false);
+  }, [open, lawyer?.id]);
+
+  const to = lawyer?.email ?? "";
+  const canSend = to.length > 0 && body.trim().length > 0 && !sent;
+
+  // Capture the picked files synchronously — the input is reset right after, so
+  // the live FileList would be empty by the time a deferred state updater reads it.
+  const addFiles = (picked: File[]) => {
+    if (picked.length === 0) return;
+    setAttachments((prev) => [...prev, ...picked]);
+  };
+  const removeFile = (idx: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleSend = () => {
+    if (!canSend) return;
+    // No backend in this app — log the outbound mail and confirm to the admin.
+    console.info("[admin/lawyers] email sent", {
+      to,
+      subject,
+      body,
+      attachments: attachments.map((f) => f.name),
+    });
+    setSent(true);
+    window.setTimeout(onClose, 1500);
+  };
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={(o) => !o && onClose()} maxWidth="560px">
+        <DialogContent className="overflow-hidden rounded-2xl border border-border p-0!">
+          {/* Focus sink — absorbs md-dialog's auto-focus on open */}
+          <span tabIndex={0} aria-hidden="true" className="sr-only" />
+
+          {/* Title bar */}
+          <div className="flex items-center justify-between gap-2 bg-primary px-4 py-2.5 text-primary-foreground">
+            <span className="text-[13px] font-semibold">New Message</span>
+            <button
+              type="button"
+              aria-label="Close"
+              onClick={onClose}
+              className="rounded p-1 text-primary-foreground/80 transition-colors hover:bg-primary-foreground/15 hover:text-primary-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          {sent ? (
+            <div className="flex flex-col items-center gap-2 px-6 py-12 text-center">
+              <span
+                className="flex h-12 w-12 items-center justify-center rounded-full"
+                style={{
+                  backgroundColor:
+                    "color-mix(in srgb, var(--md-extended-color-success) 12%, transparent)",
+                }}
+              >
+                <Send className="h-5 w-5 text-[var(--md-extended-color-success)]" />
+              </span>
+              <p className="text-sm font-semibold text-foreground">Email sent</p>
+              <p className="text-xs text-muted-foreground">Delivered to {to}</p>
+            </div>
+          ) : (
+            <>
+              <div className="px-4">
+                {/* To */}
+                <div className="flex items-center gap-2 border-b border-border py-2.5 text-[13px]">
+                  <span className="shrink-0 text-muted-foreground">To</span>
+                  <span className="min-w-0 flex-1 truncate font-medium text-foreground">
+                    {to || "—"}
+                  </span>
+                </div>
+                {/* Subject */}
+                <input
+                  type="text"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="Subject"
+                  className="w-full border-b border-border bg-transparent py-2.5 text-[13px] font-medium text-foreground outline-none placeholder:font-normal placeholder:text-muted-foreground"
+                />
+                {/* Body */}
+                <textarea
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  rows={7}
+                  placeholder="Write your message…"
+                  className="w-full resize-none bg-transparent py-3 text-[13px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground"
+                />
+
+                {/* Attachments */}
+                {attachments.length > 0 && (
+                  <div className="max-h-28 space-y-1.5 overflow-y-auto pb-2.5">
+                    {attachments.map((f, i) => (
+                      <div
+                        key={`${f.name}-${i}`}
+                        className="flex items-center gap-2 rounded-md border border-border bg-muted/50 px-2 py-1.5 text-[11px]"
+                      >
+                        <Paperclip className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        <span className="min-w-0 flex-1 truncate font-medium text-foreground">
+                          {f.name}
+                        </span>
+                        <span className="shrink-0 text-[10px] text-muted-foreground">
+                          {(f.size / 1024).toFixed(0)} KB
+                        </span>
+                        <button
+                          type="button"
+                          aria-label={`Delete ${f.name}`}
+                          title="Delete attachment"
+                          onClick={() => setPendingRemove(i)}
+                          className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Action bar — attachment then send, bottom-right */}
+              <div className="flex items-center justify-end gap-2 border-t border-border px-4 py-2.5">
+                <IconButton
+                  variant="tonal"
+                  ariaLabel="Attach files"
+                  title="Attach files"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Paperclip className="h-4 w-4" />
+                </IconButton>
+                <IconButton
+                  variant="tonal"
+                  ariaLabel="Send email"
+                  title="Send email"
+                  disabled={!canSend}
+                  onClick={handleSend}
+                >
+                  <Send className="h-4 w-4" />
+                </IconButton>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    const picked = e.target.files ? Array.from(e.target.files) : [];
+                    e.target.value = "";
+                    addFiles(picked);
+                  }}
+                />
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={pendingRemove !== null}
+        title="Delete attachment?"
+        message={
+          pendingRemove !== null && attachments[pendingRemove]
+            ? `Remove “${attachments[pendingRemove].name}” from this email? This can't be undone.`
+            : "Remove this attachment from the email?"
+        }
+        confirmLabel="Delete"
+        cancelLabel="Keep"
+        variant="danger"
+        onConfirm={() => {
+          if (pendingRemove !== null) removeFile(pendingRemove);
+          setPendingRemove(null);
+        }}
+        onCancel={() => setPendingRemove(null)}
+      />
+    </>
   );
 }
 
@@ -558,12 +781,14 @@ function PendingLawyerRequestsInbox({
   onReject,
   onViewProfile,
   onViewAttachments,
+  onEmail,
 }: {
   lawyers: Lawyer[];
   onApprove: (r: Lawyer) => void;
   onReject: (r: Lawyer) => void;
   onViewProfile: (r: Lawyer) => void;
   onViewAttachments: (r: Lawyer) => void;
+  onEmail: (r: Lawyer) => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -629,6 +854,7 @@ function PendingLawyerRequestsInbox({
                 onReject={onReject}
                 onViewProfile={onViewProfile}
                 onViewAttachments={onViewAttachments}
+                onEmail={onEmail}
               />
             ))}
           </div>
@@ -644,12 +870,14 @@ function PendingLawyerRequestCard({
   onReject,
   onViewProfile,
   onViewAttachments,
+  onEmail,
 }: {
   r: Lawyer;
   onApprove: (r: Lawyer) => void;
   onReject: (r: Lawyer) => void;
   onViewProfile: (r: Lawyer) => void;
   onViewAttachments: (r: Lawyer) => void;
+  onEmail: (r: Lawyer) => void;
 }) {
   return (
     <div
@@ -708,6 +936,14 @@ function PendingLawyerRequestCard({
           onClick={() => onViewAttachments(r)}
         >
           <Paperclip className="h-4 w-4" />
+        </IconButton>
+        <IconButton
+          variant="tonal"
+          ariaLabel={`Email ${r.name}`}
+          title="Email lawyer"
+          onClick={() => onEmail(r)}
+        >
+          <Mail className="h-4 w-4" />
         </IconButton>
         <IconButton
           variant="tonal"

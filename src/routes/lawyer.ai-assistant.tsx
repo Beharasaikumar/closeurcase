@@ -238,7 +238,7 @@ export function GenerateCounterAI() {
               Category: <strong className="text-foreground">{selectedCase?.category} Law</strong>
             </span>
             <span>
-              City: <strong className="text-foreground">{selectedCase?.city}</strong>
+              District: <strong className="text-foreground">{selectedCase?.city}</strong>
             </span>
           </div>
         </div>

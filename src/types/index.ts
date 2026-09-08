@@ -83,7 +83,10 @@ export interface Lawyer {
   awards?: LawyerAward[];
   ratingCount?: number;
   consultationFee?: number;
-  availabilityStatus?: "Active" | "Inactive";
+  /** Lawyer-controlled presence shown as a green/red dot on their avatar
+   * everywhere. Independent of `status` (admin-controlled moderation state) —
+   * a `Suspended` lawyer's presence is overridden and locked in the UI. */
+  availabilityStatus?: "Online" | "Offline";
   /** Bank account details for withdrawals. `accountNumber` and `ifscCode` are
    * masked in the UI once set and can only be entered once. */
   bankName?: string;
@@ -443,6 +446,14 @@ export interface CityItem {
   updatedAt?: string;
 }
 
+export interface DistrictItem {
+  id: string;
+  name: string;
+  state: string;
+  active: boolean;
+  updatedAt?: string;
+}
+
 export interface CourtItem {
   id: string;
   name: string;
@@ -451,6 +462,7 @@ export interface CourtItem {
   level: string;
   state: string;
   city?: string;
+  district?: string;
   active: boolean;
   updatedAt?: string;
 }
@@ -460,6 +472,8 @@ export interface StateItem {
   name: string;
   /** Short code, e.g. "TS", "AP", "MH". */
   code: string;
+  /** Districts belonging to this State / UT. */
+  districts?: string[];
   active: boolean;
   updatedAt?: string;
 }

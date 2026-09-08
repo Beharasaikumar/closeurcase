@@ -175,6 +175,7 @@ export const lawyers: Lawyer[] = [
     ],
     courts: ["Telangana High Court", "District Court Rangareddy", "City Civil Court Hyderabad"],
     ratingCount: 95,
+    availabilityStatus: "Offline",
   },
   {
     id: "l_003",

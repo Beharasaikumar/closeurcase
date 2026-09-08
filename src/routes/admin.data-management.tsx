@@ -20,9 +20,6 @@ import {
   getLanguages,
   saveLanguage,
   deleteLanguage,
-  getCities,
-  saveCity,
-  deleteCity,
   getCourts,
   saveCourt,
   deleteCourt,
@@ -38,19 +35,19 @@ import {
 import type {
   CaseCategoryItem,
   LanguageItem,
-  CityItem,
   CourtItem,
   StateItem,
   CourtLevelItem,
 } from "@/types";
 import { Plus, Pencil, Trash2, Search, X, Check } from "lucide-react";
+import { CardPagination } from "@/components/app/CardPagination";
 
 export const Route = createFileRoute("/admin/data-management")({
   head: () => ({ meta: [{ title: "Data Management — CloseUrCase Admin" }] }),
   component: AdminDataManagementPage,
 });
 
-type TabType = "categories" | "languages" | "states" | "cities" | "courts" | "courtLevels";
+type TabType = "categories" | "languages" | "states" | "courts" | "courtLevels";
 
 /* ────────────────────────────────────────────────────────────────────────────
  * A row of master data is edited in place, not in a modal. Each entity type
@@ -58,13 +55,14 @@ type TabType = "categories" | "languages" | "states" | "cities" | "courts" | "co
  * box matches — everything else (list, row, inline editor) is generic.
  * ──────────────────────────────────────────────────────────────────────────── */
 
-type FieldKind = "text" | "select" | "chips" | "tree";
+type FieldKind = "text" | "select" | "chips" | "tree" | "districts";
 
 interface FieldDef {
   key: string;
   label: string;
   /** "chips" — a flat string[] editor. "tree" — a two-level editor of
-   * `{ name, services: string[] }[]` (sub-category → legal services). */
+   * `{ name, services: string[] }[]` (sub-category → legal services).
+   * "districts" — district list manager under a state. */
   kind: FieldKind;
   required?: boolean;
   /** For kind === "select". */
@@ -78,24 +76,24 @@ type SubCat = { name: string; services: string[] };
 const subCats = (v: unknown): SubCat[] =>
   Array.isArray(v)
     ? v
-      .map((e) =>
-        typeof e === "string"
-          ? { name: e, services: [] }
-          : e && typeof e === "object"
-            ? {
-              name: String((e as SubCat).name ?? ""),
-              services: Array.isArray((e as SubCat).services)
-                ? (e as SubCat).services.map(String)
-                : [],
-            }
-            : { name: "", services: [] },
-      )
-      .filter((e) => e.name)
+        .map((e) =>
+          typeof e === "string"
+            ? { name: e, services: [] }
+            : e && typeof e === "object"
+              ? {
+                  name: String((e as SubCat).name ?? ""),
+                  services: Array.isArray((e as SubCat).services)
+                    ? (e as SubCat).services.map(String)
+                    : [],
+                }
+              : { name: "", services: [] },
+        )
+        .filter((e) => e.name)
     : [];
 
 /** Every entity is handled through this loose shape — the config functions
  * below narrow each one back to its real type at the call site. */
-type Row = { id: string; active: boolean;[key: string]: unknown };
+type Row = { id: string; active: boolean; [key: string]: unknown };
 
 interface EntityConfig {
   singular: string;
@@ -113,12 +111,6 @@ interface EntityConfig {
   /** Lowercased haystack for the search box. */
   haystack: (item: Row) => string;
 }
-
-const CITY_TIERS = [
-  { value: "Tier 1", label: "Tier 1" },
-  { value: "Tier 2", label: "Tier 2" },
-  { value: "Tier 3", label: "Tier 3" },
-];
 
 const s = (v: unknown) => String(v ?? "");
 const list = (v: unknown) => (Array.isArray(v) ? (v as string[]) : []);
@@ -196,8 +188,8 @@ const CONFIG: Record<TabType, EntityConfig> = {
     haystack: (i) => [s(i.name), s(i.nativeName), s(i.code)].join(" ").toLowerCase(),
   },
   states: {
-    singular: "State",
-    plural: "states",
+    singular: "State & Districts",
+    plural: "states & districts",
     get: getStates as unknown as () => Row[],
     save: (i) => saveState(i as Omit<StateItem, "id"> & { id?: string }),
     remove: deleteState,
@@ -217,34 +209,26 @@ const CONFIG: Record<TabType, EntityConfig> = {
         upper: true,
         placeholder: "e.g. TS",
       },
-    ],
-    empty: { name: "", code: "" },
-    primary: (i) => s(i.name),
-    secondary: (i) => s(i.code),
-    haystack: (i) => [s(i.name), s(i.code)].join(" ").toLowerCase(),
-  },
-  cities: {
-    singular: "City",
-    plural: "cities",
-    get: getCities as unknown as () => Row[],
-    save: (i) => saveCity(i as Omit<CityItem, "id"> & { id?: string }),
-    remove: deleteCity,
-    fields: [
       {
-        key: "name",
-        label: "City",
-        kind: "text",
-        required: true,
-        placeholder: "e.g. Visakhapatnam",
+        key: "districts",
+        label: "Districts in this State / UT",
+        kind: "districts",
       },
-      // options filled dynamically from the active States list at render time
-      { key: "state", label: "State / UT", kind: "select", required: true, options: [] },
-      { key: "tier", label: "Tier", kind: "select", options: CITY_TIERS },
     ],
-    empty: { name: "", state: "", tier: "Tier 1" },
+    empty: { name: "", code: "", districts: [] },
     primary: (i) => s(i.name),
-    secondary: (i) => `${s(i.state)} · ${s(i.tier)}`,
-    haystack: (i) => [s(i.name), s(i.state), s(i.tier)].join(" ").toLowerCase(),
+    secondary: (i) => {
+      const d = Array.isArray(i.districts) ? i.districts : [];
+      return `${s(i.code)} · ${d.length} district${d.length === 1 ? "" : "s"}`;
+    },
+    haystack: (i) =>
+      [
+        s(i.name),
+        s(i.code),
+        ...(Array.isArray(i.districts) ? (i.districts as string[]).map(String) : []),
+      ]
+        .join(" ")
+        .toLowerCase(),
   },
   courts: {
     singular: "Court",
@@ -260,16 +244,21 @@ const CONFIG: Record<TabType, EntityConfig> = {
         required: true,
         placeholder: "e.g. High Court of Judicature",
       },
-      // options filled dynamically from the active Court Levels list
       { key: "level", label: "Level", kind: "select", required: true, options: [] },
-      // options filled dynamically from the active States list
       { key: "state", label: "State / UT", kind: "select", required: true, options: [] },
-      { key: "city", label: "City (optional)", kind: "text", placeholder: "e.g. Hyderabad" },
+      {
+        key: "district",
+        label: "District (optional)",
+        kind: "text",
+        placeholder: "e.g. Hyderabad",
+      },
     ],
-    empty: { name: "", level: "", state: "", city: "" },
+    empty: { name: "", level: "", state: "", district: "" },
     primary: (i) => s(i.name),
-    secondary: (i) => [s(i.level), s(i.city), s(i.state)].filter(Boolean).join(" · "),
-    haystack: (i) => [s(i.name), s(i.level), s(i.state), s(i.city)].join(" ").toLowerCase(),
+    secondary: (i) =>
+      [s(i.level), s(i.district || i.city), s(i.state)].filter(Boolean).join(" · "),
+    haystack: (i) =>
+      [s(i.name), s(i.level), s(i.state), s(i.district || i.city)].join(" ").toLowerCase(),
   },
   courtLevels: {
     singular: "Court Level",
@@ -461,6 +450,130 @@ function SubCategoryTree({
   );
 }
 
+/* ── District list editor under a State ─────────────────────────────────────── */
+function DistrictListEditor({
+  value,
+  onChange,
+}: {
+  value: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const [newDistrict, setNewDistrict] = useState("");
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  const [editName, setEditName] = useState("");
+
+  const addDistrict = () => {
+    const name = newDistrict.trim();
+    if (!name) return;
+    if (!value.some((d) => d.toLowerCase() === name.toLowerCase())) {
+      onChange([...value, name]);
+    }
+    setNewDistrict("");
+  };
+
+  const removeDistrict = (idx: number) => {
+    onChange(value.filter((_, i) => i !== idx));
+    if (editingIdx === idx) setEditingIdx(null);
+  };
+
+  const startEdit = (idx: number) => {
+    setEditingIdx(idx);
+    setEditName(value[idx]);
+  };
+
+  const saveEdit = (idx: number) => {
+    const trimmed = editName.trim();
+    if (trimmed && !value.some((d, i) => i !== idx && d.toLowerCase() === trimmed.toLowerCase())) {
+      onChange(value.map((d, i) => (i === idx ? trimmed : d)));
+    }
+    setEditingIdx(null);
+  };
+
+  return (
+    <div className="space-y-2.5">
+      <div className="flex items-end gap-2">
+        <div className="flex-1">
+          <TextField
+            label="Add district"
+            value={newDistrict}
+            onChange={setNewDistrict}
+            placeholder="e.g. Hyderabad — then press Enter"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addDistrict();
+              }
+            }}
+          />
+        </div>
+        <Button variant="tonal" onClick={addDistrict} disabled={!newDistrict.trim()}>
+          Add
+        </Button>
+      </div>
+
+      {value.length === 0 ? (
+        <p className="px-1 py-2 text-xs text-muted-foreground italic">
+          No districts added yet for this state. Type a district name above and click Add.
+        </p>
+      ) : (
+        <div className="rounded-xl border border-border bg-muted/20 p-3 space-y-2">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs font-semibold text-muted-foreground">
+              {value.length} district{value.length === 1 ? "" : "s"} in this state / UT
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-1.5 max-h-56 overflow-y-auto pr-1">
+            {value.map((dist, idx) => {
+              const isEditing = editingIdx === idx;
+              if (isEditing) {
+                return (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-1.5 rounded-full border border-primary/50 bg-background px-2.5 py-1 shadow-sm"
+                  >
+                    <input
+                      autoFocus
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") saveEdit(idx);
+                        if (e.key === "Escape") setEditingIdx(null);
+                      }}
+                      className="text-xs font-medium text-foreground bg-transparent focus:outline-none w-28"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => saveEdit(idx)}
+                      className="text-xs text-primary hover:underline font-semibold"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingIdx(null)}
+                      className="text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                );
+              }
+              return (
+                <InputChip
+                  key={`${dist}-${idx}`}
+                  label={dist}
+                  onClick={() => startEdit(idx)}
+                  onRemove={() => removeDistrict(idx)}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Inline editor for one row ──────────────────────────────────────────────── */
 function RowEditor({
   fields,
@@ -479,17 +592,6 @@ function RowEditor({
 }) {
   const [chipDraft, setChipDraft] = useState("");
 
-  const chips = list(values.subCategories);
-
-  const addChip = () => {
-    const v = chipDraft.trim();
-    if (!v) return;
-    if (!chips.some((c) => c.toLowerCase() === v.toLowerCase())) {
-      onChange("subCategories", [...chips, v]);
-    }
-    setChipDraft("");
-  };
-
   return (
     <div
       className="space-y-3 px-3 pb-4 pt-1 sm:px-4"
@@ -505,6 +607,23 @@ function RowEditor({
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {fields.map((f) => {
+          if (f.kind === "districts") {
+            const distList = Array.isArray(values[f.key])
+              ? (values[f.key] as string[])
+              : typeof values[f.key] === "string"
+                ? (values[f.key] as string).split(",")
+                : [];
+            return (
+              <div key={f.key} className="sm:col-span-2 space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">{f.label}</label>
+                <DistrictListEditor
+                  value={distList}
+                  onChange={(next) => onChange(f.key, next)}
+                />
+              </div>
+            );
+          }
+
           if (f.kind === "tree") {
             return (
               <div key={f.key} className="sm:col-span-2 space-y-1.5">
@@ -518,6 +637,16 @@ function RowEditor({
           }
 
           if (f.kind === "chips") {
+            const chips = list(values[f.key]);
+            const addChip = () => {
+              const v = chipDraft.trim();
+              if (!v) return;
+              if (!chips.some((c) => c.toLowerCase() === v.toLowerCase())) {
+                onChange(f.key, [...chips, v]);
+              }
+              setChipDraft("");
+            };
+
             return (
               <div key={f.key} className="sm:col-span-2 space-y-2">
                 <div className="flex items-end gap-2">
@@ -547,7 +676,7 @@ function RowEditor({
                         label={c}
                         onRemove={() =>
                           onChange(
-                            "subCategories",
+                            f.key,
                             chips.filter((_, i) => i !== idx),
                           )
                         }
@@ -568,7 +697,9 @@ function RowEditor({
                 value={String(values[f.key] ?? "")}
                 onChange={(v) => onChange(f.key, v)}
                 options={
-                  f.required ? [{ value: "", label: `— Select ${f.label} —` }, ...opts] : opts
+                  opts.length > 0
+                    ? opts
+                    : [{ value: "", label: `Select ${f.label.toLowerCase()}` }]
                 }
               />
             );
@@ -579,24 +710,18 @@ function RowEditor({
               key={f.key}
               label={f.required ? `${f.label} *` : f.label}
               value={String(values[f.key] ?? "")}
-              onChange={(v) => onChange(f.key, v)}
+              onChange={(v) => onChange(f.key, f.upper ? v.toUpperCase() : v)}
               placeholder={f.placeholder}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  onSave();
-                }
-              }}
             />
           );
         })}
       </div>
 
-      <div className="flex items-center justify-end gap-2">
+      <div className="flex items-center justify-end gap-2 pt-2">
         <Button variant="text" onClick={onCancel}>
           Cancel
         </Button>
-        <Button variant="filled" icon={<Check className="h-4 w-4" />} onClick={onSave}>
+        <Button variant="filled" onClick={onSave} icon={<Check className="h-4 w-4" />}>
           Save
         </Button>
       </div>
@@ -613,7 +738,6 @@ export function AdminDataManagementPage() {
   const [categories, setCategories] = useState<CaseCategoryItem[]>(getCaseCategories);
   const [languages, setLanguages] = useState<LanguageItem[]>(getLanguages);
   const [states, setStates] = useState<StateItem[]>(getStates);
-  const [cities, setCities] = useState<CityItem[]>(getCities);
   const [courts, setCourts] = useState<CourtItem[]>(getCourts);
   const [courtLevels, setCourtLevels] = useState<CourtLevelItem[]>(getCourtLevels);
 
@@ -623,7 +747,6 @@ export function AdminDataManagementPage() {
         setCategories(getCaseCategories());
         setLanguages(getLanguages());
         setStates(getStates());
-        setCities(getCities());
         setCourts(getCourts());
         setCourtLevels(getCourtLevels());
       }),
@@ -647,17 +770,19 @@ export function AdminDataManagementPage() {
   }, [tab]);
 
   const baseCfg = CONFIG[tab];
-  const rows = { categories, languages, states, cities, courts, courtLevels }[
+  const rows = { categories, languages, states, courts, courtLevels }[
     tab
   ] as unknown as Row[];
 
-  // Cities and Courts pull their State / Level choices from the other managed
-  // lists, so their select fields are rebuilt each render from what's active.
+  // Courts pull State and Level choices dynamically from the active States / Levels lists
   const cfg = useMemo<EntityConfig>(() => {
-    if (tab !== "cities" && tab !== "courts") return baseCfg;
-    const stateOpts = states
-      .filter((st) => st.active)
-      .map((st) => ({ value: st.name, label: st.name }));
+    if (tab !== "courts") return baseCfg;
+    const stateOpts = [
+      { value: "All India", label: "All India (National)" },
+      ...states
+        .filter((st) => st.active)
+        .map((st) => ({ value: st.name, label: st.name })),
+    ];
     const levelOpts = courtLevels
       .filter((lv) => lv.active)
       .map((lv) => ({ value: lv.name, label: lv.name }));
@@ -675,7 +800,6 @@ export function AdminDataManagementPage() {
     categories: categories.length,
     languages: languages.length,
     states: states.length,
-    cities: cities.length,
     courts: courts.length,
     courtLevels: courtLevels.length,
   };
@@ -690,13 +814,34 @@ export function AdminDataManagementPage() {
     });
   }, [rows, search, statusFilter, cfg]);
 
+  // Standard CardPagination support — limit 25 for all tabs
+  const [pageSize, setPageSize] = useState(25);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [tab, search, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+
+  const paginatedRows = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, safePage, pageSize]);
+
   const openEdit = (row: Row) => {
     const values: Record<string, unknown> = {};
     cfg.fields.forEach((f) => {
-      if (f.kind === "chips") values[f.key] = [...list(row[f.key])];
-      else if (f.kind === "tree")
+      if (f.kind === "districts") {
+        values[f.key] = Array.isArray(row[f.key]) ? [...(row[f.key] as string[])] : [];
+      } else if (f.kind === "chips") {
+        values[f.key] = [...list(row[f.key])];
+      } else if (f.kind === "tree") {
         values[f.key] = subCats(row[f.key]).map((sc) => ({ ...sc, services: [...sc.services] }));
-      else values[f.key] = row[f.key] ?? "";
+      } else {
+        values[f.key] = row[f.key] ?? "";
+      }
     });
     setDraft(values);
     setFormError("");
@@ -723,8 +868,8 @@ export function AdminDataManagementPage() {
       if (existing) payload.active = existing.active;
     }
     cfg.fields.forEach((f) => {
-      if (f.kind === "chips") {
-        payload[f.key] = draft[f.key] ?? [];
+      if (f.kind === "districts" || f.kind === "chips") {
+        payload[f.key] = Array.isArray(draft[f.key]) ? draft[f.key] : [];
       } else if (f.kind === "tree") {
         payload[f.key] = subCats(draft[f.key])
           .map((sc) => ({
@@ -747,13 +892,12 @@ export function AdminDataManagementPage() {
     if (!row) return;
     const payload: Record<string, unknown> = { id, active: next };
     cfg.fields.forEach((f) => {
-      payload[f.key] = row[f.key] ?? (f.kind === "chips" || f.kind === "tree" ? [] : "");
+      payload[f.key] =
+        row[f.key] ?? (f.kind === "chips" || f.kind === "districts" || f.kind === "tree" ? [] : "");
     });
     cfg.save(payload as Record<string, unknown> & { active: boolean });
   };
 
-  // Turning a record off hides it from citizens/lawyers, so confirm first.
-  // Turning it back on is harmless and applies immediately.
   const handleToggle = (row: Row) => {
     if (row.active === true) {
       setDeactivateTarget({ id: row.id, name: cfg.primary(row) });
@@ -765,8 +909,7 @@ export function AdminDataManagementPage() {
   const tabItems: { value: TabType; label: string }[] = [
     { value: "categories", label: `Categories (${counts.categories})` },
     { value: "languages", label: `Languages (${counts.languages})` },
-    { value: "states", label: `States (${counts.states})` },
-    { value: "cities", label: `Cities (${counts.cities})` },
+    { value: "states", label: `States & Districts (${counts.states})` },
     { value: "courts", label: `Courts (${counts.courts})` },
     { value: "courtLevels", label: `Court Levels (${counts.courtLevels})` },
   ];
@@ -775,7 +918,7 @@ export function AdminDataManagementPage() {
     <div className="w-full space-y-4">
       <PageHeader
         title="Data Management"
-        description="Maintain the master categories, languages, states, cities, courts, and court levels used across CloseUrCase."
+        description="Maintain the master categories, languages, states & districts, courts, and court levels used across CloseUrCase."
         actions={
           <Button variant="filled" icon={<Plus className="h-4 w-4" />} onClick={openAdd}>
             Add {cfg.singular}
@@ -841,7 +984,7 @@ export function AdminDataManagementPage() {
             </p>
           </div>
         ) : (
-          filtered.map((row, idx) => {
+          paginatedRows.map((row, idx) => {
             const isEditing = editingId === row.id;
             const active = row.active === true;
             return (
@@ -913,6 +1056,23 @@ export function AdminDataManagementPage() {
             );
           })
         )}
+
+        {/* Standard CardPagination for all tabs — limit 25 */}
+        {filtered.length > 0 && (
+          <div className="border-t border-border px-3 py-3 sm:px-4 bg-muted/10">
+            <CardPagination
+              page={safePage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              pageSize={pageSize}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setCurrentPage(1);
+              }}
+              pageSizeOptions={[10, 25, 50, 100]}
+            />
+          </div>
+        )}
       </Card>
 
       <div className="flex justify-end pt-1">
@@ -949,10 +1109,10 @@ export function AdminDataManagementPage() {
 
       <ConfirmDialog
         open={confirmReset}
-        title="Reset master data to defaults?"
-        message="All categories, languages, states, cities, courts, and court levels return to their original seed records. Custom additions and edits are cleared."
-        confirmLabel="Reset everything"
-        variant="warning"
+        title="Reset all master data to defaults?"
+        message="All categories, languages, states & districts, courts, and court levels will be reset to their factory defaults. Any custom records you added will be lost."
+        confirmLabel="Reset to defaults"
+        variant="danger"
         onConfirm={() => {
           resetDataManagementToDefaults();
           setConfirmReset(false);

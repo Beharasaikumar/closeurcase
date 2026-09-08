@@ -1,3 +1,4 @@
+import { DEFAULT_PARSED_COURTS } from "./courtParser";
 import type {
   AppNotification,
   CaseDocument,
@@ -34,7 +35,7 @@ import {
   knowledgeBase as seedKnowledgeBase,
 } from "./mock";
 
-const LAWYERS_KEY = "cuc_lawyers_v9";
+const LAWYERS_KEY = "cuc_lawyers_v10";
 const CITIZENS_KEY = "cuc_citizens_v3";
 const NOTIFICATIONS_KEY = "cuc_notifications_v2";
 const VIDEO_CALLS_KEY = "cuc_video_calls_v1";
@@ -1672,150 +1673,670 @@ export const DEFAULT_CITIES: CityItem[] = [
   { id: "city_15", name: "Indore", state: "Madhya Pradesh", tier: "Tier 2", active: true },
 ];
 
-export const DEFAULT_COURTS: CourtItem[] = [
-  {
-    id: "crt_1",
-    name: "Supreme Court of India",
-    level: "Supreme Court",
-    state: "Delhi",
-    city: "New Delhi",
-    active: true,
-  },
-  {
-    id: "crt_2",
-    name: "High Court for the State of Telangana",
-    level: "High Court",
-    state: "Telangana",
-    city: "Hyderabad",
-    active: true,
-  },
-  {
-    id: "crt_3",
-    name: "High Court of Andhra Pradesh",
-    level: "High Court",
-    state: "Andhra Pradesh",
-    city: "Amaravati",
-    active: true,
-  },
-  {
-    id: "crt_4",
-    name: "High Court of Karnataka",
-    level: "High Court",
-    state: "Karnataka",
-    city: "Bengaluru",
-    active: true,
-  },
-  {
-    id: "crt_5",
-    name: "Bombay High Court",
-    level: "High Court",
-    state: "Maharashtra",
-    city: "Mumbai",
-    active: true,
-  },
-  {
-    id: "crt_6",
-    name: "Delhi High Court",
-    level: "High Court",
-    state: "Delhi",
-    city: "New Delhi",
-    active: true,
-  },
-  {
-    id: "crt_7",
-    name: "Madras High Court",
-    level: "High Court",
-    state: "Tamil Nadu",
-    city: "Chennai",
-    active: true,
-  },
-  {
-    id: "crt_8",
-    name: "Calcutta High Court",
-    level: "High Court",
-    state: "West Bengal",
-    city: "Kolkata",
-    active: true,
-  },
-  {
-    id: "crt_9",
-    name: "City Civil and Sessions Court, Hyderabad",
-    level: "District Court",
-    state: "Telangana",
-    city: "Hyderabad",
-    active: true,
-  },
-  {
-    id: "crt_10",
-    name: "City Civil Court, Bengaluru",
-    level: "District Court",
-    state: "Karnataka",
-    city: "Bengaluru",
-    active: true,
-  },
-  {
-    id: "crt_11",
-    name: "National Company Law Tribunal (NCLT) Hyderabad",
-    level: "Tribunal",
-    state: "Telangana",
-    city: "Hyderabad",
-    active: true,
-  },
-  {
-    id: "crt_12",
-    name: "National Green Tribunal (NGT) Southern Zone",
-    level: "Tribunal",
-    state: "Tamil Nadu",
-    city: "Chennai",
-    active: true,
-  },
-  {
-    id: "crt_13",
-    name: "Central Administrative Tribunal (CAT) Hyderabad",
-    level: "Tribunal",
-    state: "Telangana",
-    city: "Hyderabad",
-    active: true,
-  },
-];
+export const DEFAULT_COURTS: CourtItem[] = DEFAULT_PARSED_COURTS;
 
 export const DEFAULT_STATES: StateItem[] = [
-  { id: "st_1", name: "Andhra Pradesh", code: "AP", active: true },
-  { id: "st_2", name: "Arunachal Pradesh", code: "AR", active: true },
-  { id: "st_3", name: "Assam", code: "AS", active: true },
-  { id: "st_4", name: "Bihar", code: "BR", active: true },
-  { id: "st_5", name: "Chhattisgarh", code: "CG", active: true },
-  { id: "st_6", name: "Goa", code: "GA", active: true },
-  { id: "st_7", name: "Gujarat", code: "GJ", active: true },
-  { id: "st_8", name: "Haryana", code: "HR", active: true },
-  { id: "st_9", name: "Himachal Pradesh", code: "HP", active: true },
-  { id: "st_10", name: "Jharkhand", code: "JH", active: true },
-  { id: "st_11", name: "Karnataka", code: "KA", active: true },
-  { id: "st_12", name: "Kerala", code: "KL", active: true },
-  { id: "st_13", name: "Madhya Pradesh", code: "MP", active: true },
-  { id: "st_14", name: "Maharashtra", code: "MH", active: true },
-  { id: "st_15", name: "Manipur", code: "MN", active: true },
-  { id: "st_16", name: "Meghalaya", code: "ML", active: true },
-  { id: "st_17", name: "Mizoram", code: "MZ", active: true },
-  { id: "st_18", name: "Nagaland", code: "NL", active: true },
-  { id: "st_19", name: "Odisha", code: "OD", active: true },
-  { id: "st_20", name: "Punjab", code: "PB", active: true },
-  { id: "st_21", name: "Rajasthan", code: "RJ", active: true },
-  { id: "st_22", name: "Sikkim", code: "SK", active: true },
-  { id: "st_23", name: "Tamil Nadu", code: "TN", active: true },
-  { id: "st_24", name: "Telangana", code: "TS", active: true },
-  { id: "st_25", name: "Tripura", code: "TR", active: true },
-  { id: "st_26", name: "Uttar Pradesh", code: "UP", active: true },
-  { id: "st_27", name: "Uttarakhand", code: "UK", active: true },
-  { id: "st_28", name: "West Bengal", code: "WB", active: true },
-  { id: "st_29", name: "Andaman & Nicobar Islands", code: "AN", active: true },
-  { id: "st_30", name: "Chandigarh", code: "CH", active: true },
-  { id: "st_31", name: "Dadra & Nagar Haveli and Daman & Diu", code: "DN", active: true },
-  { id: "st_32", name: "Delhi", code: "DL", active: true },
-  { id: "st_33", name: "Jammu & Kashmir", code: "JK", active: true },
-  { id: "st_34", name: "Ladakh", code: "LA", active: true },
-  { id: "st_35", name: "Lakshadweep", code: "LD", active: true },
-  { id: "st_36", name: "Puducherry", code: "PY", active: true },
+  {
+    id: "st_1",
+    name: "Andhra Pradesh",
+    code: "AP",
+    active: true,
+    districts: [
+      "Visakhapatnam",
+      "Vijayawada",
+      "Guntur",
+      "Tirupati",
+      "Kurnool",
+      "Nellore",
+      "YSR Kadapa",
+      "Kakinada",
+      "Rajamahendravaram",
+      "Anantapur",
+      "Eluru",
+      "Ongole",
+      "Chittoor",
+      "Srikakulam",
+      "Vizianagaram",
+      "Anakapalli",
+      "Nandyal",
+      "Bapatla",
+      "Palnadu",
+    ],
+  },
+  {
+    id: "st_2",
+    name: "Arunachal Pradesh",
+    code: "AR",
+    active: true,
+    districts: [
+      "Papum Pare",
+      "Tawang",
+      "West Kameng",
+      "East Kameng",
+      "Upper Subansiri",
+      "West Siang",
+      "East Siang",
+      "Upper Siang",
+      "Changlang",
+      "Tirap",
+      "Anjaw",
+      "Lower Subansiri",
+      "Kurung Kumey",
+      "Dibang Valley",
+      "Lohit",
+    ],
+  },
+  {
+    id: "st_3",
+    name: "Assam",
+    code: "AS",
+    active: true,
+    districts: [
+      "Kamrup Metropolitan (Guwahati)",
+      "Kamrup",
+      "Cachar (Silchar)",
+      "Dibrugarh",
+      "Jorhat",
+      "Nagaon",
+      "Tinsukia",
+      "Barpeta",
+      "Dhubri",
+      "Sonitpur",
+      "Bongaigaon",
+      "Golaghat",
+      "Karbi Anglong",
+      "Hailakandi",
+      "Karimganj",
+    ],
+  },
+  {
+    id: "st_4",
+    name: "Bihar",
+    code: "BR",
+    active: true,
+    districts: [
+      "Patna",
+      "Gaya",
+      "Bhagalpur",
+      "Muzaffarpur",
+      "Purnia",
+      "Darbhanga",
+      "Bihar Sharif (Nalanda)",
+      "Arrah (Bhojpur)",
+      "Begusarai",
+      "Katihar",
+      "Munger",
+      "Chhapra (Saran)",
+      "Samastipur",
+      "Rohtas",
+      "Vaishali",
+    ],
+  },
+  {
+    id: "st_5",
+    name: "Chhattisgarh",
+    code: "CG",
+    active: true,
+    districts: [
+      "Raipur",
+      "Durg (Bhilai)",
+      "Bilaspur",
+      "Korba",
+      "Rajnandgaon",
+      "Jagdalpur (Bastar)",
+      "Raigarh",
+      "Ambikapur (Surguja)",
+      "Dhamtari",
+      "Mahasamund",
+      "Kanker",
+      "Kabirdham",
+    ],
+  },
+  {
+    id: "st_6",
+    name: "Goa",
+    code: "GA",
+    active: true,
+    districts: ["North Goa (Panaji)", "South Goa (Margao)"],
+  },
+  {
+    id: "st_7",
+    name: "Gujarat",
+    code: "GJ",
+    active: true,
+    districts: [
+      "Ahmedabad",
+      "Surat",
+      "Vadodara",
+      "Rajkot",
+      "Bhavnagar",
+      "Jamnagar",
+      "Junagadh",
+      "Gandhinagar",
+      "Anand",
+      "Navsari",
+      "Morbi",
+      "Bharuch",
+      "Mehsana",
+      "Valsad (Vapi)",
+      "Kutch",
+      "Patan",
+      "Surendranagar",
+    ],
+  },
+  {
+    id: "st_8",
+    name: "Haryana",
+    code: "HR",
+    active: true,
+    districts: [
+      "Gurugram",
+      "Faridabad",
+      "Panipat",
+      "Ambala",
+      "Yamunanagar",
+      "Rohtak",
+      "Hisar",
+      "Karnal",
+      "Sonipat",
+      "Panchkula",
+      "Bhiwani",
+      "Sirsa",
+      "Jhajjar",
+      "Kurukshetra",
+    ],
+  },
+  {
+    id: "st_9",
+    name: "Himachal Pradesh",
+    code: "HP",
+    active: true,
+    districts: [
+      "Shimla",
+      "Kangra (Dharamshala)",
+      "Solan",
+      "Mandi",
+      "Kullu",
+      "Hamirpur",
+      "Una",
+      "Bilaspur",
+      "Sirmaur",
+      "Chamba",
+      "Kinnaur",
+      "Lahaul and Spiti",
+    ],
+  },
+  {
+    id: "st_10",
+    name: "Jharkhand",
+    code: "JH",
+    active: true,
+    districts: [
+      "Ranchi",
+      "East Singhbhum (Jamshedpur)",
+      "Dhanbad",
+      "Bokaro",
+      "Deoghar",
+      "Hazaribagh",
+      "West Singhbhum (Chaibasa)",
+      "Giridih",
+      "Ramgarh",
+      "Dumka",
+      "Palamu",
+    ],
+  },
+  {
+    id: "st_11",
+    name: "Karnataka",
+    code: "KA",
+    active: true,
+    districts: [
+      "Bengaluru Urban",
+      "Bengaluru Rural",
+      "Mysuru",
+      "Dakshina Kannada (Mangaluru)",
+      "Dharwad (Hubballi)",
+      "Belagavi",
+      "Kalaburagi",
+      "Davanagere",
+      "Ballari",
+      "Vijayapura",
+      "Shivamogga",
+      "Tumakuru",
+      "Udupi",
+      "Bagalkot",
+      "Hassan",
+      "Bidar",
+      "Raichur",
+      "Mandya",
+      "Chikkamagaluru",
+    ],
+  },
+  {
+    id: "st_12",
+    name: "Kerala",
+    code: "KL",
+    active: true,
+    districts: [
+      "Thiruvananthapuram",
+      "Ernakulam (Kochi)",
+      "Kozhikode",
+      "Thrissur",
+      "Kollam",
+      "Palakkad",
+      "Alappuzha",
+      "Kannur",
+      "Kottayam",
+      "Malappuram",
+      "Kasaragod",
+      "Idukki",
+      "Wayanad",
+      "Pathanamthitta",
+    ],
+  },
+  {
+    id: "st_13",
+    name: "Madhya Pradesh",
+    code: "MP",
+    active: true,
+    districts: [
+      "Bhopal",
+      "Indore",
+      "Gwalior",
+      "Jabalpur",
+      "Ujjain",
+      "Sagar",
+      "Dewas",
+      "Satna",
+      "Ratlam",
+      "Rewa",
+      "Katni",
+      "Singrauli",
+      "Chhindwara",
+      "Sehore",
+      "Vidisha",
+      "Hoshangabad",
+    ],
+  },
+  {
+    id: "st_14",
+    name: "Maharashtra",
+    code: "MH",
+    active: true,
+    districts: [
+      "Mumbai City",
+      "Mumbai Suburban",
+      "Pune",
+      "Nagpur",
+      "Thane",
+      "Nashik",
+      "Chhatrapati Sambhajinagar (Aurangabad)",
+      "Solapur",
+      "Kolhapur",
+      "Navi Mumbai",
+      "Amravati",
+      "Nanded",
+      "Jalgaon",
+      "Raigad (Alibag)",
+      "Palghar (Vasai)",
+      "Satara",
+      "Sangli",
+      "Ahmednagar",
+      "Latur",
+      "Dhule",
+    ],
+  },
+  {
+    id: "st_15",
+    name: "Manipur",
+    code: "MN",
+    active: true,
+    districts: [
+      "Imphal West",
+      "Imphal East",
+      "Thoubal",
+      "Bishnupur",
+      "Churachandpur",
+      "Ukhrul",
+      "Senapati",
+      "Tamenglong",
+      "Chandel",
+    ],
+  },
+  {
+    id: "st_16",
+    name: "Meghalaya",
+    code: "ML",
+    active: true,
+    districts: [
+      "East Khasi Hills (Shillong)",
+      "West Garo Hills (Tura)",
+      "Ri-Bhoi",
+      "West Khasi Hills",
+      "South West Khasi Hills",
+      "East Jaintia Hills",
+      "West Jaintia Hills",
+    ],
+  },
+  {
+    id: "st_17",
+    name: "Mizoram",
+    code: "MZ",
+    active: true,
+    districts: ["Aizawl", "Lunglei", "Champhai", "Kolasib", "Serchhip", "Lawngtlai", "Siaha"],
+  },
+  {
+    id: "st_18",
+    name: "Nagaland",
+    code: "NL",
+    active: true,
+    districts: ["Kohima", "Dimapur", "Mokokchung", "Tuensang", "Wokha", "Mon", "Phek", "Zunheboto"],
+  },
+  {
+    id: "st_19",
+    name: "Odisha",
+    code: "OD",
+    active: true,
+    districts: [
+      "Khordha (Bhubaneswar)",
+      "Cuttack",
+      "Sundargarh (Rourkela)",
+      "Ganjam (Berhampur)",
+      "Sambalpur",
+      "Puri",
+      "Balasore",
+      "Bhadrak",
+      "Mayurbhanj (Baripada)",
+      "Angul",
+      "Jajpur",
+      "Balangir",
+      "Koraput",
+    ],
+  },
+  {
+    id: "st_20",
+    name: "Punjab",
+    code: "PB",
+    active: true,
+    districts: [
+      "Ludhiana",
+      "Amritsar",
+      "Jalandhar",
+      "Patiala",
+      "Bathinda",
+      "SAS Nagar (Mohali)",
+      "Hoshiarpur",
+      "Pathankot",
+      "Moga",
+      "Firozpur",
+      "Gurdaspur",
+      "Kapurthala",
+      "Sangrur",
+      "Faridkot",
+    ],
+  },
+  {
+    id: "st_21",
+    name: "Rajasthan",
+    code: "RJ",
+    active: true,
+    districts: [
+      "Jaipur",
+      "Jodhpur",
+      "Kota",
+      "Bikaner",
+      "Ajmer",
+      "Udaipur",
+      "Bhilwara",
+      "Alwar",
+      "Sikar",
+      "Sri Ganganagar",
+      "Bharatpur",
+      "Pali",
+      "Nagaur (Makrana)",
+      "Kotputli-Behror",
+      "Barmer",
+      "Chittorgarh",
+      "Jhunjhunu",
+    ],
+  },
+  {
+    id: "st_22",
+    name: "Sikkim",
+    code: "SK",
+    active: true,
+    districts: [
+      "East Sikkim (Gangtok)",
+      "West Sikkim (Geyzing)",
+      "South Sikkim (Namchi)",
+      "North Sikkim (Mangan)",
+      "Pakyong",
+      "Soreng",
+    ],
+  },
+  {
+    id: "st_23",
+    name: "Tamil Nadu",
+    code: "TN",
+    active: true,
+    districts: [
+      "Chennai",
+      "Coimbatore",
+      "Madurai",
+      "Tiruchirappalli",
+      "Salem",
+      "Tirunelveli",
+      "Tiruppur",
+      "Vellore",
+      "Erode",
+      "Thoothukudi",
+      "Dindigul",
+      "Thanjavur",
+      "Kanchipuram",
+      "Cuddalore",
+      "Chengalpattu",
+      "Tiruvallur",
+      "Viluppuram",
+      "Dharmapuri",
+    ],
+  },
+  {
+    id: "st_24",
+    name: "Telangana",
+    code: "TS",
+    active: true,
+    districts: [
+      "Hyderabad",
+      "Ranga Reddy",
+      "Medchal-Malkajgiri",
+      "Warangal",
+      "Karimnagar",
+      "Nizamabad",
+      "Khammam",
+      "Peddapalli (Ramagundam)",
+      "Mahbubnagar",
+      "Nalgonda",
+      "Adilabad",
+      "Suryapet",
+      "Siddipet",
+      "Sangareddy",
+      "Mancherial",
+      "Jagtial",
+      "Bhadradri Kothagudem",
+      "Kamareddy",
+      "Yadadri Bhuvanagiri",
+    ],
+  },
+  {
+    id: "st_25",
+    name: "Tripura",
+    code: "TR",
+    active: true,
+    districts: [
+      "West Tripura (Agartala)",
+      "Gomati",
+      "South Tripura",
+      "North Tripura",
+      "Dhalai",
+      "Unakoti",
+      "Khowai",
+      "Sepahijala",
+    ],
+  },
+  {
+    id: "st_26",
+    name: "Uttar Pradesh",
+    code: "UP",
+    active: true,
+    districts: [
+      "Lucknow",
+      "Kanpur Nagar",
+      "Ghaziabad",
+      "Agra",
+      "Meerut",
+      "Varanasi",
+      "Prayagraj (Allahabad)",
+      "Bareilly",
+      "Aligarh",
+      "Moradabad",
+      "Saharanpur",
+      "Gorakhpur",
+      "Gautam Buddha Nagar (Noida)",
+      "Firozabad",
+      "Jhansi",
+      "Mathura",
+      "Baghpat",
+      "Muzaffarnagar",
+      "Ayodhya",
+      "Shahjahanpur",
+      "Bulandshahr",
+    ],
+  },
+  {
+    id: "st_27",
+    name: "Uttarakhand",
+    code: "UK",
+    active: true,
+    districts: [
+      "Dehradun",
+      "Haridwar",
+      "Nainital (Haldwani)",
+      "Udham Singh Nagar (Rudrapur)",
+      "Almora",
+      "Pauri Garhwal",
+      "Tehri Garhwal",
+      "Pithoragarh",
+      "Chamoli",
+      "Uttarkashi",
+    ],
+  },
+  {
+    id: "st_28",
+    name: "West Bengal",
+    code: "WB",
+    active: true,
+    districts: [
+      "Kolkata",
+      "North 24 Parganas",
+      "South 24 Parganas",
+      "Howrah",
+      "Hooghly",
+      "Paschim Bardhaman (Asansol/Durgapur)",
+      "Purba Bardhaman",
+      "Darjeeling (Siliguri)",
+      "Jalpaiguri",
+      "Alipurduar",
+      "Bankura",
+      "Nadia (Kalyani)",
+      "Murshidabad",
+      "Malda",
+      "Purba Medinipur",
+      "Paschim Medinipur",
+      "Birbhum",
+    ],
+  },
+  {
+    id: "st_29",
+    name: "Andaman & Nicobar Islands",
+    code: "AN",
+    active: true,
+    districts: ["South Andaman (Port Blair)", "North & Middle Andaman", "Nicobar"],
+  },
+  {
+    id: "st_30",
+    name: "Chandigarh",
+    code: "CH",
+    active: true,
+    districts: ["Chandigarh"],
+  },
+  {
+    id: "st_31",
+    name: "Dadra & Nagar Haveli and Daman & Diu",
+    code: "DN",
+    active: true,
+    districts: ["Daman", "Diu", "Dadra & Nagar Haveli (Silvassa)"],
+  },
+  {
+    id: "st_32",
+    name: "Delhi",
+    code: "DL",
+    active: true,
+    districts: [
+      "New Delhi",
+      "Central Delhi",
+      "North Delhi",
+      "North East Delhi",
+      "North West Delhi",
+      "South Delhi",
+      "South East Delhi",
+      "South West Delhi",
+      "East Delhi",
+      "West Delhi",
+      "Shahdara",
+    ],
+  },
+  {
+    id: "st_33",
+    name: "Jammu & Kashmir",
+    code: "JK",
+    active: true,
+    districts: [
+      "Srinagar",
+      "Jammu",
+      "Anantnag",
+      "Baramulla",
+      "Kathua",
+      "Udhampur",
+      "Budgam",
+      "Pulwama",
+      "Kupwara",
+      "Rajouri",
+      "Poonch",
+      "Doda",
+      "Samba",
+    ],
+  },
+  {
+    id: "st_34",
+    name: "Ladakh",
+    code: "LA",
+    active: true,
+    districts: ["Leh", "Kargil"],
+  },
+  {
+    id: "st_35",
+    name: "Lakshadweep",
+    code: "LD",
+    active: true,
+    districts: ["Kavaratti", "Agatti", "Amini", "Andrott", "Minicoy"],
+  },
+  {
+    id: "st_36",
+    name: "Puducherry",
+    code: "PY",
+    active: true,
+    districts: ["Puducherry", "Karaikal", "Mahe", "Yanam"],
+  },
 ];
 
 export const DEFAULT_COURT_LEVELS: CourtLevelItem[] = [
@@ -1857,8 +2378,6 @@ export function getCaseCategories(): CaseCategoryItem[] {
   const hydrated = loaded.map((cat) => {
     const normalized = normalizeSubCategories(cat.subCategories);
 
-    // Back-fill an empty sub-category list from the matching default (covers
-    // rows migrated from a shape that had no sub-categories).
     if (normalized.length === 0) {
       const match = DEFAULT_CASE_CATEGORIES.find(
         (d) => d.name.toLowerCase() === cat.name.toLowerCase() || d.code === cat.code,
@@ -1869,8 +2388,6 @@ export function getCaseCategories(): CaseCategoryItem[] {
       }
     }
 
-    // If a migrated sub-category lost its services, restore them from the
-    // matching default sub-category by name.
     const defMatch = DEFAULT_CASE_CATEGORIES.find(
       (d) => d.name.toLowerCase() === cat.name.toLowerCase() || d.code === cat.code,
     );
@@ -1898,9 +2415,6 @@ export function getCaseCategories(): CaseCategoryItem[] {
   return hydrated;
 }
 
-/** Public "Find a Lawyer" taxonomy view, derived from the active managed
- * categories. Same shape the mega-menu / pickers have always consumed:
- * `{ category, case_types: [{ case_type, legal_services }] }`. */
 export function getPracticeAreaTree(): {
   category: string;
   case_types: { case_type: string; legal_services: string[] }[];
@@ -1983,44 +2497,15 @@ export function deleteLanguage(id: string): boolean {
   return false;
 }
 
-// --- Cities CRUD ---
-export function getCities(): CityItem[] {
-  return load<CityItem[]>(CITIES_KEY, DEFAULT_CITIES);
-}
-
-export function saveCity(item: Omit<CityItem, "id"> & { id?: string }): CityItem {
-  const current = getCities();
-  const now = new Date().toISOString().slice(0, 10);
-  let saved: CityItem;
-
-  if (item.id && current.some((c) => c.id === item.id)) {
-    saved = { ...item, id: item.id, updatedAt: now } as CityItem;
-    const next = current.map((c) => (c.id === item.id ? saved : c));
-    save(CITIES_KEY, next);
-  } else {
-    saved = {
-      ...item,
-      id: item.id || `city_${Date.now()}`,
-      updatedAt: now,
-    } as CityItem;
-    save(CITIES_KEY, [saved, ...current]);
-  }
-  return saved;
-}
-
-export function deleteCity(id: string): boolean {
-  const current = getCities();
-  const filtered = current.filter((c) => c.id !== id);
-  if (filtered.length !== current.length) {
-    save(CITIES_KEY, filtered);
-    return true;
-  }
-  return false;
-}
-
 // --- Courts CRUD ---
 export function getCourts(): CourtItem[] {
-  return load<CourtItem[]>(COURTS_KEY, DEFAULT_COURTS);
+  const loaded = load<CourtItem[]>(COURTS_KEY, DEFAULT_COURTS);
+  // Auto-migrate from old initial seed (<= 15 courts) to full courts dataset
+  if (loaded.length <= 15 && DEFAULT_COURTS.length > 100) {
+    save(COURTS_KEY, DEFAULT_COURTS);
+    return DEFAULT_COURTS;
+  }
+  return loaded;
 }
 
 export function saveCourt(item: Omit<CourtItem, "id"> & { id?: string }): CourtItem {
@@ -2028,14 +2513,24 @@ export function saveCourt(item: Omit<CourtItem, "id"> & { id?: string }): CourtI
   const now = new Date().toISOString().slice(0, 10);
   let saved: CourtItem;
 
+  const district = (item.district || item.city || "").trim();
+
   if (item.id && current.some((c) => c.id === item.id)) {
-    saved = { ...item, id: item.id, updatedAt: now } as CourtItem;
+    saved = {
+      ...item,
+      id: item.id,
+      city: district,
+      district,
+      updatedAt: now,
+    } as CourtItem;
     const next = current.map((c) => (c.id === item.id ? saved : c));
     save(COURTS_KEY, next);
   } else {
     saved = {
       ...item,
       id: item.id || `crt_${Date.now()}`,
+      city: district,
+      district,
       updatedAt: now,
     } as CourtItem;
     save(COURTS_KEY, [saved, ...current]);
@@ -2053,9 +2548,28 @@ export function deleteCourt(id: string): boolean {
   return false;
 }
 
-// --- States CRUD ---
+// --- States & Districts CRUD ---
 export function getStates(): StateItem[] {
-  return load<StateItem[]>(STATES_KEY, DEFAULT_STATES);
+  const loaded = load<StateItem[]>(STATES_KEY, DEFAULT_STATES);
+  let changed = false;
+  const hydrated = loaded.map((st) => {
+    const def = DEFAULT_STATES.find(
+      (d) => d.name.toLowerCase() === st.name.toLowerCase() || d.code === st.code,
+    );
+    const districts =
+      Array.isArray(st.districts) && st.districts.length > 0
+        ? st.districts
+        : (def?.districts ?? []);
+    if (districts !== st.districts) {
+      changed = true;
+      return { ...st, districts };
+    }
+    return st;
+  });
+  if (changed) {
+    save(STATES_KEY, hydrated);
+  }
+  return hydrated;
 }
 
 export function saveState(item: Omit<StateItem, "id"> & { id?: string }): StateItem {
@@ -2063,14 +2577,22 @@ export function saveState(item: Omit<StateItem, "id"> & { id?: string }): StateI
   const now = new Date().toISOString().slice(0, 10);
   let saved: StateItem;
 
+  const rawDistricts = Array.isArray(item.districts)
+    ? item.districts
+    : typeof item.districts === "string"
+      ? (item.districts as string).split(",")
+      : [];
+  const districts = Array.from(new Set(rawDistricts.map((d) => String(d).trim()).filter(Boolean)));
+
   if (item.id && current.some((s) => s.id === item.id)) {
-    saved = { ...item, id: item.id, updatedAt: now } as StateItem;
+    saved = { ...item, id: item.id, districts, updatedAt: now } as StateItem;
     const next = current.map((s) => (s.id === item.id ? saved : s));
     save(STATES_KEY, next);
   } else {
     saved = {
       ...item,
       id: item.id || `st_${Date.now()}`,
+      districts,
       updatedAt: now,
     } as StateItem;
     save(STATES_KEY, [saved, ...current]);
@@ -2086,6 +2608,75 @@ export function deleteState(id: string): boolean {
     return true;
   }
   return false;
+}
+
+// --- Districts & Legacy Cities compatibility getters ---
+export function getDistricts(): { id: string; name: string; state: string; active: boolean }[] {
+  return getStates().flatMap((st) =>
+    (st.districts ?? []).map((d) => ({
+      id: `${st.id}_${d}`,
+      name: d,
+      state: st.name,
+      active: st.active,
+    })),
+  );
+}
+
+export function getActiveDistricts(): {
+  id: string;
+  name: string;
+  state: string;
+  active: boolean;
+}[] {
+  return getStates()
+    .filter((s) => s.active)
+    .flatMap((st) =>
+      (st.districts ?? []).map((d) => ({
+        id: `${st.id}_${d}`,
+        name: d,
+        state: st.name,
+        active: true,
+      })),
+    );
+}
+
+/** Legacy Cities accessor — maps active states' districts into CityItem shape for backwards compatibility. */
+export function getCities(): CityItem[] {
+  return getDistricts().map((d) => ({
+    id: d.id,
+    name: d.name,
+    state: d.state,
+    tier: "Tier 1" as const,
+    active: d.active,
+  }));
+}
+
+export function saveCity(item: Omit<CityItem, "id"> & { id?: string }): CityItem {
+  // If a city is saved, ensure it's added to the state's district list
+  if (item.state && item.name) {
+    const states = getStates();
+    const targetState = states.find((s) => s.name.toLowerCase() === item.state.toLowerCase());
+    if (targetState) {
+      const districts = targetState.districts || [];
+      if (!districts.some((d) => d.toLowerCase() === item.name.toLowerCase())) {
+        saveState({
+          ...targetState,
+          districts: [...districts, item.name],
+        });
+      }
+    }
+  }
+  return {
+    id: item.id || `city_${Date.now()}`,
+    name: item.name,
+    state: item.state,
+    tier: item.tier || "Tier 1",
+    active: item.active !== false,
+  };
+}
+
+export function deleteCity(id: string): boolean {
+  return true;
 }
 
 // --- Court Levels CRUD ---
@@ -2156,4 +2747,3 @@ export function getActiveStates(): StateItem[] {
 export function getActiveCourtLevels(): CourtLevelItem[] {
   return getCourtLevels().filter((cl) => cl.active);
 }
-

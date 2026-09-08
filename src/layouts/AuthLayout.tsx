@@ -33,7 +33,10 @@ export function AuthLayout({
     /* Desktop: the page itself never scrolls (h-screen + overflow-hidden) — only
        the left column does. That keeps the right-hand image fixed and fully in
        frame. Mobile keeps normal document flow so the whole page scrolls. */
-    <div className="flex min-h-screen flex-col bg-background lg:h-screen lg:min-h-0 lg:overflow-hidden">
+    <div
+      data-auth-shell
+      className="flex min-h-screen flex-col bg-background lg:h-screen lg:min-h-0 lg:overflow-hidden"
+    >
       {/* Header is mobile-hidden entirely — the centered logo (when
           centerLogoOnMobile) and the footer's cross-role links already cover
           navigation on small screens. */}
@@ -66,7 +69,12 @@ export function AuthLayout({
         <main
           className={cn(
             "w-full min-w-0 lg:h-full lg:w-[55%] lg:overflow-x-hidden xl:w-[54%]",
-            fitDesktop ? "lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden" : "lg:overflow-y-auto",
+            // When this column is the scroller (non-fitDesktop), reserve the
+            // scrollbar lane so its appearing/disappearing (e.g. a dropdown
+            // opening) can't shove the form sideways.
+            fitDesktop
+              ? "lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden"
+              : "lg:overflow-y-auto lg:[scrollbar-gutter:stable]",
           )}
         >
           <div
@@ -96,8 +104,7 @@ export function AuthLayout({
                 // forms do, rather than looking boxed-in.
                 "w-full min-w-0 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-6",
                 "lg:my-auto lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none",
-                fitDesktop &&
-                  "lg:flex lg:h-full lg:max-h-[610px] lg:min-h-0 lg:flex-col",
+                fitDesktop && "lg:flex lg:h-full lg:max-h-[680px] lg:min-h-0 lg:flex-col",
               )}
             >
               <h1 className="shrink-0 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
