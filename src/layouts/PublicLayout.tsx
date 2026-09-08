@@ -19,6 +19,7 @@ import { PublicNav } from "@/components/app/PublicNav";
 import { LAWYER_PRACTICE_AREAS } from "@/components/app/lawyerPracticeAreas";
 import { GOVERNMENT_SERVICES } from "@/data/governmentServices";
 import { useCitizenLanguage } from "@/features/citizen/i18n/CitizenLanguageContext";
+import { AnimatedDownloadButton } from "@/components/app/AnimatedDownloadButton";
 import { FILLED_LINK_BUTTON_CITIZEN_CLASS, IconButton } from "@/components/m3";
 
 /** Gold gradient treatment for header/drawer CTAs, matching the gold CTAs
@@ -141,9 +142,22 @@ export function PublicLayout({ children }: { children: ReactNode }) {
 
           <PublicNav />
 
-          <div className="flex items-center gap-2 justify-self-end">
+          <div className="flex items-center gap-2 sm:gap-2.5 justify-self-end">
+            {/* On mobile: Animated 24/7 Download Button placed on left side of hamburger menu */}
+            {isHome && (
+              <div className="flex md:hidden items-center">
+                <AnimatedDownloadButton useBlendedHeader={useBlendedHeader} size="sm" />
+              </div>
+            )}
+
             <div className="hidden md:flex items-center gap-2 shrink-0">
               <CitizenLanguageButtons size="sm" showLabel={false} />
+
+              {/* On desktop: Animated 24/7 Download Button placed on left side of Lawyer Sign In */}
+              {isHome && (
+                <AnimatedDownloadButton useBlendedHeader={useBlendedHeader} size="md" />
+              )}
+
               <Link
                 to="/login"
                 className={cn(
@@ -170,13 +184,30 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               </Link>
             </div>
 
-            <IconButton
+            {/* Clearly visible hamburger menu button with distinct background, border and high contrast */}
+            <button
+              type="button"
               onClick={() => setIsMobileMenuOpen((v) => !v)}
-              className="md:hidden"
-              ariaLabel="Toggle menu"
+              className={cn(
+                "md:hidden flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all active:scale-95 focus:outline-none",
+                useBlendedHeader
+                  ? "border-[#d4af37]/45 bg-[#0a0d14]/75 text-white shadow-md shadow-black/30 hover:bg-[#0a0d14] hover:border-[#d4af37]"
+                  : "border-slate-200 bg-white text-slate-900 shadow-sm hover:bg-slate-50 hover:border-slate-300",
+              )}
+              aria-label="Toggle navigation menu"
             >
-              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </IconButton>
+              {isMobileMenuOpen ? (
+                <X className="h-5 w-5 text-[#d4af37]" />
+              ) : (
+                <Menu
+                  className={cn(
+                    "h-5 w-5",
+                    useBlendedHeader ? "text-white" : "text-slate-900",
+                  )}
+                  strokeWidth={2.4}
+                />
+              )}
+            </button>
           </div>
         </div>
       </header>

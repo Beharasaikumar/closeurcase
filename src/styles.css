@@ -524,3 +524,84 @@ md-dialog {
   white-space: nowrap;
   animation: banner-marquee 10s linear infinite;
 }
+
+/* ── Seamless vertical marquee animations for testimonials ── */
+@keyframes marquee-vertical-up {
+  0% {
+    transform: translateY(0%);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+@keyframes marquee-vertical-down {
+  0% {
+    transform: translateY(-50%);
+  }
+  100% {
+    transform: translateY(0%);
+  }
+}
+
+/* Column 1: Smooth continuous upward stream */
+.animate-marquee-col1 {
+  will-change: transform;
+  animation: marquee-vertical-up 32s linear infinite;
+}
+
+/* Column 2: Smooth continuous downward stream (opposite direction) */
+.animate-marquee-col2 {
+  will-change: transform;
+  animation: marquee-vertical-down 36s linear infinite;
+}
+
+.testimonial-marquee-wrapper:hover .animate-marquee-col1,
+.testimonial-marquee-wrapper:hover .animate-marquee-col2 {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee-col1,
+  .animate-marquee-col2,
+  .animate-spin-slow {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+/* 24/7 rotating circular text marquee animation */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 12s linear infinite;
+  will-change: transform;
+}
+
+@keyframes gold-radar-pulse {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+}
+
+.animate-gold-radar {
+  animation: gold-radar-pulse 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+

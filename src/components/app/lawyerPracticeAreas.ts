@@ -560,14 +560,35 @@ const LEGACY_LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = [
 ];
 
 /**
- * The live taxonomy every consumer imports. Built from the admin-managed
- * category list; falls back to the legacy seed if the store somehow yields
- * nothing (e.g. every category deactivated).
+ * Returns the live taxonomy tree from the admin Data Management store.
+ * Falls back to seed data if the store is empty.
  */
-export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = (() => {
+export function getLawyerPracticeAreas(): LawyerPracticeArea[] {
   const tree = getPracticeAreaTree();
   return tree.length > 0 ? tree : LEGACY_LAWYER_PRACTICE_AREAS;
-})();
+}
+
+/**
+ * The live taxonomy every consumer imports. Dynamically proxies to
+ * `getLawyerPracticeAreas()` so changes in Admin Data Management immediately
+ * reflect across all components.
+ */
+export const LAWYER_PRACTICE_AREAS: LawyerPracticeArea[] = new Proxy([] as LawyerPracticeArea[], {
+  get(_target, prop) {
+    const list = getLawyerPracticeAreas();
+    const val = Reflect.get(list, prop);
+    return typeof val === "function" ? val.bind(list) : val;
+  },
+  has(_target, prop) {
+    return Reflect.has(getLawyerPracticeAreas(), prop);
+  },
+  ownKeys() {
+    return Reflect.ownKeys(getLawyerPracticeAreas());
+  },
+  getOwnPropertyDescriptor(_target, prop) {
+    return Reflect.getOwnPropertyDescriptor(getLawyerPracticeAreas(), prop);
+  },
+});
 
 /* Bridges a taxonomy practice-area name into the app's internal LegalCategory
    enum — lawyers are still stored against a single flat `category`, so this

@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "@tanstack/react-router";
 import {
   Pencil,
@@ -17,7 +18,9 @@ import {
   User,
   Hash,
   Star,
+  Upload,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   Button,
   IconButton,
@@ -113,9 +116,12 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
   const [editingCase, setEditingCase] = useState<LegalCase | null>(null);
 
   const [attachmentsCaseId, setAttachmentsCaseId] = useState<string | null>(null);
+  const [attachmentTab, setAttachmentTab] = useState<"client" | "mydocs">("client");
   const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
   const [attachmentError, setAttachmentError] = useState("");
   const addAttachmentInputRef = useRef<HTMLInputElement>(null);
+  const lawyerUploadInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<CaseDocument | null>(null);
   const [previewFullScreen, setPreviewFullScreen] = useState(false);
 
@@ -362,11 +368,21 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
     setAttachmentsCaseId(null);
     setPreviewDoc(null);
     setPreviewFullScreen(false);
+    setAttachmentTab("client");
+    setAttachmentError("");
+    setIsDragging(false);
   }
 
-  async function handleAddAttachments(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
-    e.target.value = "";
+  async function handleAddAttachments(input: React.ChangeEvent<HTMLInputElement> | FileList | File[]) {
+    const files = Array.isArray(input)
+      ? input
+      : "target" in input
+        ? Array.from(input.target.files ?? [])
+        : Array.from(input);
+
+    if ("target" in input && input.target) {
+      input.target.value = "";
+    }
     if (files.length === 0 || !attachmentsCaseId) return;
 
     const oversized = files.find((f) => f.size > MAX_ATTACHMENT_BYTES);
@@ -379,6 +395,8 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
     setIsUploadingAttachment(true);
     try {
       const uploadDate = todayISO();
+      const uploaderRole: "citizen" | "lawyer" =
+        isLawyer && attachmentTab === "mydocs" ? "lawyer" : "citizen";
       const docs: CaseDocument[] = await Promise.all(
         files.map(async (f, i) => ({
           id: `d_${Date.now()}_${i}`,
@@ -387,7 +405,7 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
           uploadedAt: uploadDate,
           fileDataUrl: await readFileAsDataUrl(f),
           fileMimeType: f.type || undefined,
-          uploadedBy: "citizen" as const,
+          uploadedBy: uploaderRole,
         })),
       );
       addCaseAttachments(attachmentsCaseId, docs);
@@ -634,13 +652,14 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
       </datalist>
 
       {/* Custom Scrim + Modal Dialog (Bypasses shadow-DOM width capping, exact HTML match) */}
-      {dialogOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 sm:p-6 overflow-y-auto backdrop-blur-xs animate-in fade-in duration-150"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setDialogOpen(false);
-          }}
-        >
+      {dialogOpen &&
+        createPortal(
+          <div
+            className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-[100] flex h-screen w-screen min-h-[100dvh] items-start justify-center bg-black/60 p-4 sm:p-6 overflow-y-auto backdrop-blur-sm animate-in fade-in duration-150"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setDialogOpen(false);
+            }}
+          >
           <div className="my-6 w-full max-w-[720px] rounded-[28px] bg-[var(--md-sys-color-surface-container-low,#f5f3f7)] shadow-2xl border border-border/80 overflow-hidden text-foreground">
             {/* Dialog Head */}
             <div className="flex items-start justify-between gap-4 p-6 pb-2">
@@ -978,327 +997,518 @@ export function CasesTable({ cases, role }: { cases: LegalCase[]; role: "lawyer"
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* CNR Import Result Popup — nested above the edit dialog */}
-      {cnrImportResult && (
-        <div
-          className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-150"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setCnrImportResult(null);
-          }}
-        >
-          <div className="w-full max-w-sm rounded-2xl bg-[var(--md-sys-color-surface-container-low,#f5f3f7)] shadow-2xl border border-border/80 p-6 text-foreground">
-            <div className="flex items-center gap-3 mb-3">
-              <span
-                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${cnrImportResult.status === "found"
-                    ? "bg-[var(--md-extended-color-success)]/10 text-[var(--md-extended-color-success)]"
-                    : "bg-destructive/10 text-destructive"
+      {cnrImportResult &&
+        createPortal(
+          <div
+            className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-[110] flex h-screen w-screen min-h-[100dvh] items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-150"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setCnrImportResult(null);
+            }}
+          >
+            <div className="w-full max-w-sm rounded-2xl bg-[var(--md-sys-color-surface-container-low,#f5f3f7)] shadow-2xl border border-border/80 p-6 text-foreground">
+              <div className="flex items-center gap-3 mb-3">
+                <span
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                    cnrImportResult.status === "found"
+                      ? "bg-[var(--md-extended-color-success)]/10 text-[var(--md-extended-color-success)]"
+                      : "bg-destructive/10 text-destructive"
                   }`}
-              >
-                {cnrImportResult.status === "found" ? (
-                  <Check className="h-5 w-5" />
+                >
+                  {cnrImportResult.status === "found" ? (
+                    <Check className="h-5 w-5" />
+                  ) : (
+                    <X className="h-5 w-5" />
+                  )}
+                </span>
+                <h3 className="text-base font-bold text-foreground">
+                  {cnrImportResult.status === "found" ? "Case Imported" : "No Match Found"}
+                </h3>
+              </div>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {cnrImportResult.status === "found" && cnrImportResult.source === "database" ? (
+                  <>
+                    Already in our database — matched <strong>"{cnrImportResult.title}"</strong>. No
+                    need to fetch from eCourts.
+                  </>
+                ) : cnrImportResult.status === "found" ? (
+                  <>
+                    Fetched from eCourts and saved to our database — matched{" "}
+                    <strong>"{cnrImportResult.title}"</strong>. The next import for this CNR will be
+                    served from our records instead of eCourts.
+                  </>
                 ) : (
-                  <X className="h-5 w-5" />
+                  "No matching case found in our database or eCourts for this CNR."
                 )}
-              </span>
-              <h3 className="text-base font-bold text-foreground">
-                {cnrImportResult.status === "found" ? "Case Imported" : "No Match Found"}
-              </h3>
+              </p>
+              <div className="mt-5 flex justify-end">
+                <Button onClick={() => setCnrImportResult(null)}>OK</Button>
+              </div>
             </div>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              {cnrImportResult.status === "found" && cnrImportResult.source === "database" ? (
-                <>
-                  Already in our database — matched <strong>"{cnrImportResult.title}"</strong>. No
-                  need to fetch from eCourts.
-                </>
-              ) : cnrImportResult.status === "found" ? (
-                <>
-                  Fetched from eCourts and saved to our database — matched{" "}
-                  <strong>"{cnrImportResult.title}"</strong>. The next import for this CNR will be
-                  served from our records instead of eCourts.
-                </>
-              ) : (
-                "No matching case found in our database or eCourts for this CNR."
-              )}
-            </p>
-            <div className="mt-5 flex justify-end">
-              <Button onClick={() => setCnrImportResult(null)}>OK</Button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
 
       {/* Attachments Modal */}
-      {attachmentsCase && (
-        <div
-          className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 sm:p-6 overflow-y-auto backdrop-blur-xs animate-in fade-in duration-150"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) closeAttachmentsModal();
-          }}
-        >
-          <div className="my-6 w-full max-w-[640px] rounded-[28px] bg-[var(--md-sys-color-surface-container-low,#f5f3f7)] shadow-2xl border border-border/80 overflow-hidden text-foreground">
-            <div className="flex items-start justify-between gap-4 p-6 pb-2">
-              <div>
-                <h2 className="text-2xl font-normal text-foreground leading-snug">Attachments</h2>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {attachmentsCase.title || "Untitled Matter"}
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={closeAttachmentsModal}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-black/5 hover:text-foreground transition-colors cursor-pointer"
-                title="Close"
+      {attachmentsCase &&
+        createPortal(
+          (() => {
+            const clientDocs = attachmentsCase.files.files.filter((d) => d.uploadedBy !== "lawyer");
+            const lawyerDocs = attachmentsCase.files.files.filter((d) => d.uploadedBy === "lawyer");
+
+            return (
+              <div
+                className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-[100] flex h-screen w-screen min-h-[100dvh] items-center justify-center bg-black/60 p-4 sm:p-6 overflow-y-auto backdrop-blur-sm animate-in fade-in duration-150"
+                onClick={(e) => {
+                  if (e.target === e.currentTarget) closeAttachmentsModal();
+                }}
               >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
+                <div className="my-auto flex max-h-[90vh] w-full max-w-[640px] flex-col rounded-[28px] bg-[var(--md-sys-color-surface-container-low,#f5f3f7)] shadow-2xl border border-border/80 overflow-hidden text-foreground">
+                  {/* Header with Top-Right Tabs for Lawyer */}
+                  <div className="flex items-start justify-between gap-4 p-6 pb-2 shrink-0">
+                    <div>
+                      <h2 className="text-2xl font-normal text-foreground leading-snug">Attachments</h2>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {attachmentsCase.title || "Untitled Matter"}
+                      </div>
+                    </div>
 
-            <div className="p-6 pt-2 max-h-[66vh] overflow-y-auto space-y-4">
-              {/* Case Description */}
-              <div>
-                <div className="text-[11px] font-bold uppercase tracking-wider text-primary mb-2">
-                  Case Description
-                </div>
-                <div className="rounded-2xl border border-border bg-card p-3.5 text-xs leading-relaxed text-foreground whitespace-pre-wrap">
-                  {attachmentsCase.description || "No description provided."}
-                </div>
-              </div>
+                    {/* Top Right: Tabs (Client / My Docs) for Lawyer + Close button */}
+                    <div className="flex items-center gap-2">
+                      {isLawyer && (
+                        <div className="inline-flex rounded-full bg-surface border border-border/80 p-0.5 text-xs shadow-2xs">
+                          <button
+                            type="button"
+                            onClick={() => setAttachmentTab("client")}
+                            className={cn(
+                              "rounded-full px-3 py-1 font-semibold text-xs transition-all cursor-pointer",
+                              attachmentTab === "client"
+                                ? "bg-primary text-white shadow-xs"
+                                : "text-muted-foreground hover:text-foreground",
+                            )}
+                          >
+                            Client ({clientDocs.length})
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setAttachmentTab("mydocs")}
+                            className={cn(
+                              "rounded-full px-3 py-1 font-semibold text-xs transition-all cursor-pointer",
+                              attachmentTab === "mydocs"
+                                ? "bg-primary text-white shadow-xs"
+                                : "text-muted-foreground hover:text-foreground",
+                            )}
+                          >
+                            My Docs ({lawyerDocs.length})
+                          </button>
+                        </div>
+                      )}
 
-              {/* Documents / Images */}
-              <div>
-                <div className="text-[11px] font-bold uppercase tracking-wider text-primary mb-2">
-                  Documents &amp; Images ({attachmentsCase.files.files.length})
-                </div>
-                {attachmentsCase.files.files.length === 0 ? (
-                  <p className="text-xs text-muted-foreground italic">
-                    No attachments uploaded yet.
-                  </p>
-                ) : (
-                  <ul className="space-y-2">
-                    {attachmentsCase.files.files.map((d) => {
-                      const isImage = d.fileMimeType?.startsWith("image/");
-                      return (
-                        <li
-                          key={d.id}
-                          className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-3"
-                        >
-                          <div className="flex min-w-0 items-center gap-2.5">
-                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                              {isImage ? (
-                                <ImageIcon className="h-4 w-4" />
-                              ) : (
-                                <FileText className="h-4 w-4" />
-                              )}
-                            </span>
-                            <div className="min-w-0">
-                              <div
-                                className="truncate text-xs font-semibold text-foreground"
-                                title={d.name}
-                              >
-                                {d.name}
-                              </div>
-                              <div className="text-[10px] text-muted-foreground">
-                                {d.size} · {d.uploadedAt}
-                                {d.uploadedBy ? ` · added by ${d.uploadedBy}` : ""}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex shrink-0 items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setPreviewDoc(d);
-                                setPreviewFullScreen(false);
-                              }}
-                              title="Preview"
-                              className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-black/5 hover:text-foreground transition-colors cursor-pointer"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </button>
-                            <a
-                              href={
-                                d.fileDataUrl ??
-                                `data:text/plain;charset=utf-8,${encodeURIComponent(d.name)}`
-                              }
-                              download={d.fileDataUrl ? d.name : `${d.name}.txt`}
-                              title="Download"
-                              className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-black/5 hover:text-foreground transition-colors"
-                            >
-                              <Download className="h-4 w-4" />
-                            </a>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
-
-              {/* Add Attachment — citizen only; lawyer is view/download only */}
-              {!isLawyer && (
-                <div className="rounded-2xl bg-[var(--md-sys-color-surface-container,#efedf1)] p-4 space-y-2.5">
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    Add Attachment
+                      <button
+                        type="button"
+                        onClick={closeAttachmentsModal}
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-black/5 hover:text-foreground transition-colors cursor-pointer"
+                        title="Close"
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
+                    </div>
                   </div>
-                  <input
-                    ref={addAttachmentInputRef}
-                    type="file"
-                    multiple
-                    className="hidden"
-                    onChange={handleAddAttachments}
-                  />
-                  <Button
-                    variant="tonal"
-                    icon={<Paperclip className="h-4 w-4" />}
-                    onClick={() => addAttachmentInputRef.current?.click()}
-                    disabled={isUploadingAttachment}
-                  >
-                    {isUploadingAttachment ? "Uploading…" : "Choose Files"}
-                  </Button>
-                  {attachmentError && (
-                    <p className="text-[11px] font-semibold text-destructive">{attachmentError}</p>
-                  )}
-                </div>
-              )}
-            </div>
 
-            <div className="flex items-center justify-end p-6 pt-3 border-t border-border/80">
-              <Button variant="text" onClick={closeAttachmentsModal}>
-                Close
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+                  {/* Modal Body */}
+                  <div className="p-6 pt-2 overflow-y-auto space-y-4 min-h-0 flex-1">
+                    {(!isLawyer || attachmentTab === "client") ? (
+                      <>
+                        {/* Case Description */}
+                        <div>
+                          <div className="text-[11px] font-bold uppercase tracking-wider text-primary mb-2">
+                            Case Description
+                          </div>
+                          <div className="rounded-2xl border border-border bg-card p-3.5 text-xs leading-relaxed text-foreground whitespace-pre-wrap">
+                            {attachmentsCase.description || "No description provided."}
+                          </div>
+                        </div>
+
+                        {/* Client Documents & Images */}
+                        <div>
+                          <div className="text-[11px] font-bold uppercase tracking-wider text-primary mb-2">
+                            Documents &amp; Images ({clientDocs.length})
+                          </div>
+                          {clientDocs.length === 0 ? (
+                            <p className="text-xs text-muted-foreground italic">
+                              No attachments uploaded yet.
+                            </p>
+                          ) : (
+                            <ul className="space-y-2">
+                              {clientDocs.map((d) => {
+                                const isImage = d.fileMimeType?.startsWith("image/") || /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(d.name);
+                                return (
+                                  <li
+                                    key={d.id}
+                                    className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-3 shadow-2xs"
+                                  >
+                                    <div className="flex min-w-0 items-center gap-2.5">
+                                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                        {isImage ? (
+                                          <ImageIcon className="h-4 w-4" />
+                                        ) : (
+                                          <FileText className="h-4 w-4" />
+                                        )}
+                                      </span>
+                                      <div className="min-w-0">
+                                        <div
+                                          className="truncate text-xs font-semibold text-foreground"
+                                          title={d.name}
+                                        >
+                                          {d.name}
+                                        </div>
+                                        <div className="text-[10px] text-muted-foreground">
+                                          {d.size} · {d.uploadedAt}
+                                          {d.uploadedBy ? ` · added by ${d.uploadedBy}` : ""}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="flex shrink-0 items-center gap-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setPreviewDoc(d);
+                                          setPreviewFullScreen(false);
+                                        }}
+                                        title="Preview"
+                                        className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-black/5 hover:text-foreground transition-colors cursor-pointer"
+                                      >
+                                        <Eye className="h-4 w-4" />
+                                      </button>
+                                      <a
+                                        href={
+                                          d.fileDataUrl ??
+                                          `data:text/plain;charset=utf-8,${encodeURIComponent(d.name)}`
+                                        }
+                                        download={d.fileDataUrl ? d.name : `${d.name}.txt`}
+                                        title="Download"
+                                        className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-black/5 hover:text-foreground transition-colors"
+                                      >
+                                        <Download className="h-4 w-4" />
+                                      </a>
+                                    </div>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
+                        </div>
+
+                        {/* Add Attachment — citizen only */}
+                        {!isLawyer && (
+                          <div className="rounded-2xl bg-[var(--md-sys-color-surface-container,#efedf1)] p-4 space-y-2.5">
+                            <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                              Add Attachment
+                            </div>
+                            <input
+                              ref={addAttachmentInputRef}
+                              type="file"
+                              multiple
+                              accept="application/pdf,image/*,.doc,.docx,.txt"
+                              className="hidden"
+                              onChange={handleAddAttachments}
+                            />
+                            <Button
+                              variant="tonal"
+                              icon={<Paperclip className="h-4 w-4" />}
+                              onClick={() => addAttachmentInputRef.current?.click()}
+                              disabled={isUploadingAttachment}
+                            >
+                              {isUploadingAttachment ? "Uploading…" : "Choose Files or Images"}
+                            </Button>
+                            {attachmentError && (
+                              <p className="text-[11px] font-semibold text-destructive">{attachmentError}</p>
+                            )}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {/* Lawyer "My Docs" Tab */}
+                        {/* Top: Upload Feature */}
+                        <div className="rounded-2xl bg-[var(--md-sys-color-surface-container,#efedf1)] p-4 space-y-2.5 border border-border/70">
+                          <div className="flex items-center justify-between">
+                            <div className="text-[11px] font-bold uppercase tracking-wider text-primary">
+                              Upload Document or Image
+                            </div>
+                            <span className="text-[10px] text-muted-foreground">
+                              PDF, Images, DOCX (Max 4MB)
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Attach your filings, draft petitions, vakalatnama, evidence photos, or case notes for this matter.
+                          </p>
+                          <input
+                            ref={lawyerUploadInputRef}
+                            type="file"
+                            multiple
+                            accept="application/pdf,image/*,.doc,.docx,.txt"
+                            className="hidden"
+                            onChange={handleAddAttachments}
+                          />
+                          <div
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              setIsDragging(true);
+                            }}
+                            onDragLeave={() => setIsDragging(false)}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              setIsDragging(false);
+                              if (e.dataTransfer.files) {
+                                handleAddAttachments(e.dataTransfer.files);
+                              }
+                            }}
+                            onClick={() => lawyerUploadInputRef.current?.click()}
+                            className={cn(
+                              "flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center cursor-pointer transition-colors bg-card",
+                              isDragging
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:border-primary/50 hover:bg-muted/30",
+                            )}
+                          >
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-3">
+                              <Upload className="h-6 w-6" />
+                            </div>
+                            <p className="text-sm font-semibold text-foreground">
+                              Click to upload or drag &amp; drop
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              PDF, DOC, DOCX, TXT or Images (PNG, JPG, WEBP)
+                            </p>
+                          </div>
+                          {attachmentError && (
+                            <p className="text-[11px] font-semibold text-destructive">{attachmentError}</p>
+                          )}
+                        </div>
+
+                        {/* Bottom: Previous Uploaded Documents */}
+                        <div>
+                          <div className="text-[11px] font-bold uppercase tracking-wider text-primary mb-2">
+                            My Uploaded Documents ({lawyerDocs.length})
+                          </div>
+                          {lawyerDocs.length === 0 ? (
+                            <div className="rounded-2xl border border-dashed border-border bg-card p-6 text-center">
+                              <p className="text-xs text-muted-foreground italic">
+                                No documents uploaded by you yet. Use the upload area above to attach filings, draft petitions, or evidence photos.
+                              </p>
+                            </div>
+                          ) : (
+                            <ul className="space-y-2">
+                              {lawyerDocs.map((d) => {
+                                const isImage = d.fileMimeType?.startsWith("image/") || /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(d.name);
+                                return (
+                                  <li
+                                    key={d.id}
+                                    className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-3 shadow-2xs"
+                                  >
+                                    <div className="flex min-w-0 items-center gap-2.5">
+                                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                        {isImage ? (
+                                          <ImageIcon className="h-4 w-4" />
+                                        ) : (
+                                          <FileText className="h-4 w-4" />
+                                        )}
+                                      </span>
+                                      <div className="min-w-0">
+                                        <div
+                                          className="truncate text-xs font-semibold text-foreground"
+                                          title={d.name}
+                                        >
+                                          {d.name}
+                                        </div>
+                                        <div className="text-[10px] text-muted-foreground flex items-center gap-2">
+                                          <span>{d.size} · {d.uploadedAt}</span>
+                                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-medium bg-primary/10 text-primary">
+                                            Lawyer File
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="flex shrink-0 items-center gap-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setPreviewDoc(d);
+                                          setPreviewFullScreen(false);
+                                        }}
+                                        title="Preview"
+                                        className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-black/5 hover:text-foreground transition-colors cursor-pointer"
+                                      >
+                                        <Eye className="h-4 w-4" />
+                                      </button>
+                                      <a
+                                        href={
+                                          d.fileDataUrl ??
+                                          `data:text/plain;charset=utf-8,${encodeURIComponent(d.name)}`
+                                        }
+                                        download={d.fileDataUrl ? d.name : `${d.name}.txt`}
+                                        title="Download"
+                                        className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-black/5 hover:text-foreground transition-colors"
+                                      >
+                                        <Download className="h-4 w-4" />
+                                      </a>
+                                    </div>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-end p-6 pt-3 border-t border-border/80 shrink-0">
+                    <Button variant="text" onClick={closeAttachmentsModal}>
+                      Close
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            );
+          })(),
+          document.body
+        )}
 
       {/* Attachment Preview Modal — nested above the Attachments modal */}
-      {previewDoc && (
-        <div
-          className="fixed inset-0 z-60 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-150"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setPreviewDoc(null);
-          }}
-        >
+      {previewDoc &&
+        createPortal(
           <div
-            className={`flex flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl transition-all ${previewFullScreen ? "h-full w-full" : "max-h-[85vh] w-full max-w-2xl"
-              }`}
+            className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-[110] flex h-screen w-screen min-h-[100dvh] items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-150"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setPreviewDoc(null);
+            }}
           >
-            <div className="flex items-center justify-between gap-3 border-b border-border px-4 sm:px-6 py-3.5">
-              <div className="flex min-w-0 items-center gap-2.5">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  {previewDoc.fileMimeType?.startsWith("image/") ? (
-                    <ImageIcon className="h-4 w-4" />
-                  ) : (
-                    <FileText className="h-4 w-4" />
-                  )}
-                </span>
-                <span
-                  className="truncate text-xs font-bold text-foreground"
-                  title={previewDoc.name}
-                >
-                  {previewDoc.name}
-                </span>
+            <div
+              className={`flex flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl transition-all ${
+                previewFullScreen ? "h-full w-full" : "max-h-[85vh] w-full max-w-2xl"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-3 border-b border-border px-4 sm:px-6 py-3.5">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    {previewDoc.fileMimeType?.startsWith("image/") ? (
+                      <ImageIcon className="h-4 w-4" />
+                    ) : (
+                      <FileText className="h-4 w-4" />
+                    )}
+                  </span>
+                  <span
+                    className="truncate text-xs font-bold text-foreground"
+                    title={previewDoc.name}
+                  >
+                    {previewDoc.name}
+                  </span>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      openDocumentInNewTab({
+                        title: previewDoc.name,
+                        fileName: previewDoc.name,
+                        fileDataUrl: previewDoc.fileDataUrl,
+                        fileMimeType: previewDoc.fileMimeType,
+                      })
+                    }
+                    className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 hover:bg-primary/20 px-3 py-1.5 text-xs font-bold text-primary transition-all cursor-pointer shadow-2xs"
+                    title="Full Screen (Open document in new tab)"
+                  >
+                    <Maximize2 className="h-3.5 w-3.5" />
+                    <span>Full Screen</span>
+                  </button>
+                  <IconButton ariaLabel="Close preview" onClick={() => setPreviewDoc(null)}>
+                    <X className="h-4 w-4" />
+                  </IconButton>
+                </div>
               </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() =>
-                    openDocumentInNewTab({
-                      title: previewDoc.name,
-                      fileName: previewDoc.name,
-                      fileDataUrl: previewDoc.fileDataUrl,
-                      fileMimeType: previewDoc.fileMimeType,
-                    })
+
+              <div className="flex-1 overflow-y-auto bg-muted/30 p-4 sm:p-6">
+                <DocumentPreviewBody
+                  fileDataUrl={previewDoc.fileDataUrl}
+                  fileMimeType={previewDoc.fileMimeType}
+                  fileName={previewDoc.name}
+                  showFullScreenButton={false}
+                  fallback={
+                    docLooksLikeImage(previewDoc) ? (
+                      <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-xl border border-border bg-background p-6 shadow-sm">
+                        <div className="flex h-56 w-full items-center justify-center rounded-lg border border-dashed border-border bg-linear-to-br from-muted to-muted/50">
+                          <ImageIcon className="h-12 w-12 text-muted-foreground/60" />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-xs font-semibold text-foreground">{previewDoc.name}</p>
+                          <p className="mt-0.5 text-[11px] text-muted-foreground">
+                            {previewDoc.size} · Uploaded {previewDoc.uploadedAt}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mx-auto max-w-2xl space-y-6 rounded-xl border border-border bg-background p-8 text-foreground shadow-sm">
+                        <div className="flex items-center justify-between border-b border-border pb-4">
+                          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                            Case Attachment
+                          </span>
+                          <span className="font-mono text-xs text-muted-foreground">
+                            {previewDoc.size}
+                          </span>
+                        </div>
+
+                        <div className="space-y-1 py-2 text-center">
+                          <h4 className="text-sm font-bold uppercase tracking-wide text-foreground">
+                            {docDisplayTitle(previewDoc)}
+                          </h4>
+                          <p className="font-mono text-xs text-muted-foreground">
+                            Uploaded {previewDoc.uploadedAt}
+                            {previewDoc.uploadedBy ? ` · by ${previewDoc.uploadedBy}` : ""}
+                          </p>
+                        </div>
+
+                        <div className="space-y-4 text-xs leading-relaxed text-foreground/90">
+                          <p className="rounded-xl border border-border/50 bg-muted/40 p-4 font-sans">
+                            This document was submitted as part of the case record for{" "}
+                            <strong>{previewDoc.name}</strong>. It forms supporting evidence relevant
+                            to the matter and has been indexed for reference by both the citizen and
+                            the assigned Lawyer.
+                          </p>
+                          <p>
+                            1. All statements and enclosures contained herein are submitted in good
+                            faith and are subject to verification by the concerned authority.
+                          </p>
+                          <p>
+                            2. Parties are advised to review the complete original file — available
+                            via Download — before relying on this document at any hearing.
+                          </p>
+                        </div>
+
+                        <div className="flex items-end justify-between border-t border-border pt-6 text-[11px] text-muted-foreground">
+                          <div>
+                            <p className="font-bold text-foreground">ATTACHMENT RECORD</p>
+                            <p>{previewDoc.name}</p>
+                          </div>
+                          <div className="text-right font-mono">
+                            <p>CloseUrCase FILE</p>
+                            <p>ADDED {previewDoc.uploadedAt}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )
                   }
-                  className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 hover:bg-primary/20 px-3 py-1.5 text-xs font-bold text-primary transition-all cursor-pointer shadow-2xs"
-                  title="Full Screen (Open document in new tab)"
-                >
-                  <Maximize2 className="h-3.5 w-3.5" />
-                  <span>Full Screen</span>
-                </button>
-                <IconButton ariaLabel="Close preview" onClick={() => setPreviewDoc(null)}>
-                  <X className="h-4 w-4" />
-                </IconButton>
+                />
               </div>
             </div>
-
-            <div className="flex-1 overflow-y-auto bg-muted/30 p-4 sm:p-6">
-              <DocumentPreviewBody
-                fileDataUrl={previewDoc.fileDataUrl}
-                fileMimeType={previewDoc.fileMimeType}
-                fileName={previewDoc.name}
-                fallback={
-                  docLooksLikeImage(previewDoc) ? (
-                    <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-xl border border-border bg-background p-6 shadow-sm">
-                      <div className="flex h-56 w-full items-center justify-center rounded-lg border border-dashed border-border bg-linear-to-br from-muted to-muted/50">
-                        <ImageIcon className="h-12 w-12 text-muted-foreground/60" />
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs font-semibold text-foreground">{previewDoc.name}</p>
-                        <p className="mt-0.5 text-[11px] text-muted-foreground">
-                          {previewDoc.size} · Uploaded {previewDoc.uploadedAt}
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mx-auto max-w-2xl space-y-6 rounded-xl border border-border bg-background p-8 text-foreground shadow-sm">
-                      <div className="flex items-center justify-between border-b border-border pb-4">
-                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                          Case Attachment
-                        </span>
-                        <span className="font-mono text-xs text-muted-foreground">
-                          {previewDoc.size}
-                        </span>
-                      </div>
-
-                      <div className="space-y-1 py-2 text-center">
-                        <h4 className="text-sm font-bold uppercase tracking-wide text-foreground">
-                          {docDisplayTitle(previewDoc)}
-                        </h4>
-                        <p className="font-mono text-xs text-muted-foreground">
-                          Uploaded {previewDoc.uploadedAt}
-                          {previewDoc.uploadedBy ? ` · by ${previewDoc.uploadedBy}` : ""}
-                        </p>
-                      </div>
-
-                      <div className="space-y-4 text-xs leading-relaxed text-foreground/90">
-                        <p className="rounded-xl border border-border/50 bg-muted/40 p-4 font-sans">
-                          This document was submitted as part of the case record for{" "}
-                          <strong>{previewDoc.name}</strong>. It forms supporting evidence relevant
-                          to the matter and has been indexed for reference by both the citizen and
-                          the assigned Lawyer.
-                        </p>
-                        <p>
-                          1. All statements and enclosures contained herein are submitted in good
-                          faith and are subject to verification by the concerned authority.
-                        </p>
-                        <p>
-                          2. Parties are advised to review the complete original file — available
-                          via Download — before relying on this document at any hearing.
-                        </p>
-                      </div>
-
-                      <div className="flex items-end justify-between border-t border-border pt-6 text-[11px] text-muted-foreground">
-                        <div>
-                          <p className="font-bold text-foreground">ATTACHMENT RECORD</p>
-                          <p>{previewDoc.name}</p>
-                        </div>
-                        <div className="text-right font-mono">
-                          <p>CloseUrCase FILE</p>
-                          <p>ADDED {previewDoc.uploadedAt}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                }
-              />
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
 
       {/* ── Lawyer Rating Popup Dialog ─────────────────────────────────── */}
       <Dialog

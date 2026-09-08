@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
   ChevronRight,
@@ -22,7 +22,7 @@ import {
   TextField,
   Select,
 } from "@/components/m3";
-import { courts, type CourtOption } from "@/data/courts";
+import { type CourtOption } from "@/data/courts";
 import {
   searchCourtCases,
   toLegalCase,
@@ -31,7 +31,7 @@ import {
   type ImportSearchMethod,
   type ImportableCourtCase,
 } from "@/data/courtCasesFixture";
-import { addCase } from "@/data/appStore";
+import { addCase, getActiveCourts, subscribeToStore } from "@/data/appStore";
 
 type Step = "court" | "method" | "search" | "results";
 const STEP_ORDER: Step[] = ["court", "method", "search", "results"];
@@ -68,6 +68,30 @@ export function ImportCaseModal({
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [plaintiffDraft, setPlaintiffDraft] = useState("");
   const [respondentDraft, setRespondentDraft] = useState("");
+
+  const [managedCourts, setManagedCourts] = useState<CourtOption[]>(() =>
+    getActiveCourts().map((c) => ({
+      id: c.id,
+      name: c.name,
+      level: c.level as CourtOption["level"],
+      city: c.city,
+      state: c.state,
+    }))
+  );
+
+  useEffect(() => {
+    return subscribeToStore(() => {
+      setManagedCourts(
+        getActiveCourts().map((c) => ({
+          id: c.id,
+          name: c.name,
+          level: c.level as CourtOption["level"],
+          city: c.city,
+          state: c.state,
+        }))
+      );
+    });
+  }, []);
 
   function resetAll() {
     setStep("court");
@@ -216,8 +240,8 @@ export function ImportCaseModal({
               <Select
                 label="Court"
                 value={selectedCourt?.id ?? ""}
-                onChange={(id) => setSelectedCourt(courts.find((court) => court.id === id) ?? null)}
-                options={courts.map((c) => ({ value: c.id, label: `${c.name} (${c.level})` }))}
+                onChange={(id) => setSelectedCourt(managedCourts.find((court) => court.id === id) ?? null)}
+                options={managedCourts.map((c) => ({ value: c.id, label: `${c.name} (${c.level})` }))}
                 className="w-full"
               />
             </div>

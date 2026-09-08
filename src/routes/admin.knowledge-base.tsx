@@ -16,12 +16,12 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { DataTable, type Column } from "@/components/app/DataTable";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 import { DocumentPreviewBody } from "@/components/app/DocumentPreview";
-import { categories } from "@/data/mock";
 import {
   getKnowledgeBase,
   addKnowledgeItem,
   deleteKnowledgeItem,
   subscribeToStore,
+  getActiveCaseCategories,
 } from "@/data/appStore";
 import type { KnowledgeItem, LegalCategory } from "@/types";
 import {
@@ -70,15 +70,19 @@ export function KnowledgeBasePage() {
   const pendingDeleteItem = rows.find((r) => r.id === pendingDeleteId);
 
   // Upload modal form states
+  const [managedCategories, setManagedCategories] = useState(() => getActiveCaseCategories());
   const [type, setType] = useState<KnowledgeItem["type"]>("Act");
-  const [cat, setCat] = useState<LegalCategory>("Criminal");
+  const [cat, setCat] = useState<LegalCategory>(() => (getActiveCaseCategories()[0]?.name as LegalCategory) ?? "Criminal");
   const [fileSelected, setFileSelected] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [uploadError, setUploadError] = useState("");
 
   useEffect(() => {
-    const sync = () => setRows(getKnowledgeBase());
+    const sync = () => {
+      setRows(getKnowledgeBase());
+      setManagedCategories(getActiveCaseCategories());
+    };
     return subscribeToStore(sync);
   }, []);
 
@@ -306,7 +310,7 @@ export function KnowledgeBasePage() {
                 label="Legal Domain"
                 value={cat}
                 onChange={(v) => setCat(v as LegalCategory)}
-                options={categories.map((c) => ({ value: c, label: `${c} Law` }))}
+                options={managedCategories.map((c) => ({ value: c.name, label: `${c.name} Law` }))}
               />
             </div>
 

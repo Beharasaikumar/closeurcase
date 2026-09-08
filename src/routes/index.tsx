@@ -12,7 +12,7 @@ import { HowItWorks } from "@/landing-page/sections/HowItWorks";
 import { CourtExplainer } from "@/landing-page/sections/CourtExplainer";
 import { PersonalNotAutomated } from "@/landing-page/sections/PersonalNotAutomated";
 import { Testimonials } from "@/landing-page/sections/Testimonials";
-import { PracticeAreasGrid } from "@/landing-page/sections/PracticeAreasGrid";
+import { TheOldWayVsCloseUrCase } from "@/landing-page/sections/TheOldWayVsCloseUrCase";
 import { FinalCta } from "@/landing-page/sections/FinalCta";
 import { ContactBanner } from "@/landing-page/sections/ContactBanner";
 
@@ -54,7 +54,7 @@ function LandingPage() {
       <CourtExplainer />
       <PersonalNotAutomated />
       <Testimonials />
-      <PracticeAreasGrid />
+      <TheOldWayVsCloseUrCase />
       <FinalCta />
       <ContactBanner />
     </PublicLayout>

@@ -57,7 +57,7 @@ export function ContactBanner() {
                   className="!rounded-full !px-6 !py-2.5 !text-xs font-semibold transition-transform active:scale-[0.98]"
                   icon={<Download className="h-4 w-4" />}
                 >
-                  Download now
+                  Download app
                 </Button>
               </div>
             )}

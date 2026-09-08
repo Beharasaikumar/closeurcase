@@ -1,8 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/app/PageHeader";
-import { getCases, getLawyers, getCitizens, subscribeToStore } from "@/data/appStore";
-import { categories } from "@/data/mock";
+import { getCases, getLawyers, getCitizens, subscribeToStore, getActiveCaseCategories } from "@/data/appStore";
 import type { Citizen, Lawyer } from "@/types";
 import {
   Users,
@@ -501,12 +500,14 @@ function AdminDashboard() {
   const [casesList, setCasesList] = useState(getCases);
   const [lawyersList, setLawyersList] = useState(getLawyers);
   const [citizensList, setCitizensList] = useState(getCitizens);
+  const [managedCategories, setManagedCategories] = useState(() => getActiveCaseCategories());
 
   useEffect(() => {
     const sync = () => {
       setCasesList(getCases());
       setLawyersList(getLawyers());
       setCitizensList(getCitizens());
+      setManagedCategories(getActiveCaseCategories());
     };
     return subscribeToStore(sync);
   }, []);
@@ -527,12 +528,12 @@ function AdminDashboard() {
   const totalCases = casesList.length;
   const totalLawyers = lawyersList.length;
 
-  const categoryStats = categories
+  const categoryStats = managedCategories
     .map((cat, i) => {
-      const count = casesList.filter((x) => x.category === cat).length;
-      const lawyerCount = lawyersList.filter((x) => x.category === cat).length;
+      const count = casesList.filter((x) => x.category === cat.name).length;
+      const lawyerCount = lawyersList.filter((x) => x.category === cat.name).length;
       const percentage = totalCases > 0 ? Math.round((count / totalCases) * 100) : 0;
-      return { category: cat, count, lawyerCount, percentage, color: PALETTE[i % PALETTE.length] };
+      return { category: cat.name, count, lawyerCount, percentage, color: PALETTE[i % PALETTE.length] };
     })
     .sort((a, b) => b.count - a.count);
 

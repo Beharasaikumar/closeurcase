@@ -3,7 +3,14 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { PageHeader } from "@/components/app/PageHeader";
 import { AvatarUploadField } from "@/components/app/AvatarUploadField";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
-import { getLawyers, updateLawyerProfile, subscribeToStore } from "@/data/appStore";
+import {
+  getLawyers,
+  updateLawyerProfile,
+  subscribeToStore,
+  getActiveCities,
+  getActiveLanguages,
+  getActiveCourts,
+} from "@/data/appStore";
 import {
   ShieldCheck,
   MapPin,
@@ -28,7 +35,10 @@ import {
   Star,
 } from "lucide-react";
 import { Button, TextField, Select, Checkbox, InputChip, IconButton } from "@/components/m3";
-import { LAWYER_PRACTICE_AREAS } from "@/components/app/lawyerPracticeAreas";
+import {
+  getLawyerPracticeAreas,
+  type LawyerPracticeArea,
+} from "@/components/app/lawyerPracticeAreas";
 import { sanitizeName, sanitizePhone } from "@/lib/validations";
 import { INDIAN_COURTS, INDIAN_CITIES, INDIAN_LANGUAGES } from "@/data/courts";
 import { nearestServiceCity, DEFAULT_CITY } from "@/lib/geo";
@@ -125,6 +135,28 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
   const [accountNumber, setAccountNumber] = useState(lawyer.accountNumber || "");
   const [ifscCode, setIfscCode] = useState(lawyer.ifscCode || "");
 
+  // Live master entities from Admin Data Management
+  const [managedCities, setManagedCities] = useState<string[]>(() =>
+    getActiveCities().map((c) => c.name),
+  );
+  const [managedLanguages, setManagedLanguages] = useState<string[]>(() =>
+    getActiveLanguages().map((l) => l.name),
+  );
+  const [managedCourts, setManagedCourts] = useState<string[]>(() =>
+    getActiveCourts().map((c) => c.name),
+  );
+  const [practiceAreaTree, setPracticeAreaTree] =
+    useState<LawyerPracticeArea[]>(getLawyerPracticeAreas);
+
+  useEffect(() => {
+    return subscribeToStore(() => {
+      setManagedCities(getActiveCities().map((c) => c.name));
+      setManagedLanguages(getActiveLanguages().map((l) => l.name));
+      setManagedCourts(getActiveCourts().map((c) => c.name));
+      setPracticeAreaTree(getLawyerPracticeAreas());
+    });
+  }, []);
+
   // Practice Areas & 3-Tier Multi-Select State
   const [selectedPracticeArea, setSelectedPracticeArea] = useState<string>("");
   const [selectedSpecialization, setSelectedSpecialization] = useState<string>("");
@@ -153,9 +185,9 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
 
   const availableSpecializations = useMemo(() => {
     if (!selectedPracticeArea) return [];
-    const pa = LAWYER_PRACTICE_AREAS.find((p) => p.category === selectedPracticeArea);
+    const pa = practiceAreaTree.find((p) => p.category === selectedPracticeArea);
     return pa ? pa.case_types : [];
-  }, [selectedPracticeArea]);
+  }, [selectedPracticeArea, practiceAreaTree]);
 
   const availableLegalServices = useMemo(() => {
     if (!selectedSpecialization) return [];
@@ -597,7 +629,7 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
           <TagDropdownField
             label="Service Cities"
             placeholder="-- Select City to Add --"
-            options={INDIAN_CITIES}
+            options={managedCities.length > 0 ? managedCities : INDIAN_CITIES}
             values={cities}
             onAdd={(val) => {
               if (val && !cities.includes(val)) {
@@ -725,7 +757,7 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
               onChange={handlePracticeAreaChange}
               options={[
                 { value: "", label: "-- Select Practice Area --" },
-                ...LAWYER_PRACTICE_AREAS.map((pa) => ({
+                ...practiceAreaTree.map((pa) => ({
                   value: pa.category,
                   label: pa.category,
                 })),
@@ -860,7 +892,7 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
             <TagDropdownField
               label="Languages Spoken"
               placeholder="-- Select Language --"
-              options={INDIAN_LANGUAGES}
+              options={managedLanguages.length > 0 ? managedLanguages : INDIAN_LANGUAGES}
               values={languages}
               onAdd={(val) => {
                 if (val && !languages.includes(val)) {
@@ -872,6 +904,7 @@ function LawyerProfileForm({ lawyer }: { lawyer: NonNullable<ReturnType<typeof g
 
             <CourtsDropdownField
               label="Courts Practiced In"
+              options={managedCourts.length > 0 ? managedCourts : INDIAN_COURTS}
               values={courts}
               onAdd={(val) => {
                 if (val && !courts.includes(val)) {
@@ -1077,23 +1110,27 @@ function TagDropdownField({
 function CourtsDropdownField({
   label,
   values,
+  options,
   onAdd,
   onRemove,
 }: {
   label: string;
   values: string[];
+  options?: string[];
   onAdd: (val: string) => void;
   onRemove: (index: number) => void;
 }) {
   const [selectedCourt, setSelectedCourt] = useState("");
   const [searchFilter, setSearchFilter] = useState("");
 
+  const courtPool = options && options.length > 0 ? options : INDIAN_COURTS;
+
   const filteredCourts = useMemo(() => {
     const q = searchFilter.trim().toLowerCase();
-    return INDIAN_COURTS.filter(
+    return courtPool.filter(
       (c) => !values.includes(c) && (q ? c.toLowerCase().includes(q) : true),
     );
-  }, [searchFilter, values]);
+  }, [searchFilter, values, courtPool]);
 
   const handleAddCourt = (courtName: string) => {
     if (!courtName) return;

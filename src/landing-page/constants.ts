@@ -173,32 +173,59 @@ export const INDIAN_COURTS = [
   },
 ];
 
-export const CITIZEN_TESTIMONIALS = [
-  {
-    name: "Rajesh Kumar V.",
-    role: "Property Dispute Client",
-    rating: 5,
-    quote:
-      "CloseUrCase connected me with a senior property Advocate within hours. Every hearing date was updated on my phone, and we resolved our property partition suit smoothly.",
-  },
-  {
-    name: "Anitha Rao M.",
-    role: "Consumer Grievance Client",
-    rating: 5,
-    quote:
-      "Filing a consumer claim against a builder seemed overwhelming until I used CloseUrCase. The assigned Lawyer guided me through the Consumer Commission process effortlessly.",
-  },
-];
+export interface LegalTestimonial {
+  name: string;
+  role: string;
+  quote: string;
+}
 
-export const PRACTICE_GRID = [
-  { title: "Civil Litigation", desc: "Property partition, title suits, contracts", icon: Gavel },
-  { title: "Family and Custody", desc: "Divorce, alimony, child guardianship", icon: Users },
-  { title: "Cheque Bounce Sec 138", desc: "Negotiable Instruments legal recovery", icon: FileText },
-  { title: "Corporate Insolvency", desc: "NCLT proceedings and debt recovery", icon: Briefcase },
+export const CITIZEN_TESTIMONIALS: LegalTestimonial[] = [
   {
-    title: "Consumer Protection",
-    desc: "Service deficiency and builder claims",
-    icon: ShoppingBag,
+    name: "sxxxxxxxxxxxor@gmail.com",
+    role: "Verified Client",
+    quote:
+      "Adv. Rajesh Sharma handled my property partition with great efficiency. Very professional, quick, and thorough—completed the documentation in the shortest time. Highly recommend CloseUrCase for hassle-free legal support!",
   },
-  { title: "High Court Writs", desc: "Article 226 constitutional petitions", icon: Landmark },
+  {
+    name: "Aayush Aggarwal",
+    role: "Verified Client",
+    quote:
+      "I recently used CloseUrCase for civil litigation and was very impressed with the service provided by Adv. Meenakshi. She was extremely helpful and professional throughout the process. She answered all my questions promptly and clearly, and made sure that our filing was completed quickly and efficiently.",
+  },
+  {
+    name: "PINKEE DAS",
+    role: "Verified Client",
+    quote:
+      "Loved the service of Adv. Nandini from CloseUrCase for timely filing in the Consumer Forum and prompt response at every hearing date.",
+  },
+  {
+    name: "Raj rathnam",
+    role: "Verified Client",
+    quote:
+      "I really appreciate the way your legal counsel assisted me in our High Court matter. Patient, knowledgeable, and goes the extra mile for client satisfaction.",
+  },
+  {
+    name: "Ritesh Kalyan",
+    role: "Verified Client",
+    quote:
+      "I would like to place on record my sincere appreciation for the CloseUrCase team who assisted me in commercial dispute recovery. Truly impressed with their prompt action, dedication, and professional ethics.",
+  },
+  {
+    name: "pvxxxxxxxxxx89@gmail.com",
+    role: "Verified Client",
+    quote:
+      "CloseUrCase paired me with a senior family court advocate within hours. Every hearing date was updated directly on my phone, and our matter was resolved with complete dignity.",
+  },
+  {
+    name: "VB Gamer",
+    role: "Verified Client",
+    quote:
+      "Getting our land revenue records updated had dragged on for years. Through CloseUrCase, we got a verified advocate who resolved the mutation dispute smoothly. Thank you! 🙏",
+  },
+  {
+    name: "Hitesh Vallam",
+    role: "Verified Client",
+    quote:
+      "Had a positive experience with my trademark and contract filings. Adv. Sanjay was extremely helpful throughout the process and addressed all my concerns promptly.",
+  },
 ];

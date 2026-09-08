@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import {
   Briefcase,
@@ -24,12 +24,22 @@ import { FormStepper } from "@/components/app/FormStepper";
 import type { FormStep } from "@/components/app/FormStepper";
 import { PermissionsGate } from "@/components/app/PermissionsGate";
 import { usePermissionsGate } from "@/features/permissions/usePermissionsGate";
-import { LAWYER_PRACTICE_AREAS } from "@/components/app/lawyerPracticeAreas";
+import {
+  LAWYER_PRACTICE_AREAS,
+  getLawyerPracticeAreas,
+  type LawyerPracticeArea,
+} from "@/components/app/lawyerPracticeAreas";
 import { sanitizeName, sanitizePhone, validateName, validatePhone, validateEmail } from "@/lib/validations";
 import { INDIAN_COURTS, INDIAN_CITIES, INDIAN_LANGUAGES } from "@/data/courts";
-import { addLawyer } from "@/data/appStore";
+import {
+  addLawyer,
+  subscribeToStore,
+  getActiveCities,
+  getActiveLanguages,
+  getActiveCourts,
+} from "@/data/appStore";
 import { readFileAsDataUrl } from "@/lib/files";
-import type { LegalCategory, LawyerAward, LawyerPracticeArea } from "@/types";
+import type { LegalCategory, LawyerAward, LawyerPracticeArea as LpaType } from "@/types";
 import { Button, IconButton, TextField, Select, Checkbox, InputChip } from "@/components/m3";
 
 const MAX_ID_PROOF_BYTES = 5 * 1024 * 1024;
@@ -139,6 +149,28 @@ function LawyerRegister() {
   const emailRes = validateEmail(email);
   const phoneRes = validatePhone(phone);
 
+  // Live master entities from Admin Data Management
+  const [managedCities, setManagedCities] = useState<string[]>(() =>
+    getActiveCities().map((c) => c.name),
+  );
+  const [managedLanguages, setManagedLanguages] = useState<string[]>(() =>
+    getActiveLanguages().map((l) => l.name),
+  );
+  const [managedCourts, setManagedCourts] = useState<string[]>(() =>
+    getActiveCourts().map((c) => c.name),
+  );
+  const [practiceAreaTree, setPracticeAreaTree] =
+    useState<LawyerPracticeArea[]>(getLawyerPracticeAreas);
+
+  useEffect(() => {
+    return subscribeToStore(() => {
+      setManagedCities(getActiveCities().map((c) => c.name));
+      setManagedLanguages(getActiveLanguages().map((l) => l.name));
+      setManagedCourts(getActiveCourts().map((c) => c.name));
+      setPracticeAreaTree(getLawyerPracticeAreas());
+    });
+  }, []);
+
   // 3-Tier Practice Category Selection State
   const [selectedPracticeArea, setSelectedPracticeArea] = useState<string>("");
   const [selectedSpecialization, setSelectedSpecialization] = useState<string>("");
@@ -153,9 +185,9 @@ function LawyerRegister() {
   // Available specializations for current practice area
   const availableSpecializations = useMemo(() => {
     if (!selectedPracticeArea) return [];
-    const pa = LAWYER_PRACTICE_AREAS.find((p) => p.category === selectedPracticeArea);
+    const pa = practiceAreaTree.find((p) => p.category === selectedPracticeArea);
     return pa ? pa.case_types : [];
-  }, [selectedPracticeArea]);
+  }, [selectedPracticeArea, practiceAreaTree]);
 
   // Available legal services for current specialization
   const availableLegalServices = useMemo(() => {
@@ -526,7 +558,7 @@ function LawyerRegister() {
           <TagDropdownField
             label="Service Cities *"
             placeholder="-- Select City to Add --"
-            options={INDIAN_CITIES}
+            options={managedCities.length > 0 ? managedCities : INDIAN_CITIES}
             values={cities}
             onAdd={(val) => {
               if (val && !cities.includes(val)) {
@@ -546,7 +578,7 @@ function LawyerRegister() {
               onChange={handlePracticeAreaChange}
               options={[
                 { value: "", label: "-- Select Practice Area --" },
-                ...LAWYER_PRACTICE_AREAS.map((pa) => ({
+                ...practiceAreaTree.map((pa) => ({
                   value: pa.category,
                   label: pa.category,
                 })),
@@ -751,7 +783,7 @@ function LawyerRegister() {
             <TagDropdownField
               label="Languages Spoken"
               placeholder="-- Select a Language to Add --"
-              options={INDIAN_LANGUAGES}
+              options={managedLanguages.length > 0 ? managedLanguages : INDIAN_LANGUAGES}
               values={languages}
               onAdd={(val) => {
                 if (val && !languages.includes(val)) {
@@ -763,6 +795,7 @@ function LawyerRegister() {
 
             <CourtsDropdownField
               label="Courts Practiced In"
+              options={managedCourts.length > 0 ? managedCourts : INDIAN_COURTS}
               values={courts}
               onAdd={(val) => {
                 if (val && !courts.includes(val)) {
@@ -947,23 +980,27 @@ function TagDropdownField({
 function CourtsDropdownField({
   label,
   values,
+  options,
   onAdd,
   onRemove,
 }: {
   label: string;
   values: string[];
+  options?: string[];
   onAdd: (val: string) => void;
   onRemove: (index: number) => void;
 }) {
   const [selectedCourt, setSelectedCourt] = useState("");
   const [searchFilter, setSearchFilter] = useState("");
 
+  const courtPool = options && options.length > 0 ? options : INDIAN_COURTS;
+
   const filteredCourts = useMemo(() => {
     const q = searchFilter.trim().toLowerCase();
-    return INDIAN_COURTS.filter(
+    return courtPool.filter(
       (c) => !values.includes(c) && (q ? c.toLowerCase().includes(q) : true),
     );
-  }, [searchFilter, values]);
+  }, [searchFilter, values, courtPool]);
 
   const handleAddCourt = (courtName: string) => {
     if (!courtName) return;

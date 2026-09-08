@@ -1249,13 +1249,15 @@ export const INDIAN_COURTS_RAW = [
   "West Tripura Judicial District",
 ];
 
-// Deduplicated & alphabetically sorted list of Indian Courts
-export const INDIAN_COURTS: string[] = Array.from(
+import { getCities, getLanguages, getCourts } from "@/data/appStore";
+
+// Deduplicated & alphabetically sorted fallback list of Indian Courts
+const RAW_FALLBACK_COURTS: string[] = Array.from(
   new Set(INDIAN_COURTS_RAW.map((c) => c.trim()).filter(Boolean)),
 ).sort((a, b) => a.localeCompare(b));
 
-// Major Indian Cities for selection dropdown
-export const INDIAN_CITIES: string[] = [
+// Fallback Indian Cities
+const RAW_FALLBACK_CITIES: string[] = [
   "Hyderabad",
   "Visakhapatnam",
   "Vijayawada",
@@ -1335,8 +1337,8 @@ export const INDIAN_CITIES: string[] = [
   "Puducherry",
 ];
 
-// Indian Languages for spoken languages selection dropdown
-export const INDIAN_LANGUAGES: string[] = [
+// Fallback Indian Languages
+const RAW_FALLBACK_LANGUAGES: string[] = [
   "English",
   "Telugu",
   "Hindi",
@@ -1363,7 +1365,7 @@ export const INDIAN_LANGUAGES: string[] = [
   "Marwari",
 ];
 
-export const courts: CourtOption[] = INDIAN_COURTS.slice(0, 10).map((name, idx) => ({
+const RAW_FALLBACK_COURT_OPTIONS: CourtOption[] = RAW_FALLBACK_COURTS.slice(0, 10).map((name, idx) => ({
   id: `c_${idx}`,
   name,
   level: name.includes("Supreme")
@@ -1375,8 +1377,131 @@ export const courts: CourtOption[] = INDIAN_COURTS.slice(0, 10).map((name, idx) 
         : "District Court",
 }));
 
-export function searchCourts(query: string): string[] {
-  const q = query.trim().toLowerCase();
-  if (!q) return INDIAN_COURTS;
-  return INDIAN_COURTS.filter((c) => c.toLowerCase().includes(q));
+export function getManagedCourtsList(): string[] {
+  try {
+    const active = getCourts().filter((c) => c.active).map((c) => c.name);
+    return active.length > 0 ? active : RAW_FALLBACK_COURTS;
+  } catch {
+    return RAW_FALLBACK_COURTS;
+  }
 }
+
+export function getManagedCitiesList(): string[] {
+  try {
+    const active = getCities().filter((c) => c.active).map((c) => c.name);
+    return active.length > 0 ? active : RAW_FALLBACK_CITIES;
+  } catch {
+    return RAW_FALLBACK_CITIES;
+  }
+}
+
+export function getManagedLanguagesList(): string[] {
+  try {
+    const active = getLanguages().filter((l) => l.active).map((l) => l.name);
+    return active.length > 0 ? active : RAW_FALLBACK_LANGUAGES;
+  } catch {
+    return RAW_FALLBACK_LANGUAGES;
+  }
+}
+
+export function getManagedCourtOptions(): CourtOption[] {
+  try {
+    const active = getCourts().filter((c) => c.active);
+    if (active.length > 0) {
+      return active.map((c) => ({
+        id: c.id,
+        name: c.name,
+        level: (c.level as CourtOption["level"]) || "District Court",
+      }));
+    }
+  } catch {}
+  return RAW_FALLBACK_COURT_OPTIONS;
+}
+
+/**
+ * Dynamic proxy for INDIAN_COURTS sourced from Admin Data Management.
+ */
+export const INDIAN_COURTS: string[] = new Proxy([] as string[], {
+  get(_target, prop) {
+    const list = getManagedCourtsList();
+    const val = Reflect.get(list, prop);
+    return typeof val === "function" ? val.bind(list) : val;
+  },
+  has(_target, prop) {
+    return Reflect.has(getManagedCourtsList(), prop);
+  },
+  ownKeys() {
+    return Reflect.ownKeys(getManagedCourtsList());
+  },
+  getOwnPropertyDescriptor(_target, prop) {
+    return Reflect.getOwnPropertyDescriptor(getManagedCourtsList(), prop);
+  },
+});
+
+/**
+ * Dynamic proxy for INDIAN_CITIES sourced from Admin Data Management.
+ */
+export const INDIAN_CITIES: string[] = new Proxy([] as string[], {
+  get(_target, prop) {
+    const list = getManagedCitiesList();
+    const val = Reflect.get(list, prop);
+    return typeof val === "function" ? val.bind(list) : val;
+  },
+  has(_target, prop) {
+    return Reflect.has(getManagedCitiesList(), prop);
+  },
+  ownKeys() {
+    return Reflect.ownKeys(getManagedCitiesList());
+  },
+  getOwnPropertyDescriptor(_target, prop) {
+    return Reflect.getOwnPropertyDescriptor(getManagedCitiesList(), prop);
+  },
+});
+
+/**
+ * Dynamic proxy for INDIAN_LANGUAGES sourced from Admin Data Management.
+ */
+export const INDIAN_LANGUAGES: string[] = new Proxy([] as string[], {
+  get(_target, prop) {
+    const list = getManagedLanguagesList();
+    const val = Reflect.get(list, prop);
+    return typeof val === "function" ? val.bind(list) : val;
+  },
+  has(_target, prop) {
+    return Reflect.has(getManagedLanguagesList(), prop);
+  },
+  ownKeys() {
+    return Reflect.ownKeys(getManagedLanguagesList());
+  },
+  getOwnPropertyDescriptor(_target, prop) {
+    return Reflect.getOwnPropertyDescriptor(getManagedLanguagesList(), prop);
+  },
+});
+
+/**
+ * Dynamic proxy for courts list sourced from Admin Data Management.
+ */
+export const courts: CourtOption[] = new Proxy([] as CourtOption[], {
+  get(_target, prop) {
+    const list = getManagedCourtOptions();
+    const val = Reflect.get(list, prop);
+    return typeof val === "function" ? val.bind(list) : val;
+  },
+  has(_target, prop) {
+    return Reflect.has(getManagedCourtOptions(), prop);
+  },
+  ownKeys() {
+    return Reflect.ownKeys(getManagedCourtOptions());
+  },
+  getOwnPropertyDescriptor(_target, prop) {
+    return Reflect.getOwnPropertyDescriptor(getManagedCourtOptions(), prop);
+  },
+});
+
+export function searchCourts(query: string): string[] {
+  const list = getManagedCourtsList();
+  const q = query.trim().toLowerCase();
+  if (!q) return list;
+  return list.filter((c) => c.toLowerCase().includes(q));
+}
+

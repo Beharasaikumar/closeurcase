@@ -29,9 +29,17 @@ import { LawyerProfileCard } from "@/components/app/LawyerProfileCard";
 import { usePwaInstall } from "@/lib/usePwaInstall";
 import {
   LAWYER_PRACTICE_AREAS,
+  getLawyerPracticeAreas,
+  type LawyerPracticeArea,
   mapPracticeAreaToCategory,
 } from "@/components/app/lawyerPracticeAreas";
-import { addCase, addSubscription, getLawyers, generateCloseUrCaseId } from "@/data/appStore";
+import {
+  addCase,
+  addSubscription,
+  getLawyers,
+  generateCloseUrCaseId,
+  subscribeToStore,
+} from "@/data/appStore";
 import { SUBSCRIPTION_PLANS } from "@/data/subscriptionPlans";
 import { useSpeechToText } from "@/features/citizen/useSpeechToText";
 import { distanceToCity } from "@/lib/geo";
@@ -278,9 +286,18 @@ export function FindLawyerWizard() {
     (assignMode === "admin" && subscriptionPlan !== null) ||
     (assignMode === "browse" && selectedLawyerId !== "");
 
+  const [practiceAreaTree, setPracticeAreaTree] =
+    useState<LawyerPracticeArea[]>(getLawyerPracticeAreas);
+
+  useEffect(() => {
+    return subscribeToStore(() => {
+      setPracticeAreaTree(getLawyerPracticeAreas());
+    });
+  }, []);
+
   const currentPracticeAreaObj = useMemo(
-    () => LAWYER_PRACTICE_AREAS.find((pa) => pa.category === selectedPracticeArea),
-    [selectedPracticeArea],
+    () => practiceAreaTree.find((pa) => pa.category === selectedPracticeArea),
+    [selectedPracticeArea, practiceAreaTree],
   );
   const availableSpecializations = useMemo(
     () => currentPracticeAreaObj?.case_types ?? [],
@@ -922,7 +939,7 @@ export function FindLawyerWizard() {
                               onChange={handlePracticeAreaChange}
                               options={[
                                 { value: "", label: "-- Select Practice Area --" },
-                                ...LAWYER_PRACTICE_AREAS.map((pa) => ({
+                                ...practiceAreaTree.map((pa) => ({
                                   value: pa.category,
                                   label: pa.category,
                                 })),

@@ -2131,3 +2131,29 @@ export function resetDataManagementToDefaults() {
   save(STATES_KEY, DEFAULT_STATES);
   save(COURT_LEVELS_KEY, DEFAULT_COURT_LEVELS);
 }
+
+/* ── Active-only master entity convenience getters ────────────────────────── */
+export function getActiveCaseCategories(): CaseCategoryItem[] {
+  return getCaseCategories().filter((c) => c.active);
+}
+
+export function getActiveLanguages(): LanguageItem[] {
+  return getLanguages().filter((l) => l.active);
+}
+
+export function getActiveCities(): CityItem[] {
+  return getCities().filter((c) => c.active);
+}
+
+export function getActiveCourts(): CourtItem[] {
+  return getCourts().filter((c) => c.active);
+}
+
+export function getActiveStates(): StateItem[] {
+  return getStates().filter((s) => s.active);
+}
+
+export function getActiveCourtLevels(): CourtLevelItem[] {
+  return getCourtLevels().filter((cl) => cl.active);
+}
+

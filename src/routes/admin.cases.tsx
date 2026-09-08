@@ -13,8 +13,8 @@ import {
   assignLawyerToCase,
   updateCaseFields,
   subscribeToStore,
+  getActiveCaseCategories,
 } from "@/data/appStore";
-import { categories } from "@/data/mock";
 import type { CaseStatus, LegalCase, LegalCategory } from "@/types";
 import { Search, UserCheck, X, Siren, AlertTriangle, Eye, Hash, MapPin } from "lucide-react";
 import {
@@ -440,7 +440,17 @@ function CitizenRequirementsView({ c }: { c: LegalCase }) {
 function CaseManageControls({ c }: { c: LegalCase }) {
   const isUnassigned = !c.lawyerId;
 
-  const approvedLawyers = useMemo(() => getLawyers().filter((l) => l.status === "Approved"), []);
+  const [approvedLawyers, setApprovedLawyers] = useState(() =>
+    getLawyers().filter((l) => l.status === "Approved")
+  );
+  const [managedCategories, setManagedCategories] = useState(() => getActiveCaseCategories());
+
+  useEffect(() => {
+    return subscribeToStore(() => {
+      setApprovedLawyers(getLawyers().filter((l) => l.status === "Approved"));
+      setManagedCategories(getActiveCaseCategories());
+    });
+  }, []);
 
   const [category, setCategory] = useState<LegalCategory>(c.category);
   const [lawyerId, setLawyerId] = useState(c.lawyerId ?? "");
@@ -483,7 +493,7 @@ function CaseManageControls({ c }: { c: LegalCase }) {
           value={category}
           onChange={(v) => setCategory(v as LegalCategory)}
           disabled={!isUnassigned}
-          options={categories.map((cat) => ({ value: cat, label: `${cat} Law` }))}
+          options={managedCategories.map((cat) => ({ value: cat.name, label: `${cat.name} Law` }))}
         />
         <Select
           label="Assign Lawyer"

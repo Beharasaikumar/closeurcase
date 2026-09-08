@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { PlusCircle } from "lucide-react";
 import {
@@ -11,9 +11,15 @@ import {
   Button,
 } from "@/components/m3";
 import { sanitizeName, sanitizeCNR, validateName, validateCNR } from "@/lib/validations";
-import { getCitizens, addCase } from "@/data/appStore";
-import { categories } from "@/data/mock";
-import type { CaseStatus, LegalCase } from "@/types";
+import {
+  getCitizens,
+  addCase,
+  getActiveCaseCategories,
+  getActiveCourts,
+  getActiveCities,
+  subscribeToStore,
+} from "@/data/appStore";
+import type { CaseStatus, LegalCase, LegalCategory } from "@/types";
 
 const STATUS_OPTIONS: CaseStatus[] = [
   "Pending",
@@ -49,9 +55,31 @@ export function AddCaseModal({
   const citizens = getCitizens();
   const isEdit = Boolean(editingCase);
 
+  const [managedCategories, setManagedCategories] = useState<string[]>(() => {
+    const active = getActiveCaseCategories().map((c) => c.name);
+    return active.length > 0 ? active : ["Criminal", "Corporate", "Family", "Property", "Civil"];
+  });
+  const [managedCourts, setManagedCourts] = useState<string[]>(() =>
+    getActiveCourts().map((c) => c.name),
+  );
+  const [managedCities, setManagedCities] = useState<string[]>(() =>
+    getActiveCities().map((c) => c.name),
+  );
+
+  useEffect(() => {
+    return subscribeToStore(() => {
+      const active = getActiveCaseCategories().map((c) => c.name);
+      if (active.length > 0) setManagedCategories(active);
+      setManagedCourts(getActiveCourts().map((c) => c.name));
+      setManagedCities(getActiveCities().map((c) => c.name));
+    });
+  }, []);
+
   const [title, setTitle] = useState(editingCase?.title ?? "");
   const [clientName, setClientName] = useState(editingCase?.citizenName ?? "");
-  const [category, setCategory] = useState(editingCase?.category ?? categories[0]);
+  const [category, setCategory] = useState<LegalCategory>(
+    (editingCase?.category as LegalCategory) ?? (managedCategories[0] as LegalCategory) ?? "Criminal",
+  );
   const [courtName, setCourtName] = useState(editingCase?.caseDetails.courtName ?? "");
   const [caseNumber, setCaseNumber] = useState(editingCase?.caseDetails.caseNumber ?? "");
   const [cnrNumber, setCnrNumber] = useState(editingCase?.caseDetails.cnr ?? "");
@@ -71,7 +99,7 @@ export function AddCaseModal({
   function reset() {
     setTitle("");
     setClientName("");
-    setCategory(categories[0]);
+    setCategory((managedCategories[0] as LegalCategory) ?? "Criminal");
     setCourtName("");
     setCaseNumber("");
     setCnrNumber("");
@@ -105,7 +133,7 @@ export function AddCaseModal({
           title: title.trim(),
           citizenName: clientName.trim(),
           citizenId: linkedCitizen?.id ?? editingCase.citizenId,
-          category,
+          category: category as LegalCategory,
           caseDetails: {
             ...editingCase.caseDetails,
             courtName: courtName.trim() || editingCase.caseDetails.courtName,
@@ -122,7 +150,7 @@ export function AddCaseModal({
           id: `CS-${Math.floor(10000 + Math.random() * 90000)}`,
           title: title.trim(),
           description: "",
-          category,
+          category: category as LegalCategory,
           citizenId: linkedCitizen?.id,
           citizenName: clientName.trim(),
           lawyerId,
@@ -250,16 +278,25 @@ export function AddCaseModal({
               label="Category"
               value={category}
               onChange={(v) => setCategory(v as typeof category)}
-              options={categories.map((c) => ({ value: c, label: c }))}
+              options={managedCategories.map((c) => ({ value: c, label: c }))}
             />
           </div>
 
-          <TextField
-            label="Court Name"
-            value={courtName}
-            onChange={setCourtName}
-            placeholder="e.g. City Civil Court, Banjara Hills, Hyderabad"
-          />
+          <div>
+            <TextField
+              label="Court Name"
+              value={courtName}
+              onChange={setCourtName}
+              placeholder="e.g. High Court for the State of Telangana"
+              className="w-full"
+              {...({ list: "add-case-courts-list" } as Record<string, unknown>)}
+            />
+            <datalist id="add-case-courts-list">
+              {managedCourts.map((crt) => (
+                <option key={crt} value={crt} />
+              ))}
+            </datalist>
+          </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <TextField
@@ -310,7 +347,21 @@ export function AddCaseModal({
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <TextField label="City" value={city} onChange={setCity} />
+            <div>
+              <TextField
+                label="City"
+                value={city}
+                onChange={setCity}
+                placeholder="e.g. Hyderabad"
+                className="w-full"
+                {...({ list: "add-case-cities-list" } as Record<string, unknown>)}
+              />
+              <datalist id="add-case-cities-list">
+                {managedCities.map((cty) => (
+                  <option key={cty} value={cty} />
+                ))}
+              </datalist>
+            </div>
             <Select
               label="Status"
               value={status}
