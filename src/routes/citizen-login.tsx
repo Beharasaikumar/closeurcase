@@ -33,8 +33,6 @@ export const Route = createFileRoute("/citizen-login")({
 
 type Step = "phone" | "otp";
 
-const STATIC_OTP = "0000";
-
 /** Numeric id per `Step`, for the shared `FormStepper` (which is id-based,
  * matching its other caller in lawyer-register.tsx) — kept separate from the
  * `Step` union so the rest of this file's phone/otp branching is untouched. */
@@ -98,8 +96,8 @@ export function CitizenLogin() {
   };
 
   const verifyOtp = () => {
-    if (otp !== STATIC_OTP) {
-      setOtpError("Invalid OTP. Use 0000 for demo access.");
+    if (!/^\d{4}$/.test(otp)) {
+      setOtpError("Enter the 4-digit OTP.");
 
       return;
     }

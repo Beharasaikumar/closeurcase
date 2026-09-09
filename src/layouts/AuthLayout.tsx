@@ -43,9 +43,7 @@ export function AuthLayout({
       data-auth-shell
       className="flex min-h-screen flex-col bg-background lg:h-screen lg:min-h-0 lg:overflow-hidden"
     >
-      {/* Header is mobile-hidden entirely — the centered logo (when
-          centerLogoOnMobile) and the footer's cross-role links already cover
-          navigation on small screens. */}
+
       <header className="hidden shrink-0 border-b border-border bg-surface sm:block">
         <div className="mx-auto flex h-16 w-full max-w-[1560px] items-center justify-between px-6 sm:px-8 lg:px-10">
           <Link to="/" className="flex items-center gap-2.5 shrink-0 hover:opacity-90">
@@ -62,30 +60,16 @@ export function AuthLayout({
         </div>
       </header>
 
-      {/* `min-w-0` on the row and on <main> is load-bearing: flex children
-          default to `min-width: auto`, which lets wide content (the stepper,
-          long dropdown labels) push the column — and therefore the page —
-          wider than the viewport. Allowing them to shrink is what actually
-          prevents horizontal overflow, rather than clipping it. */}
       <div
         className={cn(
           "flex w-full min-w-0 flex-1 lg:min-h-0",
-          // Mobile: center the (short) login card vertically. Reset to the
-          // default top-aligned stretch on desktop, where <main> needs its
-          // full height.
           centerOnMobile && "items-center lg:items-stretch",
         )}
       >
-        {/* ── Left column ──
-            In `fitDesktop` mode this never scrolls: it is a fixed-height flex
-            box and the card inside is sized to fit. Otherwise it falls back to
-            scrolling, which the simpler auth screens still rely on. */}
+
         <main
           className={cn(
             "w-full min-w-0 lg:h-full lg:w-[55%] lg:overflow-x-hidden xl:w-[54%]",
-            // When this column is the scroller (non-fitDesktop), reserve the
-            // scrollbar lane so its appearing/disappearing (e.g. a dropdown
-            // opening) can't shove the form sideways.
             fitDesktop
               ? "lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden"
               : "lg:overflow-y-auto lg:[scrollbar-gutter:stable]",
