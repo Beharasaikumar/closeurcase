@@ -155,6 +155,7 @@ export function CitizenLogin() {
   return (
     <AuthLayout
       centerLogoOnMobile
+      centerOnMobile
       image="/citizen-login.png"
       title={step === "phone" ? translate("citizenLoginLabel") : translate("verifyOtpTitle")}
 

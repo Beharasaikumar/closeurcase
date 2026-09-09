@@ -8,6 +8,7 @@ export function AuthLayout({
   children,
   footer,
   centerLogoOnMobile = false,
+  centerOnMobile = false,
   wide = false,
   fitDesktop = false,
   image = "/lawyer-login.png",
@@ -19,6 +20,11 @@ export function AuthLayout({
   /** Mobile only: shows a larger, centered logo + wordmark above the card
    * instead of the (mobile-hidden) navbar logo. */
   centerLogoOnMobile?: boolean;
+  /** Mobile only: vertically centers the card in the viewport instead of
+   * letting it sit at the top of the page. Only safe for short screens (the
+   * login screens) — taller multi-step forms must stay top-aligned so they
+   * can scroll. No effect on desktop. */
+  centerOnMobile?: boolean;
   /** When true, expands the form column for rich multi-step forms. */
   wide?: boolean;
   /** Desktop only: run as a fixed-height application screen — the area below
@@ -43,7 +49,7 @@ export function AuthLayout({
       <header className="hidden shrink-0 border-b border-border bg-surface sm:block">
         <div className="mx-auto flex h-16 w-full max-w-[1560px] items-center justify-between px-6 sm:px-8 lg:px-10">
           <Link to="/" className="flex items-center gap-2.5 shrink-0 hover:opacity-90">
-            <img src="/logo.png" alt="CloseUrCase Logo" className="h-9 w-9 object-contain" />
+            <img src="/logo.svg" alt="CloseUrCase Logo" className="h-9 w-9 object-contain" />
             <span className="flex flex-col leading-tight">
               <span className="text-base font-bold tracking-tight text-foreground">
                 CloseUrCase
@@ -61,7 +67,15 @@ export function AuthLayout({
           long dropdown labels) push the column — and therefore the page —
           wider than the viewport. Allowing them to shrink is what actually
           prevents horizontal overflow, rather than clipping it. */}
-      <div className="flex w-full min-w-0 flex-1 lg:min-h-0">
+      <div
+        className={cn(
+          "flex w-full min-w-0 flex-1 lg:min-h-0",
+          // Mobile: center the (short) login card vertically. Reset to the
+          // default top-aligned stretch on desktop, where <main> needs its
+          // full height.
+          centerOnMobile && "items-center lg:items-stretch",
+        )}
+      >
         {/* ── Left column ──
             In `fitDesktop` mode this never scrolls: it is a fixed-height flex
             box and the card inside is sized to fit. Otherwise it falls back to
@@ -89,7 +103,7 @@ export function AuthLayout({
           >
             {centerLogoOnMobile && (
               <div className="mb-6 flex flex-col items-center gap-3 sm:hidden">
-                <img src="/logo.png" alt="CloseUrCase Logo" className="h-24 w-24 object-contain" />
+                <img src="/logo.svg" alt="CloseUrCase Logo" className="h-24 w-24 object-contain" />
                 <span className="text-2xl font-extrabold tracking-tight text-foreground">
                   CloseUrCase
                 </span>

@@ -41,6 +41,7 @@ export function Login() {
   return (
     <AuthLayout
       centerLogoOnMobile
+      centerOnMobile
       title="Lawyer & Admin sign in"
       subtitle="Email and password for Lawyers and platform administrators."
       footer={

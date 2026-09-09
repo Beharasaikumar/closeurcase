@@ -129,7 +129,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
         {useBlendedHeader && <style>{heroBlendPanelResetCss}</style>}
         <div className="mx-auto grid h-16 w-full max-w-7xl 2xl:max-w-[1440px] grid-cols-[auto_1fr_auto] items-center gap-3 lg:gap-6 px-4 sm:px-6 lg:px-8">
           <Link to="/" className="flex items-center gap-2.5 shrink-0 hover:opacity-90">
-            <img src="/logo.png" alt="CloseUrCase Logo" className="h-9 w-9 object-contain" />
+            <img src="/logo.svg" alt="CloseUrCase Logo" className="h-9 w-9 object-contain" />
             <span className="flex flex-col leading-tight">
               <span className="text-base font-bold tracking-tight text-foreground">
                 CloseUrCase
@@ -440,7 +440,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
             {/* Brand */}
             <div>
               <Link to="/" className="inline-flex items-center gap-2.5 hover:opacity-90">
-                <img src="/logo.png" alt="CloseUrCase Logo" className="h-9 w-9 object-contain" />
+                <img src="/logo.svg" alt="CloseUrCase Logo" className="h-9 w-9 object-contain" />
                 <span className="flex flex-col leading-tight">
                   <span className="text-base font-bold tracking-tight text-slate-900">
                     CloseUrCase
