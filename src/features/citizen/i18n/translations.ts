@@ -87,7 +87,7 @@ const en: Record<TranslationKey, string> = {
   pickCaseTypeDesc: "Pick one option before using the microphone or upload form.",
   heroTitle: "Structured Resolution for Every Legal Matter",
   heroDesc:
-    "CloseUrCase helps citizens file cases, match with Lawyers, and track progress — in English, Hindi, or Telugu.",
+    "CloseUrCase helps citizens file cases, match with Lawyers, and track progress in English, Hindi, or Telugu.",
   getStarted: "Get Started Now",
   citizenLoginLabel: "Find a Lawyer",
   citizenLoginSubtitle: "Mobile number only · No password",
