@@ -53,7 +53,9 @@ export function AnimatedDownloadButton({
         className="h-3.5 w-3.5 shrink-0 transition-transform duration-200 group-hover:translate-y-0.5"
         strokeWidth={2.2}
       />
-      <span>Download App</span>
+      {/* In the compact (header) size, drop the label on the narrowest phones
+          so the logo + button + hamburger row can't overflow ~375px. */}
+      <span className={isSm ? "hidden min-[390px]:inline" : undefined}>Download App</span>
     </button>
   );
 }

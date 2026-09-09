@@ -22,6 +22,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { ChipSet, FilterChip, AssistChip, IconButton, Button } from "@/components/m3";
+import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 
 type Role = "citizen" | "lawyer" | "admin";
 
@@ -54,6 +55,7 @@ export function SharedNotificationsPage({ role }: { role: Role }) {
   const navigate = useNavigate();
   const [items, setItems] = useState<AppNotification[]>(() => getNotifications(role));
   const [filter, setFilter] = useState<"all" | "unread">("all");
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     const sync = () => setItems(getNotifications(role));
@@ -81,8 +83,11 @@ export function SharedNotificationsPage({ role }: { role: Role }) {
     markAllNotificationsRead();
   };
 
-  const handleDelete = (id: string) => {
-    deleteNotification(id);
+  const pendingDeleteNotif = items.find((n) => n.id === pendingDeleteId) ?? null;
+
+  const handleConfirmDelete = () => {
+    if (pendingDeleteId) deleteNotification(pendingDeleteId);
+    setPendingDeleteId(null);
   };
 
   const handleBack = () => {
@@ -94,11 +99,11 @@ export function SharedNotificationsPage({ role }: { role: Role }) {
   };
 
   return (
-    <div className={`space-y-6 ${role === "lawyer" ? "" : "max-w-4xl"}`}>
+    <div className="space-y-6">
       <PageHeader
         title="Notifications"
         description="Stay informed with real-time alerts regarding cases, assignments, and platform updates."
-        actionsPosition={role === "citizen" ? "below" : "inline"}
+        actionsPosition="inline"
         actions={
           unreadCount > 0 ? (
             <Button
@@ -200,7 +205,7 @@ export function SharedNotificationsPage({ role }: { role: Role }) {
                       variant="standard"
                       className="ml-auto"
                       ariaLabel="Delete notification"
-                      onClick={() => handleDelete(n.id)}
+                      onClick={() => setPendingDeleteId(n.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </IconButton>
@@ -211,6 +216,21 @@ export function SharedNotificationsPage({ role }: { role: Role }) {
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        title="Delete Notification"
+        message={
+          pendingDeleteNotif
+            ? `Are you sure you want to delete "${pendingDeleteNotif.title}"? This notification will be permanently removed and can't be recovered.`
+            : "Are you sure you want to delete this notification? It will be permanently removed and can't be recovered."
+        }
+        confirmLabel="Yes, Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setPendingDeleteId(null)}
+      />
     </div>
   );
 }

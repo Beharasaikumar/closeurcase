@@ -20,6 +20,7 @@ import { LAWYER_PRACTICE_AREAS } from "@/components/app/lawyerPracticeAreas";
 import { GOVERNMENT_SERVICES } from "@/data/governmentServices";
 import { useCitizenLanguage } from "@/features/citizen/i18n/CitizenLanguageContext";
 import { AnimatedDownloadButton } from "@/components/app/AnimatedDownloadButton";
+import { MailLink } from "@/components/app/MailLink";
 import { FILLED_LINK_BUTTON_CITIZEN_CLASS, IconButton } from "@/components/m3";
 
 /** Gold gradient treatment for header/drawer CTAs, matching the gold CTAs
@@ -127,7 +128,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
         style={useBlendedHeader ? heroBlendVars : undefined}
       >
         {useBlendedHeader && <style>{heroBlendPanelResetCss}</style>}
-        <div className="mx-auto grid h-16 w-full max-w-7xl 2xl:max-w-[1440px] grid-cols-[auto_1fr_auto] items-center gap-3 lg:gap-6 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto grid h-16 w-full max-w-7xl 2xl:max-w-[1440px] grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-3 lg:gap-6 px-3 sm:px-6 lg:px-8">
           <Link to="/" className="flex items-center gap-2.5 shrink-0 hover:opacity-90">
             <img src="/logo.svg" alt="CloseUrCase Logo" className="h-9 w-9 object-contain" />
             <span className="flex flex-col leading-tight">
@@ -143,14 +144,15 @@ export function PublicLayout({ children }: { children: ReactNode }) {
           <PublicNav />
 
           <div className="flex items-center gap-2 sm:gap-2.5 justify-self-end">
-            {/* On mobile: Animated 24/7 Download Button placed on left side of hamburger menu */}
+            {/* Below xl: compact header (logo + Download + hamburger). The full
+                centered nav + action cluster only fits comfortably at xl. */}
             {isHome && (
-              <div className="flex md:hidden items-center">
+              <div className="flex xl:hidden items-center">
                 <AnimatedDownloadButton useBlendedHeader={useBlendedHeader} size="sm" />
               </div>
             )}
 
-            <div className="hidden md:flex items-center gap-2 shrink-0">
+            <div className="hidden xl:flex items-center gap-2 shrink-0">
               <CitizenLanguageButtons size="sm" showLabel={false} />
 
               {/* On desktop: Animated 24/7 Download Button placed on left side of Lawyer Sign In */}
@@ -189,7 +191,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               type="button"
               onClick={() => setIsMobileMenuOpen((v) => !v)}
               className={cn(
-                "md:hidden flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all active:scale-95 focus:outline-none",
+                "xl:hidden flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all active:scale-95 focus:outline-none",
                 useBlendedHeader
                   ? "border-[#d4af37]/45 bg-[#0a0d14]/75 text-white shadow-md shadow-black/30 hover:bg-[#0a0d14] hover:border-[#d4af37]"
                   : "border-slate-200 bg-white text-slate-900 shadow-sm hover:bg-slate-50 hover:border-slate-300",
@@ -217,7 +219,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
           block for any `position: fixed` descendant — inset-y-0 would then resolve
           against the header's own ~64px box instead of the viewport. */}
       <div
-        className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 md:hidden ${
+        className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 xl:hidden ${
           isMobileMenuOpen ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
         onClick={closeMobileMenu}
@@ -228,7 +230,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
         role="dialog"
         aria-modal="true"
         aria-label="Mobile menu"
-        className={`fixed inset-y-0 right-0 z-50 w-4/5 max-w-sm overflow-y-auto border-l border-border bg-surface shadow-2xl transition-transform duration-300 ease-out md:hidden ${
+        className={`fixed inset-y-0 right-0 z-50 w-4/5 max-w-sm overflow-y-auto border-l border-border bg-surface shadow-2xl transition-transform duration-300 ease-out xl:hidden ${
           isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -455,13 +457,13 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                 — matched to your case type and tracked from filing to resolution.
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
-                <a
-                  href="mailto:support@closeurcase.in"
+                <MailLink
+                  email="support@closeurcase.in"
                   className="inline-flex items-center gap-1.5 rounded-full border border-[#d4af37]/30 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-600 shadow-sm transition-colors hover:border-[#d4af37]/60 hover:text-[#a9853f]"
                 >
                   <Mail className="h-3.5 w-3.5" />
                   support@closeurcase.in
-                </a>
+                </MailLink>
                 <Link
                   to="/"
                   hash="contact"

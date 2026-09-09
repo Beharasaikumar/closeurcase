@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { renderAsync as renderDocxAsync } from "docx-preview";
 import { FileText, Maximize2 } from "lucide-react";
 import { openDocumentInNewTab } from "@/lib/files";
 
@@ -47,11 +46,13 @@ export function DocxPreview({
     const container = containerRef.current;
     if (container) container.innerHTML = "";
 
-    fetch(fileDataUrl)
-      .then((res) => res.blob())
-      .then((blob) => {
+    // `docx-preview` (and its `jszip` dependency) is ~170 KB minified and is
+    // only needed when a Word document is actually previewed — load it lazily
+    // so it stays out of the initial bundle.
+    Promise.all([import("docx-preview"), fetch(fileDataUrl).then((res) => res.blob())])
+      .then(([{ renderAsync }, blob]) => {
         if (cancelled || !container) return;
-        return renderDocxAsync(blob, container, undefined, {
+        return renderAsync(blob, container, undefined, {
           ignoreWidth: true,
           ignoreHeight: true,
         });

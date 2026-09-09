@@ -483,6 +483,7 @@ export function LawyersPage() {
               <DocumentPreviewBody
                 fileDataUrl={attachmentsLawyer.idProofUrl}
                 fileName={attachmentsLawyer.idProofFileName || "ID Proof"}
+                showFullScreenButton={false}
                 fallback={
                   <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-xl border border-border bg-background p-6 shadow-sm">
                     <FileText className="h-12 w-12 text-muted-foreground/60" />

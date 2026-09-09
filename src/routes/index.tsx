@@ -15,6 +15,7 @@ import { Testimonials } from "@/landing-page/sections/Testimonials";
 import { TheOldWayVsCloseUrCase } from "@/landing-page/sections/TheOldWayVsCloseUrCase";
 import { FinalCta } from "@/landing-page/sections/FinalCta";
 import { ContactBanner } from "@/landing-page/sections/ContactBanner";
+import { ScrollToTopButton } from "@/components/app/ScrollToTopButton";
 
 export const Route = createFileRoute("/")({
   beforeLoad: () => {
@@ -57,6 +58,7 @@ function LandingPage() {
       <TheOldWayVsCloseUrCase />
       <FinalCta />
       <ContactBanner />
+      <ScrollToTopButton />
     </PublicLayout>
   );
 }

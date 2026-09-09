@@ -376,6 +376,7 @@ function GlobalDocsTab() {
                 fileDataUrl={activePdf.fileDataUrl}
                 fileMimeType={activePdf.fileMimeType}
                 fileName={activePdf.fileName ?? activePdf.title}
+                showFullScreenButton={false}
                 fallback={
                   <div className="mx-auto max-w-2xl rounded-xl border border-border bg-background p-4 sm:p-6 shadow-sm space-y-4 text-foreground">
                     <div className="flex items-center justify-between border-b border-border pb-3">
@@ -758,6 +759,7 @@ function MyDocsTab({ state }: { state: { lawyerId: string; docs: LawyerDocument[
                 fileDataUrl={activeDoc.fileDataUrl}
                 fileMimeType={activeDoc.fileMimeType}
                 fileName={activeDoc.fileName ?? activeDoc.title}
+                showFullScreenButton={false}
                 fallback={
                   <div className="mx-auto flex max-w-2xl min-h-[220px] flex-col items-center justify-center gap-2.5 rounded-xl border border-border bg-background p-4 sm:p-6 text-center shadow-sm">
                     <FileText className="h-7 w-7 text-muted-foreground" />

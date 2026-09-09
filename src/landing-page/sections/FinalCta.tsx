@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { ArrowUpRight, CheckCircle2, MessageSquareText, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MailLink } from "@/components/app/MailLink";
 
 const FEEDBACK_TYPES = [
   "General Feedback",
@@ -67,15 +68,15 @@ export function FinalCta() {
 
                 {/* Single direct email on the card so user can mail directly if preferred */}
                 <div className="pt-1">
-                  <a
-                    href="mailto:feedback@closeurcase.com"
+                  <MailLink
+                    email="feedback@closeurcase.com"
                     className="inline-flex items-center gap-2 text-xs font-medium text-slate-600 hover:text-[#a9853f] transition-colors group"
                   >
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#d4af37]/12 text-[#a9853f] group-hover:bg-[#d4af37]/20 transition-colors">
                       <Mail className="h-3.5 w-3.5" />
                     </span>
                     <span>Prefer email? Write directly to <strong className="font-semibold text-slate-800 group-hover:text-[#a9853f]">feedback@closeurcase.com</strong></span>
-                  </a>
+                  </MailLink>
                 </div>
               </div>
 

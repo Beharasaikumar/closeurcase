@@ -58,7 +58,7 @@ export function PublicNav() {
   const activeArea = LAWYER_PRACTICE_AREAS[activeAreaIndex];
 
   return (
-    <nav ref={navRef} className="relative hidden md:flex items-center justify-center gap-1">
+    <nav ref={navRef} className="relative hidden xl:flex items-center justify-center gap-1">
       <Link
         to="/citizen-login"
         onMouseEnter={() => openNow("lawyer")}

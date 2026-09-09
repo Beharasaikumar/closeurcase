@@ -458,6 +458,7 @@ function PdfModalBody({
             fileDataUrl={hasRealFile ? item.fileDataUrl : undefined}
             fileMimeType={item.fileMimeType}
             fileName={item.fileName ?? item.title}
+            showFullScreenButton={false}
             fallback={
               <div className="mx-auto max-w-2xl rounded-xl border border-border bg-background p-4 sm:p-6 shadow-sm space-y-4 text-foreground">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-border pb-3 gap-2">
