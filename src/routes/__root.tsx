@@ -66,6 +66,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function ScrollToTop() {
   const router = useRouter();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const hash = useRouterState({ select: (s) => s.location.hash });
 
   useEffect(() => {
     if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
@@ -73,7 +74,12 @@ function ScrollToTop() {
     }
   }, []);
 
+  // Reset scroll on real route (pathname) changes only. A hash-only
+  // navigation on the same page — the "About" / "Contact" links in the
+  // public header and footer point at `/#about` / `/#contact` — must keep
+  // its scroll position so the browser can bring that section into view.
   useEffect(() => {
+    if (window.location.hash) return;
     const reset = () => {
       window.scrollTo(0, 0);
       document.documentElement.scrollTop = 0;
@@ -91,8 +97,31 @@ function ScrollToTop() {
     };
   }, [pathname]);
 
+  // Smooth-scroll to the `#hash` target once it has rendered. Target
+  // sections carry `scroll-mt-*` so the sticky header doesn't overlap them.
   useEffect(() => {
+    if (!hash) return;
+    const scrollToHash = () => {
+      const el = document.getElementById(hash);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    const rafId = requestAnimationFrame(scrollToHash);
+    const tm = setTimeout(scrollToHash, 60);
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(tm);
+    };
+  }, [hash, pathname]);
+
+  useEffect(() => {
+    let lastPath = router.state.location.pathname;
     return router.subscribe("onRendered", () => {
+      const nextPath = router.state.location.pathname;
+      const changedPath = nextPath !== lastPath;
+      lastPath = nextPath;
+      // Leave scroll alone for hash-only navigations and for the hash
+      // being cleared afterwards — only jump to top on an actual route change.
+      if (!changedPath || window.location.hash) return;
       window.scrollTo(0, 0);
       document.querySelectorAll("main, [data-scroll-container], #dashboard-main").forEach((el) => {
         el.scrollTop = 0;

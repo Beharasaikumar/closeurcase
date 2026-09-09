@@ -97,11 +97,13 @@ export function PublicNav() {
         About
       </Link>
 
-      {/* Find a Lawyer mega-menu */}
+      {/* Find a Lawyer mega-menu — fixed + viewport-centered rather than
+          absolute-centered on this <nav>, which sits in an off-center grid
+          column and pushed the panel off-screen on narrower desktops. */}
       <div
         onMouseEnter={() => openNow("lawyer")}
         onMouseLeave={closeSoon}
-        className={`absolute left-1/2 top-full z-50 w-[80vw] max-w-6xl -translate-x-1/2 pt-2 transition-all duration-200 ease-out ${
+        className={`fixed left-1/2 top-16 z-50 w-[min(80vw,72rem)] -translate-x-1/2 pt-2 transition-all duration-200 ease-out ${
           openMenu === "lawyer"
             ? "pointer-events-auto translate-y-0 opacity-100"
             : "pointer-events-none -translate-y-1 opacity-0"
@@ -169,11 +171,11 @@ export function PublicNav() {
         </div>
       </div>
 
-      {/* Government Services mega-menu */}
+      {/* Government Services mega-menu — see positioning note above. */}
       <div
         onMouseEnter={() => openNow("gov")}
         onMouseLeave={closeSoon}
-        className={`absolute left-1/2 top-full z-50 w-[80vw] max-w-6xl -translate-x-1/2 pt-2 transition-all duration-200 ease-out ${
+        className={`fixed left-1/2 top-16 z-50 w-[min(80vw,72rem)] -translate-x-1/2 pt-2 transition-all duration-200 ease-out ${
           openMenu === "gov"
             ? "pointer-events-auto translate-y-0 opacity-100"
             : "pointer-events-none -translate-y-1 opacity-0"
