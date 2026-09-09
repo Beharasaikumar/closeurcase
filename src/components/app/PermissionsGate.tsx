@@ -68,8 +68,8 @@ export function PermissionsGate({
       title="Before you continue"
       subtitle="CloseUrCase needs a few device permissions to work well. We'll tell you why for each one."
     >
-      <div className="space-y-3 lg:space-y-2.5">
-        <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-2 lg:gap-2">
+      <div className="space-y-2.5">
+        <div className="grid grid-cols-2 gap-2">
           {DEVICE_PERMISSIONS.map((permission) => {
             const permissionState = status[permission.id];
             const hint = getPermissionHint(permission.id, permissionState);
@@ -77,16 +77,16 @@ export function PermissionsGate({
             const isRetrying = retryingId === permission.id;
             return (
               <PermissionRow key={permission.id} state={permissionState}>
-                <permission.icon className="h-4.5 w-4.5 shrink-0 text-primary lg:h-4 lg:w-4 lg:mt-0.5" />
+                <permission.icon className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-foreground leading-tight lg:text-[13px]">
+                  <p className="text-[13px] font-semibold text-foreground leading-tight">
                     {permission.label}
                   </p>
-                  <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground lg:text-[11px] lg:leading-snug">
+                  <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
                     {permission.reason}
                   </p>
                   {hint && (
-                    <p className="mt-1 text-xs leading-relaxed font-medium text-warning lg:text-[11px] lg:leading-snug">
+                    <p className="mt-1 text-[11px] leading-snug font-medium text-warning">
                       {hint}
                     </p>
                   )}
@@ -107,15 +107,15 @@ export function PermissionsGate({
           })}
         </div>
 
-        <div className="flex items-start gap-2 rounded-lg bg-muted/50 p-2.5 text-xs leading-relaxed text-muted-foreground lg:p-2 lg:text-[11px] lg:leading-snug">
-          <ShieldCheck className="h-4 w-4 shrink-0 text-primary lg:h-3.5 lg:w-3.5 lg:mt-0.5" />
+        <div className="flex items-start gap-2 rounded-lg bg-muted/50 p-2 text-[11px] leading-snug text-muted-foreground">
+          <ShieldCheck className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" />
           <span>
             Your browser will show its own permission prompts. You can allow or deny each one — you
             can always change your choice later in your browser or device settings.
           </span>
         </div>
 
-        <div className="space-y-2 lg:space-y-1.5">
+        <div className="space-y-1.5">
           <Button
             type="button"
             variant="filled"
@@ -132,7 +132,7 @@ export function PermissionsGate({
               variant="text"
               onClick={onContinue}
               disabled={requesting}
-              className="w-full lg:h-8"
+              className="w-full h-8"
             >
               Skip for now
             </Button>
@@ -151,7 +151,7 @@ function PermissionRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-2.5 rounded-xl border border-border bg-surface p-3 lg:p-2.5">
+    <div className="flex items-start gap-2 rounded-xl border border-border bg-surface p-2.5">
       {children}
       <div className="shrink-0 pt-0.5">
         <StatusBadge state={state} />

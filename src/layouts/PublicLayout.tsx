@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, MouseEvent, ReactNode } from "react";
 import {
   ArrowUpRight,
   ChevronDown,
@@ -53,6 +53,16 @@ export function PublicLayout({ children }: { children: ReactNode }) {
   const { translate } = useCitizenLanguage();
   const location = useLocation();
   const isHome = location.pathname === "/";
+
+  // Clicking the logo while already on the landing page should just glide back
+  // to the very top (and reset any horizontal offset) rather than doing a
+  // same-route navigation, which leaves the scroll position wherever it was.
+  function handleLogoClick(e: MouseEvent) {
+    if (location.pathname !== "/") return;
+    e.preventDefault();
+    closeMobileMenu();
+    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+  }
 
   // Only the homepage gets the blended, transparent-over-hero header. Every
   // other route keeps the original solid sticky header untouched.
@@ -129,7 +139,11 @@ export function PublicLayout({ children }: { children: ReactNode }) {
       >
         {useBlendedHeader && <style>{heroBlendPanelResetCss}</style>}
         <div className="mx-auto grid h-16 w-full max-w-7xl 2xl:max-w-[1440px] grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-3 lg:gap-6 px-3 sm:px-6 lg:px-8">
-          <Link to="/" className="flex items-center gap-2.5 shrink-0 hover:opacity-90">
+          <Link
+            to="/"
+            onClick={handleLogoClick}
+            className="flex items-center gap-2.5 shrink-0 hover:opacity-90"
+          >
             <img src="/logo.svg" alt="CloseUrCase Logo" className="h-9 w-9 object-contain" />
             <span className="flex flex-col leading-tight">
               <span className="text-base font-bold tracking-tight text-foreground">
@@ -441,7 +455,11 @@ export function PublicLayout({ children }: { children: ReactNode }) {
           <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1.1fr]">
             {/* Brand */}
             <div>
-              <Link to="/" className="inline-flex items-center gap-2.5 hover:opacity-90">
+              <Link
+                to="/"
+                onClick={handleLogoClick}
+                className="inline-flex items-center gap-2.5 hover:opacity-90"
+              >
                 <img src="/logo.svg" alt="CloseUrCase Logo" className="h-9 w-9 object-contain" />
                 <span className="flex flex-col leading-tight">
                   <span className="text-base font-bold tracking-tight text-slate-900">

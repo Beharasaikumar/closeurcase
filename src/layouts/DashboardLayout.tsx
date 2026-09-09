@@ -536,9 +536,10 @@ export function DashboardLayout({
           </main>
         </div>
 
-        {/* ── Mobile Navigation Bar (floating bottom tab bar) — every role gets one. ── */}
+        {/* ── Mobile Navigation Bar — flush, edge-to-edge bottom tab bar pinned to
+              the bottom of the viewport; every role gets one. ── */}
         {!hideBottomNav && (
-          <nav className="fixed inset-x-3 bottom-3 z-40 flex items-stretch rounded-[var(--md-sys-shape-corner-large)] border border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface-container)] shadow-[var(--md-sys-elevation-level2)] md:hidden">
+          <nav className="fixed inset-x-0 bottom-0 z-40 flex items-stretch border-t border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface-container)] shadow-[var(--md-sys-elevation-level2)] md:hidden">
             {bottomNav.map((item) => {
               const active = item.match(pathname);
               const Icon = item.icon;
